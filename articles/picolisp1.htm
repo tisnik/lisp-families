@@ -1,0 +1,1087 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>PicoLisp: minimalistický a přitom překvapivě výkonný interpret Lispu</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>PicoLisp: minimalistický a přitom překvapivě výkonný interpret Lispu</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>V současnosti je aktivně používáno relativně mnoho dialektů programovacího jazyka LISP. Jedná se zejména o Common Lisp, dále pak o Emacs Lisp (Elisp) i o odvozené jazyky Scheme (Guile) a taktéž o populární Clojure. Kromě toho se můžeme setkat i s minimalisticky pojatými interpretry, mezi něž patří PicoLisp.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. PicoLisp: minimalistický a přitom překvapivě výkonný interpret Lispu</a></p>
+<p><a href="#k02">2. Interní datové struktury používané interpretrem PicoLispu</a></p>
+<p><a href="#k03">3. Typ ukládaných hodnot</a></p>
+<p><a href="#k04">4. Automatická správa paměti (garbage collector atd.)</a></p>
+<p><a href="#k05">5. Je interpret PicoLispu skutečně pojatý minimalisticky?</a></p>
+<p><a href="#k06">6. Základní vlastnosti PicoLispu &ndash; tečkové páry a seznamy</a></p>
+<p><a href="#k07">7. Další datové struktury postavené nad seznamy: zásobníky, fronty a cyklické seznamy</a></p>
+<p><a href="#k08">8. Funkce &ndash; základní stavební prvek programů</a></p>
+<p><a href="#k09">9. Funkce vyššího řádu</a></p>
+<p><a href="#k10">10. Programové smyčky</a></p>
+<p><a href="#k11">11. Anonymní funkce</a></p>
+<p><a href="#k12">12. Reprezentace numerických hodnot</a></p>
+<p><a href="#k13">13. Obsah druhé části článku</a></p>
+<p><a href="#k14">14. Příloha: stručná historie vývoje LISPu</a></p>
+<p><a href="#k15">15. Literatura</a></p>
+<p><a href="#k16">16. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. PicoLisp: minimalistický a přitom překvapivě výkonný interpret Lispu</h2>
+
+<p>Programovací jazyk LISP za sebou má přibližně šedesátiletou historii, což
+mj.&nbsp;znamená, že se jedná o jednu z&nbsp;nejdéle existujících rodin
+programovacích jazyků vůbec (druhá podobná větev je tvořena různými verzemi
+Fortranu a třetí pak COBOLem). V&nbsp;průběhu oněch necelých šedesáti let
+vzniklo velké množství různých variant tohoto jazyka, přičemž některé varianty
+byly implementovány formou interpretru a jiné naopak byly vybaveny překladačem.
+Z&nbsp;rodiny LISPovských jazyků se vyvinuly i další podobně koncipované
+jazyky, především pak <i>Scheme</i> (v&nbsp;Linuxu zastupované především
+projektem Guile) a dnes stále více populární jazyk <i>Clojure</i>.
+Z&nbsp;&bdquo;velkých&ldquo; LISPů je nutné jmenovat především dialekt
+<i>Common Lisp</i>. Kromě toho však vzniklo i mnoho minimalisticky pojatých
+interpretrů a překladačů Lispu. Patří sem například dnes již historický Xlisp,
+první (původně značně primitivní) AutoLISP a v&nbsp;neposlední řadě i PicoLisp,
+který si popíšeme dnes.</p>
+
+<p>Interpret programovacího jazyka <i>PicoLisp</i> je &ndash; alespoň podle
+slov autorů tohoto projektu &ndash; pojat minimalisticky. To se ovšem týká
+především způsobu implementace interních datových struktur používaných samotným
+interpretrem a jeho správcem paměti (<i>garbage collector</i>). Naproti tomu
+vlastní programovací jazyk je až překvapivě vyspělý, což sice nemusí být na
+první pohled patrné, ale například při porovnání s&nbsp;podobnými
+minimalisticky pojatými programovacími jazyky (různými implementacemi Forthu)
+se ukazuje, že <i>PicoLisp</i> obsahuje jak rozsáhlou základní knihovnu, tak i
+možnost relativně snadného použití nativních (většinou céčkových) knihoven,
+které jsou v&nbsp;systému nainstalovány (dokonce existuje možnost propojení
+PicoLispu s&nbsp;běžící JVM, podle mě je to ale spíše technologické demo a
+nikoli řešení připravené pro použití v&nbsp;produkci).</p>
+
+<p>Tento programovací jazyk je tedy v&nbsp;případě potřeby možné použít i ve
+funkci &bdquo;lepidla&ldquo;, v&nbsp;němž jsou implementovány pouze
+vysokoúrovňové části aplikace (tu lze navíc vytvářet a testovat interaktivně),
+zatímco části nízkoúrovňové mohou být vytvořeny v&nbsp;nějakém jazyku
+překládaném do nativního kódu. Na podobném předpokladu, tj.&nbsp;na myšlence
+současného použití vysokoúrovňového a nízkoúrovňového jazyka, byl ostatně
+postaven i dnes poněkud pozapomenutý jazyk TCL (viz též <a
+href="https://www.tcl.tk/doc/scripting.html">slavný článek</a> od tvůrce tohoto
+jazyka, slova tohoto článku se už do značné míry vyplnila), ale i mnohem
+populárnější skriptovací jazyky (Python, Ruby, Perl, částečně i Lua).</p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Interní datové struktury používané interpretrem PicoLispu</h2>
+
+<p>Popisem možností programovacího jazyka <i>PicoLisp</i> se budeme poněkud
+podrobněji zabývat v&nbsp;navazujících kapitolách; nyní se pojďme alespoň ve
+stručnosti věnovat tomu, jakým způsobem je interně implementován vlastní
+interpret a jeho virtuální stroj. Interpretry LISPovských jazyků jsou většinou
+relativně jednoduché, zejména v&nbsp;porovnání s&nbsp;interpretry jiných
+programovacích jazyků se složitějšími syntaktickými pravidly. Je tomu tak
+z&nbsp;toho důvodu, že v&nbsp;LISPu se programy zapisují v&nbsp;notaci, která
+do značné míry koresponduje s&nbsp;AST (<i>Abstract Syntax Tree</i>), které si
+překladač či interpret prakticky jakéhokoli programovacího jazyka vytváří ve
+druhé fázi překladu. <i>PicoLisp</i> tedy parsuje zapsané <i>formy</i> a přímo
+z&nbsp;nich vytváří interní podobu programu, kterou ukládá do paměti a následně
+interpretuje.</p>
+
+<p>To, že je interpret <i>PicoLispu</i> pojat minimalisticky, je způsobeno tím,
+že interně podporuje pouze několik jednoduchých datových typů a navíc jen
+jediný složený datový typ. Interně jsou totiž všechny hodnoty ukládány do
+takzvaných &bdquo;tečkových párů&ldquo; (<i>dot-pair</i>, někdy se setkáme
+s&nbsp;překladem tečka-dvojice), což vlastně není nic jiného, než céčková
+datová struktura se dvěma prvky. První prvek se z&nbsp;historických důvodů
+jmenuje <strong>car</strong>, druhý pak <strong>cdr</strong>. Tyto prvky
+obsahují buď vlastní jednoduchou hodnotu (část celého čísla, hodnotu
+<strong>nil</strong> atd.) či ukazatel na další tečkový pár. Ve zdrojovém kódu
+<i>PicoLispu</i> vypadá deklarace tečkového páru (zde nazývaného buňka &ndash;
+<i>cell</i>) dosti nenápadně, ovšem síla plyne až ze způsobu použití:</p>
+
+<pre>
+typedef struct cell {
+    struct cell *car;
+    struct cell *cdr;
+} cell, *any;
+</pre>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Typ ukládaných hodnot</h2>
+
+<p>Typ hodnoty uložené do <strong>car</strong> či <strong>cdr</strong> se
+snadno pozná z&nbsp;nejnižších tří bitů. Předpokládejme překlad na 32bitové
+platformě (příkladem může být <i>Raspberry Pi</i> apod.). V&nbsp;takovém
+případě je <strong>sizeof(cell)</strong> rovno 64bitům a každý z&nbsp;ukazatelů
+má následující strukturu:</p>
+
+<pre>
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxx010 Číslo (resp. jeho část)
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxx100 Symbol
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxx000 Pár (ukazatel)
+</pre>
+
+<p>Poznámky:</p>
+
+<ol>
+
+<li>PicoLisp pro čísla používá speciální formát umožňující reprezentovat
+prakticky jakoukoli hodnotu (omezeni jsme dostupnou kapacitou paměti). Pro malá
+čísla (do šedesáti bitů na 64bitové platformě) je hodnota přímo uložena
+v&nbsp;buňce (60 bitů hodnoty, bit pro znaménko následovaný již zmíněnou
+trojicí bitů 010), pro větší hodnoty pak v&nbsp;buňkách tvořících lineárně
+vázaný seznam.</li>
+
+<li>Nejnižší bit je interně použit správcem paměti typu mark &amp; sweep.
+Implicitně je nulový (jak je naznačeno před tímto odstavcem), ovšem při
+označování dostupných buněk je správcem paměti nastavován na jedničku.</li>
+
+<li>To, že ukazatel na další pár má spodní tři bity (na 64bitových platformách
+čtyři bity) nulové, je zcela v&nbsp;pořádku, protože tečkové páry/buňky jsou
+vždy zarovnány na adresy dělitelné osmi (na 64bitových platformách
+šestnácti).</li>
+
+<li>V&nbsp;celém virtuálním stroji existuje jedna speciální hodnota (vytvořená
+při inicializaci VM) nazvaná <strong>NIL</strong>. Ta má hned několik významů;
+pokud je použita v&nbsp;buňce (což je velmi často), tak se jedná o ukazatel na
+symbol (tj.&nbsp;druhý typ hodnoty).</li>
+
+</ol>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Automatická správa paměti (garbage collector atd.)</h2>
+
+<p>Žádné další složitější či rozsáhlejší datové struktury, než jsou výše
+zmíněné tečkové páry alias buňky, v&nbsp;PicoLispu nenajdeme. Co to však
+znamená v&nbsp;praxi? Největší dopad má tato vlastnost na implementaci správce
+paměti (<i>garbage collector</i>), který má do značné míry ulehčenou práci
+&ndash; nikdy totiž nemusí provádět přeskupování bloků paměti jen proto, aby se
+v&nbsp;ní vytvořilo místo například pro rozsáhlejší pole či pro delší řetězec
+(to je naopak poměrně velký problém například pro správce paměti v&nbsp;Javě
+atd. &ndash; velké objekty jsou mnohdy spravovány speciálním způsobem). Celá
+paměť, přesněji řečeno halda (<i>heap</i>), se v&nbsp;případě <i>PicoLispu</i>
+alokuje ve větších blocích, které mohou mít velikost například jeden megabajt
+(to je výchozí hodnota, ale při překladu ji lze změnit předeklarováním
+konstanty <strong>CELLS</strong> v&nbsp;hlavičkovém souboru
+<strong>pico.h</strong> &ndash; lze tak sledovat chování správce paměti):</p>
+
+<pre>
+#define CELLS (1024*1024/sizeof(cell)) // Heap allocation unit 1MB
+&nbsp;
+typedef struct heap {
+    cell cells[CELLS];
+    struct heap *next;
+} heap;
+</pre>
+
+<p>Vidíme, že jednotlivé bloky tvoří lineárně vázaný seznam (další lineární
+seznam je použit pro svázání volných buněk v&nbsp;rámci bloků).</p>
+
+<p>V&nbsp;těchto blocích je vytvořeno místo pro <i>n</i> tečkových párů
+(buněk), přičemž každé z&nbsp;míst může být buď skutečně obsazeno nebo je
+volné. Pokud je dané místo volné, obsahuje ukazatel na další volné místo.
+Všechna volná místa na haldě tak tvoří jediný lineárně vázaný seznam. Alokátor
+paměti tedy může jednoduše začít paměť přidělovat od začátku tohoto seznamu,
+pamatovat si ukazatel na první prvek seznamu a přesně od tohoto místa alokovat
+popř.&nbsp;hledat další volnou oblast paměti.</p>
+
+<p>Správce paměti je typu <i>mark &amp; sweep</i>. Ve fázi <i>mark</i> se
+označují dostupné tečkové páry (pro tento účel je vyhrazen nejnižší bit
+v&nbsp;každém slovu), ve fázi <i>sweep</i> se pak neoznačené tečkové páry
+zneplatňují a přidávají do seznamu volných buněk. Může dojít i k&nbsp;uvolnění
+celého bloku paměti (tj.&nbsp;jediným systémovým voláním se uvolní celý jeden
+megabajt). Mimochodem &ndash; celý správce paměti je implementován ve zdrojovém
+souboru o velikosti necelých čtyř kilobajtů a má jen 184 řádků, což skutečně
+<strong>je</strong> minimalistické pojetí (otázkou ovšem zůstává chování
+garbage collectoru u aplikací běžících například několik měsíců).</p>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Je interpret PicoLispu skutečně pojatý minimalisticky?</h2>
+
+<p>Zdrojové kódy PicoLispu existují ve dvou variantách. Pro všechny 32bitové
+procesory (a pro architektury odlišné od x86_64) se používá varianta
+naprogramovaná v&nbsp;jazyce C, pro 64bitové procesory řady x86_64 pak
+varianta, v&nbsp;níž je část zdrojových kódů vytvořena v&nbsp;assembleru a je
+vůči céčkové variantě optimalizována. Podívejme se jen pro ilustraci na
+velikost výsledného binárního kódu interpretru a virtuálního stroje PicoLispu
+v&nbsp;porovnání s&nbsp;dalšími interpretry/VM.</p>
+
+<h4>Architektura x86_64, balíčky z&nbsp;Linux Mintu</h4>
+
+<table>
+<tr><th>#</th><th>Interpret/VM</th><th>Velikost</th></tr>
+<tr><td>1</td><td>picolisp </td><td>&nbsp;&nbsp;195&nbsp;272</td></tr>
+<tr><td>2</td><td>lua5.1   </td><td>&nbsp;&nbsp;174&nbsp;976</td></tr>
+<tr><td>3</td><td>lua5.2   </td><td>&nbsp;&nbsp;195&nbsp;416</td></tr>
+<tr><td>4</td><td>luajit   </td><td>&nbsp;&nbsp;445&nbsp;080</td></tr>
+<tr><td>5</td><td>python2.7</td><td>3&nbsp;345&nbsp;416</td></tr>
+<tr><td>6</td><td>python3.4</td><td>3&nbsp;709&nbsp;944</td></tr>
+</table>
+
+<h4>Architektura ARM11, balíčky z&nbsp;Raspbiannu, PicoLisp přeložený autorem článku</h4>
+
+<table>
+<tr><th>#</th><th>Interpret/VM</th><th>Velikost</th></tr>
+<tr><td>1</td><td>picolisp (-O2)</td><td>&nbsp;&nbsp;233&nbsp;896</td></tr>
+<tr><td>2</td><td>picolisp (-Os)</td><td>&nbsp;&nbsp;201&nbsp;128</td></tr>
+<tr><td>3</td><td>lua5.1   </td><td>&nbsp;&nbsp;128&nbsp;920</td></tr>
+<tr><td>4</td><td>luajit   </td><td>&nbsp;&nbsp;365&nbsp;312</td></tr>
+<tr><td>5</td><td>python2.7</td><td>2&nbsp;674&nbsp;536</td></tr>
+<tr><td>6</td><td>python3.4</td><td>2&nbsp;814&nbsp;320</td></tr>
+</table>
+
+<p>Poznámky:</p>
+
+<ol>
+
+<li>Nejedná se o příliš férové porovnání, protože například nebereme
+v&nbsp;úvahu množství zabudovaných funkcí dostupných programátorům atd.
+(například v&nbsp;případě jazyka Lua nemáme k&nbsp;dispozici knihovnu pro práci
+s&nbsp;regulárními výrazy atd.)</li>
+
+<li>Raspbian nebyl zvolen náhodou, protože právě na Raspberry Pi má použití
+PicoLispu svůj význam. Na výkonnějších desktopech a serverech se vyplatí použít
+buď Common Lisp nebo rovnou Clojure.</li>
+
+<li>Na Raspbiannu se musí nepatrně upravit Makefile tak, aby se nepoužíval
+přepínač -m32.</li>
+
+<li>Na Raspbiannu jsem nejprve provedl překlad s&nbsp;výchozí volbou -O2
+(optimalizace na výkon) a posléze i s&nbsp;volbou -Os (menší strojový
+kód).</li>
+
+<li>Povšimněte si, že ostatní binární soubory jsou pro ARM11 (ARMv6) menší, což
+může být způsobeno použitím instrukční sady Thumb, popř.&nbsp;méně agresivními
+optimalizacemi (rozbalování programových smyček atd.) </li>
+
+</ol>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Základní vlastnosti PicoLispu &ndash; tečkové páry a seznamy</h2>
+
+<p>Víme již, že základní interní strukturou PicoLispu je takzvaný tečkový pár
+(<i>dotted-pair</i>). Tečkový pár je možné v&nbsp;LISPovských programech
+zapisovat formou dvojice výrazů (takzvaných S-výrazů) oddělených tečkou (a
+většinou i mezerami, v&nbsp;případě čísel jsou mezery nutností), které jsou
+uzavřeny do kulatých závorek (i když je pravda, že se s&nbsp;tečka-dvojicemi
+v&nbsp;reálných programech příliš často nesetkáme, především z&nbsp;důvodu
+nepřehledného zápisu s&nbsp;velkým množstvím závorek). V&nbsp;následujících
+ukázkách je vždy první řádek zapsán programátorem, druhý řádek je vyhodnocen
+interpretrem PicoLispu:</p>
+
+<p>Základní způsob zápisu tečkového páru:</p>
+
+<pre>
+(1 . 2)
+(1 . 2)
+</pre>
+
+<p>Musí se skutečně jednat o pár, což je hlídáno:</p>
+
+<pre>
+(1 . 2 . 3)
+(1 . 2) -- Bad dotted pair
+</pre>
+
+<p>Složitější datová struktura tvořená rekurzivně zanořenými tečkovými
+páry:</p>
+
+<pre>
+(1 . ((2 . 3) . 4))
+(1 (2 . 3) . 4)
+</pre>
+
+<p>Zde se opět pokoušíme o vytvoření trojice:</p>
+
+<pre>
+(1 . (2 . 3) . 4)
+(1 2 . 3) -- Bad dotted pair
+</pre>
+
+<p>Někdy je nutné interpretru zakázat pokus o vyhodnocení zadáním
+apostrofu:</p>
+
+<pre>
+'((1 . 2) . (3 . 4))
+((1 . 2) 3 . 4)
+</pre>
+
+<p>A nyní přichází na řadu velmi zajímavá vlastnost: rekurzivní tečkové páry
+zakončené dvojicí (atom . NIL) vytvoří seznam, resp.&nbsp;přesněji řečeno
+seznam je pouze syntaktickým cukrem pro takto vytvořenou datovou strukturu:</p>
+
+<pre>
+(1 . (2 . (3 . NIL)))
+(1 2 3)
+</pre>
+
+<p>Dtto platí při použití prázdného seznamu jako ukončovacího prvku (prázdný
+seznam je při zpracování a vyhodnocování totožný s&nbsp;NIL):</p>
+
+<pre>
+(1 . (2 . (3 . ())))
+(1 2 3)
+</pre>
+
+<p>V&nbsp;<i>PicoLispu</i> se seznam začínající číslem nijak nevyhodnocuje (což
+je praktické):</p>
+
+<pre>
+(1 2 3 4)
+(1 2 3 4)
+</pre>
+
+<p>Seznam je možné uložit do proměnné, přesněji řečeno ho navázat na symbol a
+získat jeho první prvek funkcí <strong>car</strong>, ostatní prvky seznamu bez
+prvku prvního funkcí <strong>cdr</strong>, popř.&nbsp;použít některou
+z&nbsp;kombinací <strong>c[ad]+r</strong></p>
+
+<pre>
+(setq a '(1 2 3))
+(1 2 3)
+&nbsp;
+(car a)          
+1
+&nbsp;
+(cdr a)
+(2 3)
+&nbsp;
+(cadr a)
+2
+&nbsp;
+(cddr a) 
+(3)
+</pre>
+
+<p>Poznámka: povšimněte si rozdílu mezi <strong>(1 2 3 4)</strong> a
+<strong>(car a)</strong>. V&nbsp;prvním případě se seznam nijak speciálně
+nevyhodnocuje, zatímco v&nbsp;případě druhém je první prvek chápán jako jméno
+funkce, která se má zavolat. Jinými slovy &ndash; v&nbsp;LISPu není velký
+rozdíl mezi daty a programovým kódem. Této důležité vlastnosti se říká
+<i>homoikonicita</i>.</p>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Další datové struktury postavené nad seznamy: zásobníky, fronty a cyklické seznamy</h2>
+
+<p>Seznamy mohou být použity i pro implementaci dalších užitečných datových
+struktur. Příkladem může být zásobník <i>(stack)</i> se základními operacemi
+<strong>push</strong> a <strong>pop</strong>:</p>
+
+<pre>
+(push 'zasobnik 1)
+1
+&nbsp;
+(push 'zasobnik 2)
+2
+&nbsp;
+(push 'zasobnik 3)
+3
+&nbsp;
+zasobnik
+(3 2 1)
+&nbsp;
+(pop 'zasobnik)
+3
+&nbsp;
+(pop 'zasobnik)
+2
+&nbsp;
+(pop 'zasobnik)
+1
+&nbsp;
+(pop 'zasobnik)
+NIL
+</pre>
+
+<p>Třetí často používanou datovou strukturou je fronta (<i>queue</i>)</p>
+
+<pre>
+(queue 'fronta 1)
+1
+&nbsp;
+(queue 'fronta 2)
+2
+&nbsp;
+(queue 'fronta 3)
+3
+&nbsp;
+fronta
+(1 2 3)
+&nbsp;
+(pop 'fronta)
+1
+&nbsp;
+fronta
+(2 3)
+&nbsp;
+(pop 'fronta)
+2
+&nbsp;
+(pop 'fronta)
+3
+&nbsp;
+(pop 'fronta)
+NIL
+</pre>
+
+<p>Vytvoření fronty typu FIFO s&nbsp;využitím cyklického seznamu (poslední
+prvek seznamu ukazuje na prvek první):</p>
+
+<pre>
+(fifo 'X 1)
+1
+&nbsp;
+(fifo 'X 2 3)
+3
+&nbsp;
+X
+(3 1 2 .)
+; tečka před závorkou označuje cyklický seznam!
+&nbsp;
+(fifo 'X)
+1
+&nbsp;
+(fifo 'X)
+2
+&nbsp;
+X
+(3 .)
+&nbsp;
+(fifo 'X)
+3
+&nbsp;
+(fifo 'X)
+NIL
+</pre>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Funkce &ndash; základní stavební prvek programů</h2>
+
+<p>Podobně jako u každého dialektu programovacího jazyka LISP, i v&nbsp;případě
+<i>PicoLispu</i> se program skládá především z&nbsp;funkcí. Ty mohou být
+anonymní (nepojmenované) či naopak pojmenované. Nejprve se zabývejme
+pojmenovanými funkcemi, protože ty se chovají prakticky stejně, jako běžné
+funkce v&nbsp;jiných programovacích jazycích. Pojmenované funkce se definují
+pomocí <strong>de</strong> (zkratka od &bdquo;define&ldquo;), za nímž následuje
+jméno funkce. Každá funkce může mít libovolný počet parametrů, jejichž jména se
+uvádí v&nbsp;seznamu za pojmenováním funkce. Poslední částí formy
+<strong>de</strong> je tělo funkce, přičemž po zavolání funkce se vyhodnocená
+forma vrátí jako její výsledek (nikde se tedy nezapisuje slovo
+&bdquo;return&ldquo; ani nic podobného):</p>
+
+<pre>
+(de add (x y) (+ x y))
+</pre>
+
+<p>Přehlednější je však zápis definice funkce na více řádků. První řádek
+obsahuje jméno, druhý pojmenované parametry, další řádky pak tělo funkce:</p>
+
+<pre>
+(de mul
+    (x y)
+    (* x y))
+</pre>
+
+<p>PicoLisp nedělá velké rozdíly mezi kulatými a hranatými závorkami, proto se
+můžeme přiblížit formátu známému z&nbsp;programovacího jazyka Clojure:</p>
+
+<pre>
+(de mul
+    [x y]
+    (* x y))
+</pre>
+
+<p>Zavolání funkce je jednoduché &ndash; používá se stále ten samý formát
+seznamu, na jehož prvním místě je jméno funkce a za ním následují
+parametry:</p>
+
+<pre>
+(mul 6 7)
+42
+</pre>
+
+<p>Funkce bez parametrů, která vrací NIL:</p>
+
+<pre>
+(de nic () NIL)
+&nbsp;
+(nic)
+NIL
+</pre>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Funkce vyššího řádu</h2>
+
+<p><i>PicoLisp</i> sice není, na rozdíl od Haskellu a částečně i Clojure, čistě
+funkcionální jazyk, nicméně i zde hrají při vývoji aplikací velkou roli funkce
+vyššího řádu, tj.&nbsp;funkce, které jako své parametry akceptují jiné funkce
+popř.&nbsp;dokonce vrací (nové) funkce jako svoji návratovou hodnotu. Mezi dvě
+základní funkce vyššího řádu, které nalezneme prakticky ve všech dialektech
+programovacího jazyka Lisp, patří funkce nazvané <strong>mapcar</strong> a
+taktéž <strong>apply</strong>. Funkce <strong>mapcar</strong> jako svůj první
+parametr akceptuje jinou funkci (s&nbsp;jedním parametrem) a druhým parametrem
+musí být seznam. <strong>mapcar</strong> postupně aplikuje předanou funkci na
+jednotlivé prvky seznamu a vytváří tak seznam nový (modifikovaný). Podívejme se
+na jednoduchý příklad &ndash; aplikace funkce pro zvýšení hodnoty o jedničku na
+seznam:</p>
+
+<pre>
+(de inc
+    (x)
+    (+ x 1)) 
+&nbsp;
+(mapcar inc (1 2 3))
+(2 3 4)
+</pre>
+
+<p>Funkce <strong>apply</strong> se chová poněkud odlišně &ndash; aplikuje
+totiž nějakou funkci (svůj první parametr) na předaný seznam. Typický
+&bdquo;školní&ldquo; příklad s&nbsp;binární funkcí + (tj.&nbsp;funkcí se dvěma
+parametry) může vypadat následovně:</p>
+
+<pre>
+(apply + (1 2 3 4))
+10
+</pre>
+
+<p>Pozor však &ndash; <strong>apply</strong> není <strong>reduce</strong> a ve
+výše uvedeném příkladu fungovala proto, že funkce + je variadická. Následující
+kód již správně nebude:</p>
+
+<pre>
+(de add
+    (x y)
+    (+ x y))
+&nbsp;
+(apply add (1 2 3 4)) 
+3
+</pre>
+
+<p>Můžeme zkusit i něco složitějšího. Funkcí <strong>range</strong>
+vygenerujeme seznam hodnot a posléze tyto hodnoty vynásobíme:</p>
+
+<pre>
+(range 1 10)
+(1 2 3 4 5 6 7 8 9 10)
+&nbsp;
+(apply * (range 1 6))
+720
+</pre>
+
+<p>Ono vynásobení hodnot od 1 do <i>n</i> není vlastně nic jiného, než výpočet
+faktoriálu, takže:</p>
+
+<pre>
+(de factorial
+    (n)
+    (apply * (range 1 n)))
+</pre>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Programové smyčky</h2>
+
+<p>Vzhledem k&nbsp;tomu, že se <i>PicoLisp</i> nesnaží být (na rozdíl od
+<i>Scheme</i>) čistě funkcionálním jazykem, nalezneme v&nbsp;něm i programové
+smyčky, které se ovšem stále zapisují formou funkcí či speciálních forem.
+Nebudeme si ukazovat všechny typy programových smyček, ale jen naprosté
+základy:</p>
+
+<p>Počítaná smyčka typu <strong>for</strong>:</p>
+
+<pre>
+(for n 10 (println n)) 
+&nbsp;
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre>
+
+<p>Počítaná smyčka typu <strong>while</strong>:</p>
+
+<pre>
+(while (num? (read)) (println 'cislo))
+&nbsp;
+1                                     
+cislo
+454
+cislo
+4254
+cislo
+konec
+</pre>
+
+<p>Počítaná smyčka typu <strong>repeat-until</strong>:</p>
+
+<pre>
+(until (=T (setq N (read)))
+    (println 'vysledek (* N N)))
+1
+vysledek 1
+4
+vysledek 16
+9
+vysledek 81
+10
+vysledek 100
+</pre>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Anonymní funkce</h2>
+
+<p>Kromě pojmenovaných funkcí, které jsme si již představili v&nbsp;předchozích
+kapitolách, je možné v&nbsp;<i>PicoLispu</i> použít i funkce anonymní,
+tj.&nbsp;funkce, které nejsou navázány na žádné jméno. Zajímavé je, že zde
+nenalezneme žádnou obdobu speciální formy <i>lambda</i> ani nic podobného, ale
+lze použít formu <i>quote</i>, která se v&nbsp;<i>PicoLispu</i> chová poněkud
+odlišně, než v&nbsp;jiných dialektech LISPu. Podívejme se na typický příklad
+&ndash; budeme chtít ze vstupního seznamu vytvořit výstupní seznam
+s&nbsp;hodnotami o jedničku zvýšenými. Pro něco tak jednoduchého asi nemá smysl
+si vytvářet novou pojmenovanou funkci, ale použijeme přímo funkci anonymní:</p>
+
+<pre>
+(mapcar (quote (x) (+ x 1) ) (1 2 3 4))
+&nbsp;
+(2 3 4 5)
+</pre>
+
+<p>Zajímá vás řada n<sup>2</sup>?:</p>
+
+<pre>
+(mapcar (quote (x) (* x x)) (range 1 10)) 
+(1 4 9 16 25 36 49 64 81 100)
+</pre>
+
+<p>Nebo chcete získat seznam faktoriálů <i>n</i> od 1 do 10?:</p>
+
+<pre>
+(mapcar (quote (n) (apply * (range 1 n) )) (range 1 10))           
+&nbsp;
+(1 2 6 24 120 720 5040 40320 362880 3628800)
+</pre>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Reprezentace numerických hodnot</h2>
+
+<p>PicoLisp se od mnoha dalších dnes používaných programovacích jazyků odlišuje
+i tím, že pro reprezentaci numerických hodnot nepoužívá ani základní
+celočíselné datové typy (int, long int atd.) a dokonce ani dnes běžné formáty
+hodnot s&nbsp;plovoucí řádovou čárkou (float, double), které jsou definovány
+v&nbsp;normě IEEE 754. Namísto toho jsou podporována celá čísla se znaménkem,
+která mají neomezený rozsah. Interně jsou totiž číselné hodnoty reprezentovány
+speciálním typem seznamu, který vypadá následovně:</p>
+
+<pre>
+   Number
+   |
+   V
++-----+-----+
+| DIG |  |  |
++-----+--+--+
+         |
+         V
+      +-----+-----+
+      | DIG |  |  |
+      +-----+--+--+
+               |
+               V
+            +-----+-----+
+            | DIG |  /  |
+            +-----+-----+
+</pre>
+
+<p>Tato datová struktura je v&nbsp;64bitové variantě PicoLispu mírně odlišná,
+než je tomu v&nbsp;základní 32bitové verzi, nicméně původní myšlenka zůstává
+zachována: pro relativně malé hodnoty (jak kladné, tak i záporné) postačuje
+číslo reprezentovat jedinou buňkou (<i>cell</i>), zatímco u větších hodnot je
+nutné použít dvě či dokonce větší množství buněk propojených formou lineárního
+seznamu. Předností je (podle očekávání) neomezený rozsah a taktéž nezávislost
+na existenci matematického koprocesoru (či příslušné knihovny), nevýhodou pak
+obecně poněkud pomalejší výpočty, zejména u těch mikroprocesorových
+architektur, které mají plnohodnotné matematické koprocesory. Naopak u malých
+mikrořadičů může být výhodnější NEpoužít matematickou knihovnu pro reálná čísla
+a namísto toho se spokojit s&nbsp;řešením nabízeným PicoLispem. Díky možnosti
+specifikovat pevné umístění řádové tečky (čárky) se navíc (prakticky) neomezený
+rozsah spojuje s&nbsp;neomezenou přesností, což je téma, které si ukážeme
+příště.</p>
+
+<p>Podívejme se nyní na to, jak výpočty s&nbsp;&bdquo;neomezenými&ldquo;
+celočíselnými hodnotami probíhají v&nbsp;praxi. Opět si zvolme populární
+výpočet faktoriálu:</p>
+
+<pre>
+(de factorial
+    [n]
+    (apply * (range 1 n)))
+</pre>
+
+<p>Vlastní výpočet faktoriálu je omezen jen výkonem mikroprocesoru (ten je
+dostatečný i na původním modelu Raspberry Pi) a dostupnou operační pamětí.
+Začneme zlehka:</p>
+
+<pre>
+(for n 10 (println n (factorial n)))
+&nbsp;
+1 1
+2 2
+3 6
+4 24
+5 120
+6 720
+7 5040
+8 40320
+9 362880
+10 3628800
+</pre>
+
+<p>Ovšem můžeme se například podívat na 1000!:</p>
+
+<pre>
+(factorial 1000)
+&nbsp;
+402387260077093773543702433923003985719374864210714632543799
+910429938512398629020592044208486969404800479988610197196058
+631666872994808558901323829669944590997424504087073759918823
+627727188732519779505950995276120874975462497043601418278094
+646496291056393887437886487337119181045825783647849977012476
+632889835955735432513185323958463075557409114262417474349347
+553428646576611667797396668820291207379143853719588249808126
+867838374559731746136085379534524221586593201928090878297308
+431392844403281231558611036976801357304216168747609675871348
+312025478589320767169132448426236131412508780208000261683151
+027341827977704784635868170164365024153691398281264810213092
+761244896359928705114964975419909342221566832572080821333186
+116811553615836546984046708975602900950537616475847728421889
+679646244945160765353408198901385442487984959953319101723355
+556602139450399736280750137837615307127761926849034352625200
+015888535147331611702103968175921510907788019393178114194545
+257223865541461062892187960223838971476088506276862967146674
+697562911234082439208160153780889893964518263243671616762179
+168909779911903754031274622289988005195444414282012187361745
+992642956581746628302955570299024324153181617210465832036786
+906117260158783520751516284225540265170483304226143974286933
+061690897968482590125458327168226458066526769958652682272807
+075781391858178889652208164348344825993266043367660176999612
+831860788386150279465955131156552036093988180612138558600301
+435694527224206344631797460594682573103790084024432438465657
+245014402821885252470935190620929023136493273497565513958720
+559654228749774011413346962715422845862377387538230483865688
+976461927383814900140767310446640259899490222221765904339901
+886018566526485061799702356193897017860040811889729918311021
+171229845901641921068884387121855646124960798722908519296819
+372388642614839657382291123125024186649353143970137428531926
+649875337218940694281434118520158014123344828015051399694290
+153483077644569099073152433278288269864602789864321139083506
+217095002597389863554277196742822248757586765752344220207573
+630569498825087968928162753848863396909959826280956121450994
+871701244516461260379029309120889086942028510640182154399457
+156805941872748998094254742173582401063677404595741785160829
+230135358081840096996372524230560855903700624271243416909004
+153690105933983835777939410970027753472000000000000000000000
+000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000
+</pre>
+
+<p>Tento výsledek by měl (alespoň doufejme) odpovídat výsledku z&nbsp;adresy <a
+href="http://justinwhite.com/big-calc/1000.html">http://justinwhite.com/big-calc/1000.html</a>.</p>
+
+<p>Další možnosti práce s&nbsp;numerickými hodnotami, především změnu pozice
+řádové tečky (čárky), si popíšeme ve druhé části tohoto článku.</p>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Obsah druhé části článku</h2>
+
+<p>Ve druhé a současně i poslední části tohoto článku popis možností nabízených
+těm vývojářům, kteří se rozhodnou využít programovací jazyk PicoLisp,
+dokončíme. Zabývat se budeme jak funkcemi, které jsou součástí základních
+knihoven tohoto jazyka (včetně deklarací tříd či zpracování výjimek), tak i
+způsobem kooperace programů napsaných v&nbsp;PicoLispu s&nbsp;nativními
+knihovnami. Nezapomeneme ani na další zajímavou vlastnost PicoLispu &ndash;
+možnost volání metod objektů vytvořených v&nbsp;samostatně běžícím virtuálním
+stroji jazyka Java (JVM). Jak kooperace s&nbsp;nativními knihovnami, tak i
+volání metod v&nbsp;JVM jsou z&nbsp;hlediska praktické použitelnosti PicoLispu
+velmi důležité, protože nelze předpokládat (ani by to vlastně nebylo
+praktické), že pro tento dosti minoritní interpret s&nbsp;relativně malou
+komunitou vznikne větší množství knihoven a/nebo dokonce celých frameworků.</p>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Příloha: stručná historie vývoje LISPu</h2>
+
+<p>Historie programovacího jazyka <i>LISP</i> je poměrně dlouhá a komplikovaná,
+neboť se jedná o jeden z&nbsp;nejstarších programovacích jazyků vůbec. Autorem
+teoretického návrhu <i>LISPu</i> je <i>John McCarthy</i>, který se již
+v&nbsp;roce 1956 připojil k&nbsp;týmu, jehož úkolem bylo navrhnout algebraický
+programovací jazyk umožňující zpracování seznamů, jenž by byl vhodný pro vývoj
+systémů umělé inteligence &ndash; <i>AI</i> (zatímco dnes jsou &bdquo;v
+kurzu&ldquo; enterprise systémy, cloudy, virtualizace, popř.&nbsp;WEB 2.0,
+v&nbsp;padesátých a šedesátých letech minulého století se jednalo o umělou
+inteligenci a taktéž o expertní systémy). McCarthy navrhl, aby se fakta o
+okolním světě (která může AI při své činnosti použít) reprezentovala formou vět
+ve vhodně strukturovaném formálním jazyce. Posléze se ukázalo, že je výhodné
+reprezentovat jednotlivé věty formou seznamů. McCarthy myšlenku jazyka vhodného
+pro AI rozpracoval dále &ndash; odklonil se například od infixové notace zápisu
+algebraických výrazů, protože naprogramování některých manipulací s&nbsp;těmito
+výrazy (derivace, integrace, zjednodušení výrazů, logická dedukce) bylo
+zbytečně složité.</p>
+
+<p>Následně McCarthy ve svých teoretických pracech (vznikajících v&nbsp;průběhu
+let 1957 a 1958) ukázal, že je možné s&nbsp;využitím několika poměrně
+jednoduchých operací (a notací pro zápis funkcí) vytvořit programovací jazyk,
+který je Turingovsky kompletní (tj.&nbsp;jeho výpočetní mocnost je ekvivalentní
+<i>Turingovu stroji</i>), ale zápis algoritmů v&nbsp;tomto jazyce je mnohem
+jednodušší než zápis pravidel pro Turingův stroj. Tento jazyk, jenž byl
+z&nbsp;velké části založen na <i>Lambda kalkulu</i>, obsahoval možnost
+vytváření rekurzivních funkcí (což byl významný rozdíl například oproti
+tehdejší verzi <i>FORTRANU</i>), funkce bylo možné použít jako argumenty jiných
+funkcí, byly zde popsány i podmíněné výrazy (jedna z&nbsp;variant speciální
+formy), funkce pro manipulaci se seznamy a v&nbsp;neposlední řadě také funkce
+<i>eval</i>.</p>
+
+<p>V&nbsp;průběhu dalších více než pěti desetiletí vzniklo mnoho dialektů
+tohoto programovacího jazyka, například <i>MacLISP</i>, <i>InterLISP</i>,
+<i>ZetaLISP</i>, <i>XLisp</i>, <i>AutoLISP</i> (původně odvozený
+z&nbsp;<i>XLispu</i>), <i>Emacs LISP</i> nebo slavný <i>Common LISP</i>. Kromě
+těchto implementací jazyka LISP, které se od sebe v&nbsp;několika ohledech
+odlišují (například existencí či neexistencí maker či objektového systému
+&ndash; CLOS v&nbsp;případě Common Lispu), vznikl v&nbsp;minulosti i nový
+dialekt tohoto jazyka nazvaný <i>Scheme</i> (původně <i>Schemer</i>), jehož
+autory jsou dnes již zmíněný Guy L. Steele a Gerald Jay Sussman.</p>
+
+<p>Tento dialekt je implementačně jednodušší a také se ho lze naučit rychleji,
+než mnohé další varianty jazyka LISP. Právě z&nbsp;těchto důvodů se
+<i>Scheme</i> využívá či využívalo jak při výuce programování, tak i
+v&nbsp;mnoha open-source projektech, například v&nbsp;grafickém editoru
+<i>GIMP</i> jako jeden z&nbsp;podporovaných skriptovacích jazyků. Richard
+Stallman si dokonce přál, aby se <i>Scheme</i> stalo standardním skriptovacím
+jazykem většiny GNU aplikací, což je idea, která se především po vzniku dalších
+vysokoúrovňových programovacích jazyků (<i>Perl</i>, <i>Python</i>, <i>TCL</i>)
+nakonec neuskutečnila (z&nbsp;tohoto období pochází také známá <i>TCL War</i>,
+která ukázala některé konceptuální rozdíly mezi aplikacemi založenými na
+LISPu/Scheme a modelem UNIXu založeného na používání textových proudů).</p>
+
+<p>Jednou z&nbsp;moderních reinkarnací LISPu je jazyk <i>Clojure</i>, jemuž se
+na stránkách Roota věnujeme poměrně intenzivně.</p>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Literatura</h2>
+
+<ol>
+
+<li>McCarthy<br />
+<i>&bdquo;Recursive functions of symbolic expressions and their computation by machine, part I&ldquo;</i><br />
+1960
+</li>
+
+<li>Guy L. Steele<br />
+<i>&bdquo;History of Scheme&ldquo;</i><br />
+2006, Sun Microsystems Laboratories
+</li>
+
+<li>
+Kolář J., Muller K.:<br />
+<i>&bdquo;Speciální programovací jazyky&ldquo;</i><br />
+Praha 1981
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 9, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., October 1987
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 10, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., September 1988
+</li>
+
+<li>McCarthy, John; Abrahams, Paul W.; Edwards, Daniel J.; Hart, Timothy P.; Levin, Michael I.<br />
+<i>&bdquo;LISP 1.5 Programmer's Manual&ldquo;</i><br />
+MIT Press. ISBN 0 262 130 1 1 4
+</li>
+
+<li>Carl Hewitt; Peter Bishop and Richard Steiger<br />
+<i>&bdquo;A Universal Modular Actor Formalism for Artificial Intelligence&ldquo;</i><br />
+1973
+</li>
+
+<li>Feiman, J.<br />
+<i>&bdquo;The Gartner Programming Language Survey (October 2001)&ldquo;</i><br />
+Gartner Advisory
+</li>
+
+</ol>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>PicoLisp<br />
+<a href="http://picolisp.com/wiki/?home">http://picolisp.com/wiki/?home</a>
+</li>
+
+<li>A PicoLisp Tutorial<br />
+<a href="http://software-lab.de/doc/tut.html">http://software-lab.de/doc/tut.html</a>
+</li>
+
+<li>Pico Lisp Documentation<br />
+<a href="http://picolisp.com/wiki/?Documentation">http://picolisp.com/wiki/?Documentation</a>
+</li>
+
+<li>The PicoLisp Machine<br />
+<a href="http://software-lab.de/doc/ref.html#vm">http://software-lab.de/doc/ref.html#vm</a>
+</li>
+
+<li>Pico Lisp: A Case for Minimalist Interpreters?<br />
+<a href="http://lambda-the-ultimate.org/node/2124">http://lambda-the-ultimate.org/node/2124</a>
+</li>
+
+<li>PicoLisp na Wikipedii<br />
+<a href="https://en.wikipedia.org/wiki/PicoLisp">https://en.wikipedia.org/wiki/PicoLisp</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">http://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Programovací jazyk LISP (druhá část)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-lisp-druha-cast/">http://www.root.cz/clanky/programovaci-jazyk-lisp-druha-cast/</a>
+</li>
+
+<li>Steel Bank Common Lisp<br />
+<a href="http://www.sbcl.org/">http://www.sbcl.org/</a>
+</li>
+
+<li>CLISP (implementace Common Lispu)<br />
+<a href="http://clisp.org/">http://clisp.org/</a>
+</li>
+
+<li>PLEAC-PicoLisp<br />
+<a href="http://pleac.sourceforge.net/pleac_picolisp/index.html#AEN4">http://pleac.sourceforge.net/pleac_picolisp/index.html#AEN4</a>
+</li>
+
+<li>Rosetta Code &ndash; Category:Lisp<br />
+<a href="http://rosettacode.org/wiki/Category:Lisp">http://rosettacode.org/wiki/Category:Lisp</a>
+</li>
+
+<li>Emacs timeline<br />
+<a href="http://www.jwz.org/doc/emacs-timeline.html">http://www.jwz.org/doc/emacs-timeline.html</a>
+</li>
+
+<li>EINE (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/EINE">http://www.emacswiki.org/emacs/EINE</a>
+</li>
+
+<li>EINE (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EINE">http://texteditors.org/cgi-bin/wiki.pl?EINE</a>
+</li>
+
+<li>ZWEI (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/ZWEI">http://www.emacswiki.org/emacs/ZWEI</a>
+</li>
+
+<li>ZWEI (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?ZWEI">http://texteditors.org/cgi-bin/wiki.pl?ZWEI</a>
+</li>
+
+<li>Zmacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Zmacs">https://en.wikipedia.org/wiki/Zmacs</a>
+</li>
+
+<li>Zmacs (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?Zmacs">http://texteditors.org/cgi-bin/wiki.pl?Zmacs</a>
+</li>
+
+<li>TecoEmacs (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/TecoEmacs">http://www.emacswiki.org/emacs/TecoEmacs</a>
+</li>
+
+<li>Micro Emacs<br />
+<a href="http://www.emacswiki.org/emacs/MicroEmacs">http://www.emacswiki.org/emacs/MicroEmacs</a>
+</li>
+
+<li>Micro Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MicroEMACS">https://en.wikipedia.org/wiki/MicroEMACS</a>
+</li>
+
+<li>EmacsHistory<br />
+<a href="http://www.emacswiki.org/emacs/EmacsHistory">http://www.emacswiki.org/emacs/EmacsHistory</a>
+</li>
+
+<li>Seznam editorů s ovládáním podobným Emacsu či kompatibilních s příkazy Emacsu<br />
+<a href="http://www.finseth.com/emacs.html">http://www.finseth.com/emacs.html</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2016</small></p>
+</body>
+</html>
+
