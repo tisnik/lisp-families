@@ -1,0 +1,1361 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>PicoLisp: užitečné funkce a speciální formy používané při tvorbě aplikací</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>PicoLisp: užitečné funkce a speciální formy používané při tvorbě aplikací</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Ve druhé části článku o rychlém, zajímavém a přitom poměrně neznámém interpretru PicoLisp si popíšeme další funkce a speciální formy, které jsou dostupné všem vývojářům, kteří se rozhodnou tento interpret použít. Uvidíme, že nabídka funkcí je na minimalisticky pojatý jazyk až překvapivě rozsáhlá.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. PicoLisp: užitečné funkce a speciální formy používané při tvorbě aplikací</a></p>
+<p><a href="#k02">2. Práce s&nbsp;globálními proměnnými</a></p>
+<p><a href="#k03">3. Lokální proměnné</a></p>
+<p><a href="#k04">4. Pravdivostní hodnoty a základní booleovské operace</a></p>
+<p><a href="#k05">5. Další booleovské operace a predikáty</a></p>
+<p><a href="#k06">6. Význam konstanty NIL v&nbsp;PicoLispu</a></p>
+<p><a href="#k07">7. Konstruktory seznamů &ndash; <strong>cons</strong> a <strong>list</strong></a></p>
+<p><a href="#k08">8. Funkce <strong>filter</strong></a></p>
+<p><a href="#k09">9. Funkce <strong>mini</strong>, <strong>maxi</strong>, <strong>sum</strong> a <strong>cnt</strong></a></p>
+<p><a href="#k10">10. Řízení běhu programu &ndash; rozvětvení</a></p>
+<p><a href="#k11">11. Použití forem <strong>when</strong> a <strong>unless</strong></a></p>
+<p><a href="#k12">12. Vícenásobné rozvětvení &ndash; forma <strong>cond</strong> a <strong>nond</strong></a></p>
+<p><a href="#k13">13. Rozvětvení na základě dvou podmínek &ndash; forma <strong>if2</strong></a></p>
+<p><a href="#k14">14. Sledování běhu programu s&nbsp;využitím funkcí <strong>trace</strong>, <strong>traceAll</strong> a <strong>untrace</strong></a></p>
+<p><a href="#k15">15. Literatura</a></p>
+<p><a href="#k16">16. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. PicoLisp: užitečné funkce a speciální formy používané při tvorbě aplikací</h2>
+
+<p>Ve druhé části článku o <i>PicoLispu</i>, tj.&nbsp;o minimalistickém
+interpretru programovacího jazyka LISP, si popíšeme další vlastnosti tohoto
+dialektu. Nejprve si řekneme, jakým způsobem se pracuje s&nbsp;proměnnými
+(především jak je řešena viditelnost lokálních proměnných), následně si
+popíšeme způsob práce s&nbsp;pravdivostními hodnotami (zejména s&nbsp;chápáním
+hodnoty <strong>NIL</strong>, které je zde odlišné od ostatních dialektů LISPu)
+a posléze si popíšeme funkce a speciální formy určené pro práci se seznamy, pro
+řízení běhů programů a taktéž pro sledování (trasování) aplikace &ndash; to je
+velmi užitečná vlastnost, zejména při ladění rekurzivních funkcí.</p>
+
+<p>Před vysvětlováním významu nových funkcí a speciálních forem si připomeňme,
+jakým způsobem se v&nbsp;<i>PicoLispu</i> definují nové funkce, které jsou
+základním kamenem všech programů. Podobně jako v&nbsp;prakticky jakémkoli jiném
+programovacím jazyku, i zde můžeme definovat pojmenované funkce, a to
+s&nbsp;využitím <strong>de</strong>:</p>
+
+<pre>
+<strong>(de factorial</strong>
+<strong>    (n)</strong>
+<strong>    (apply * (range 1 n)))</strong>
+</pre>
+
+<p>V&nbsp;některých případech nám však bude postačovat definice funkcí
+anonymních, tj.&nbsp;funkcí, které nejsou nijak pojmenovány (přesněji řečeno
+nejsou navázány na žádný symbol). V&nbsp;dalším příkladu taková funkce slouží
+pro výpočet druhých mocnin (čtverců) sekvence celočíselných hodnot. Vidíme, že
+anonymní funkce jsou vytvářeny s&nbsp;využitím speciální formy
+<strong>quote</strong> a nikoli <strong>lambda</strong>:</p>
+
+<pre>
+<strong>(mapcar (quote (x) (* x x)) (range 1 10))</strong>
+(1 4 9 16 25 36 49 64 81 100)
+</pre>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Práce s&nbsp;globálními proměnnými</h2>
+
+<p>Prozatím jsme se v&nbsp;demonstračních příkladech zabývali pouze funkcemi,
+které nějakým způsobem zpracovávaly své parametry a popř.&nbsp;vracely nějaký
+vypočtený výsledek. Ovšem <i>PicoLisp</i> není pouze akademický jazyk, takže
+umožňuje i práci s&nbsp;proměnnými, samozřejmě včetně proměnných globálních
+(jejichž výskyt by se měl v&nbsp;programech co nejvíce omezit). Globální i
+lokální proměnné jsou měnitelné, protože <i>PicoLisp</i> není, ostatně stejně
+jako většina ostatních LISPových dialektů, čistě funkcionální. Pro základní
+práci s&nbsp;proměnnými je určeno těchto pět funkcí:</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Význam</th></tr>
+<tr><td>1</td><td>set</td><td>nastavení proměnné na určitou hodnotu, proměnná musí být quotována</td></tr>
+<tr><td>2</td><td>setq</td><td>nastavení proměnné na určitou hodnotu, proměnná je quotována automaticky</td></tr>
+<tr><td>3</td><td>val</td><td>získání hodnoty určené proměnné (tato hodnota je výsledkem celé formy)</td></tr>
+<tr><td>4</td><td>zero</td><td>nastavení zvolené proměnné či proměnných na hodnotu 0</td></tr>
+<tr><td>5</td><td>one</td><td>nastavení zvolené proměnné či proměnných na hodnotu 1</td></tr>
+</table>
+
+<p>Podívejme se nyní na způsob použití těchto funkcí. Nejdříve si vyzkoušejme,
+jak <i>PicoLisp</i> reaguje při pokusu vypsat hodnotu neexistující proměnné.
+Nestane se nic hrozného (nevyhodí se výjimka atd.), ale pouze se vrátí
+<strong>NIL</strong>:</p>
+
+<pre>
+<strong>neznamy-symbol</strong>
+NIL
+</pre>
+
+<p>Pro nastavení hodnoty proměnné či proměnných se používá forma
+<strong>set</strong>. Jména proměnných musí být quotována (apostrof před
+jménem):</p>
+
+<pre>
+<strong>(set 'answer 42)</strong>
+42
+&nbsp;
+<strong>(set 'x 10 'y 20)</strong>
+20
+&nbsp;
+<strong>x</strong>
+10
+&nbsp;
+<strong>y</strong>
+20
+</pre>
+
+<p>Pokud na quotování zapomenete, dostanete jednu z&nbsp;následujících
+chybových hlášení (v&nbsp;závislosti na tom, zde proměnná již existuje či
+nikoli):</p>
+
+<pre>
+<strong>(set x 10)</strong>
+10 -- Variable expected
+&nbsp;
+<strong>(set z 20)</strong>
+NIL -- Protected symbol
+</pre>
+
+<p>Mnohem praktičtější je namísto funkce <strong>set</strong> použít formu
+<strong>setq</strong>, která quotování nepotřebuje. Proto se s&nbsp;touto
+formou setkáme v&nbsp;programech mnohem častěji:</p>
+
+<pre>
+<strong>(setq u 50 v (* u 2))</strong>
+100
+&nbsp;
+<strong>u</strong>
+50
+&nbsp;
+<strong>v</strong>
+100
+</pre>
+
+<p>V&nbsp;některých případech se proměnné inicializují na hodnotu 0, což
+zařizuje funkce <strong>zero</strong>:</p>
+
+<pre>
+<strong>(zero a b c d)</strong>
+0
+&nbsp;
+<strong>a</strong>
+0
+&nbsp;
+<strong>b</strong>
+0
+</pre>
+
+<p>Podobný význam má i funkce <strong>one</strong>, samozřejmě s&nbsp;tím
+rozdílem, že se nové proměnné nastaví na hodnotu 1:</p>
+
+<pre>
+<strong>(one x y z w)</strong>
+1
+&nbsp;
+<strong>x</strong>
+1
+&nbsp;
+<strong>y</strong>
+1
+&nbsp;
+<strong>z</strong>
+1
+&nbsp;
+<strong>w</strong>
+1
+</pre>
+
+<p>Funkce <strong>val</strong> se pravděpodobně příliš často v&nbsp;praxi
+nepoužije &ndash; slouží k&nbsp;získání hodnoty proměnné, která je funkci
+předána jako symbol (je tedy quotována). Tato funkce tedy vlastně provádí
+&bdquo;dequotaci&ldquo; a lze ji použít i v&nbsp;případě, že se jí předá
+neznámá proměnná:</p>
+
+<pre>
+<strong>(val 'x)</strong>
+1
+&nbsp;
+<strong>x</strong>
+1
+&nbsp;
+<strong>(val 'neznamy-symbol)</strong>
+NIL
+</pre>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Lokální proměnné</h2>
+
+<p>V&nbsp;mnoha funkcích se používají lokální proměnné. Ty se nedefinují pomocí
+<strong>set</strong> ani <strong>setq</strong>, ale speciální formou
+<strong>let</strong>, která současně omezuje platnost takto vytvořených
+proměnných. Do formy <strong>let</strong> se zapisuje jak deklarace a
+inicializace proměnné, tak i vlastní tělo, tj.&nbsp;seznam výrazů. Návratovou
+hodnotou celého bloku je hodnota vrácená posledním výrazem. Nejjednodušší
+příklad s&nbsp;deklarací jediné lokální proměnné:</p>
+
+<pre>
+<strong>(let x 10 (* x 2))</strong>
+20
+</pre>
+
+<p>Při deklaraci dvou proměnných (či ještě většího počtu proměnných) se
+používají závorky:</p>
+
+<pre>
+<strong>(let (x 6 y 7) (* x y))</strong>
+42
+</pre>
+
+<p>Alternativně lze použít i hranaté závorky a umístit jednotlivé výrazy na
+samostatné řádky. Tento způsob zápisu vylepšuje čitelnost:</p>
+
+<pre>
+<strong>(let [x 6 y 7]
+             (* x y))</strong>
+42
+</pre>
+
+<p>Příklad použití speciální formy <strong>let</strong> uvnitř funkce. Zde je
+návratová hodnota <strong>let</strong> současně i návratovou hodnotou celé
+funkce:</p>
+
+<pre>
+<strong>(de prumer</strong>
+<strong>    [seznam]</strong>
+<strong>    (let [soucet (apply + seznam)</strong>
+<strong>          pocet (length seznam)]</strong>
+<strong>          (/ soucet pocet)))</strong>
+</pre>
+
+<p>Můžeme snadno provést otestování nové funkce:</p>
+
+<pre>
+<strong>(process (1 2 3))</strong>
+2
+&nbsp;
+<strong>(process (1 1 1))</strong>
+1
+&nbsp;
+<strong>(process (1 1 10))</strong>
+4
+</pre>
+
+<p>Formy <strong>let</strong> je možné v&nbsp;případě potřeby libovolným
+způsobem rekurzivně zanořovat. Oblast viditelnosti proměnných je stále určena
+blokem <strong>let</strong>, ve kterém je proměnná deklarována. Zde má tedy
+proměnná nazvaná <strong>vysledek</strong> jen omezenou platnost
+viditelnosti:</p>
+
+<pre>
+<strong>(de prumer</strong>
+<strong>    [seznam]</strong>
+<strong>    (let [soucet (apply + seznam)</strong>
+<strong>          pocet (length seznam)]</strong>
+<strong>          (let [vysledek (/ soucet pocet)]</strong>
+<strong>              vysledek)))</strong>
+</pre>
+
+<p>Proměnné, které jsou deklarovány a inicializovány dříve, je možné použít i
+ve výrazech sloužících pro inicializaci později deklarovaných proměnných. Co to
+znamená v&nbsp;praxi? Příkladem může být následující úprava funkce
+<strong>prumer</strong>, ve které je proměnná <strong>vysledek</strong>
+inicializována výrazem používajícím proměnné deklarované uvnitř stejného bloku
+<strong>let</strong>. S&nbsp;podobným kódem se v&nbsp;praxi setkáme poměrně
+často:</p>
+
+<pre>
+<strong>(de prumer</strong>
+<strong>    [seznam]</strong>
+<strong>    (let [soucet   (apply + seznam)</strong>
+<strong>          pocet    (length seznam)</strong>
+<strong>          vysledek (/ soucet pocet)]</strong>
+<strong>              vysledek))</strong>
+</pre>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Pravdivostní hodnoty a základní booleovské operace</h2>
+
+<p>V&nbsp;dialektu <i>PicoLisp</i> se pro reprezentaci pravdivostních hodnot
+<i>true</i> a <i>false</i> používají globální konstanty nazvané
+<strong>T</strong> a <strong>NIL</strong> (tato konstanta je poněkud překvapivě
+psána verzálkami, na rozdíl od dalších dialektů LISPů). Jedna z&nbsp;těchto
+konstant je vždy výsledkem všech booleovských operací, ovšem jejich vstupní
+parametry mohou být libovolné (čísla, symboly atd.), s&nbsp;tím, že jakákoli
+hodnota rozdílná od <strong>NIL</strong> je považována za logickou pravdu. Při
+tvorbě programů jsou k&nbsp;dispozici všechny tři základní booleovské operace
+vypsané v&nbsp;následující tabulce:</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Význam</th></tr>
+<tr><td>1</td><td>and</td><td>logický součin</td></tr>
+<tr><td>2</td><td>or</td><td>logický součet</td></tr>
+<tr><td>3</td><td>not</td><td>logická negace</td></tr>
+</table>
+
+<p>Všechny tři výše vypsané funkce jsou variadické, tj.&nbsp;lze jim předat
+libovolné množství parametrů. V&nbsp;případě funkce <strong>not</strong> má
+smysl použít jen jediný parametr:</p>
+
+<pre>
+<strong>(not)</strong>
+T
+&nbsp;
+<strong>(not NIL)</strong>
+T
+&nbsp;
+<strong>(not T)</strong>
+NIL
+</pre>
+
+<p>Naproti tomu u funkcí <strong>and</strong> a <strong>or</strong> je možné (a
+mnohdy i vhodné) použít i větší počet parametrů, což je jasně patrné
+z&nbsp;následujících demonstračních příkladů</p>
+
+<pre>
+<strong>(and)</strong>
+NIL
+&nbsp;
+<strong>(and NIL)</strong>
+NIL
+&nbsp;
+<strong>(and T)</strong>
+T
+&nbsp;
+<strong>(and T NIL T NIL)</strong>
+NIL
+&nbsp;
+<strong>(and T T T T)</strong>
+T
+&nbsp;
+<strong>(or)</strong>
+NIL
+&nbsp;
+<strong>(or T T T T)</strong>
+T
+&nbsp;
+<strong>(or T T T NIL)</strong>
+T
+&nbsp;
+<strong>(or NIL NIL)</strong>
+NIL
+&nbsp;
+</pre>
+
+<p>Pro zjednodušení některých logických výrazů jsou v&nbsp;<i>PicoLispu</i>
+implementovány i další logické funkce, které doplňují výše uvedenou základní
+trojici. Jedná se o negaci logického součinu (NAND), negaci logického součtu
+(NOR) a nonekvivalenci (XOR):</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Význam</th></tr>
+<tr><td>1</td><td>nand</td><td>negace logického součinu</td></tr>
+<tr><td>2</td><td>nor</td><td>negace logického součtu</td></tr>
+<tr><td>3</td><td>xor</td><td>nonekvivalence</td></tr>
+</table>
+
+<p>Opět je jedná o variadické funkce, o čemž se můžeme přesvědčit například u
+funkce <strong>nand</strong>:</p>
+
+<pre>
+<strong>(nand T NIL)</strong>
+T
+&nbsp;
+<strong>(nand T T)</strong>
+NIL
+&nbsp;
+<strong>(nand T T T)</strong>
+NIL
+&nbsp;
+<strong>(nand T T T NIL)</strong>
+T
+</pre>
+
+<p>U funkcí <strong>nor</strong> a <strong>xor</strong> je situace podobná.
+Povšimněte si, že kombinace těchto funkcí může být velmi užitečná a může navíc
+eliminovat některé složité výrazy, které můžeme znát například z&nbsp;céčkových
+jazyků:</p>
+
+<pre>
+if (!(a==b || c&gt;0)) {...}
+</pre>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Další booleovské operace a predikáty</h2>
+
+<p>Kromě šestice logických funkcí popsaných <a href="#k04">ve čtvrté
+kapitole</a> se můžeme setkat s&nbsp;dalšími užitečnými funkcemi orientovanými
+na zpracování pravdivostních hodnot. Tyto funkce jsou vypsány
+v&nbsp;tabulce:</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Význam</th></tr>
+<tr><td>1</td><td>=T</td><td>test na hodnotu T</td></tr>
+<tr><td>2</td><td>nT</td><td>test na hodnotu odlišnou od T</td></tr>
+<tr><td>3</td><td>=0</td><td>test na nulu</td></tr>
+<tr><td>4</td><td>=1</td><td>test na jedničku</td></tr>
+<tr><td>5</td><td>=0</td><td>test na číselnou hodnotu odlišnou od nuly</td></tr>
+<tr><td>6</td><td>on</td><td>do předaných proměnných (libovolný počet) uloží hodnotu T</td></tr>
+<tr><td>7</td><td>off</td><td>do předaných proměnných (libovolný počet) uloží hodnotu NIL</td></tr>
+</table>
+
+<p>K&nbsp;dialektům programovacího jazyka LISP samozřejmě patří i množina
+predikátů, tj.&nbsp;funkcí, které na základě nějaké vyhodnocené podmínky vrací
+pravdivostní hodnotu. Většina predikátů končí otazníkem, ale nalezneme zde i
+několik výjimek (není však samozřejmě nijak problematické si dodefinovat i
+ostatní predikáty končící otazníkem):</p>
+
+<table>
+<tr><th>#</th><th>Predikát</th><th>Význam</th></tr>
+<tr><td>1</td><td>atom</td><td>test, zda je předaná hodnota atomem: NIL, číslo či symbol</td></tr>
+<tr><td>2</td><td>pair</td><td>test, zda je předaná hodnota tečkovým párem</td></tr>
+<tr><td>3</td><td>num?</td><td>test, zda je předaná hodnota číslem</td></tr>
+<tr><td>4</td><td>fun?</td><td>test, zda je předaná hodnota funkcí</td></tr>
+<tr><td>5</td><td>flg?</td><td>test, zda je předaná hodnota rovna T nebo NIL (ničemu jinému)</td></tr>
+<tr><td>6</td><td>sp?</td><td>test na NIL, prázdný řetězec či řetězec s&nbsp;bílými znaky</td></tr>
+<tr><td>7</td><td>bool</td><td>pro všechny hodnoty kromě NIL vrací T (tedy vlastně konvertuje na T či NIL)</td></tr>
+</table>
+
+<p>Podívejme se na několik jednoduchých příkladů. U testu na funkci se nevrací
+T, ale buď parametry funkce či u nativní funkce nějaká jednoznačná číselná
+hodnota (prostě cokoli odlišného od <strong>NIL</strong>):</p>
+
+<pre>
+<strong>(fun? gcd)</strong>
+NIL
+&nbsp;
+<strong>(fun? prumer)</strong>
+(seznam)
+&nbsp;
+<strong>(fun? println)</strong>
+271502
+&nbsp;
+<strong>(fun? print)</strong>
+271494
+&nbsp;
+<strong>(fun? car)</strong>
+268459
+&nbsp;
+<strong>(fun? cdr)</strong>
+268462
+</pre>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Význam konstanty NIL v&nbsp;PicoLispu</h2>
+
+<p>Konstanta <strong>NIL</strong>, která je jednou ze dvou možných návratových
+hodnot funkcí zmíněných <a href="#k04">ve čtvrté kapitole</a> i <a
+href="#k05">v&nbsp;kapitole páté</a>, má v&nbsp;interpretru programovacího
+jazyka <i>PicoLisp</i> hned několik významů, které mohou být někdy až
+neobvyklé, zejména při porovnání s&nbsp;dalšími dialekty LISPu. První
+zajímavostí resp.&nbsp;odlišností je fakt, že se tato konstanta zapisuje
+verzálkami (<strong>NIL</strong> nikoli minuskami jako <strong>nil</strong>) a
+že se jedná o jeden ze dvou globálních symbolů nezačínajících hvězdičkou.
+Všechny ostatní globální symboly <i>PicoLispu</i> totiž právě podle oné
+hvězdičky poznáme (a programátoři jsou vedeni k&nbsp;tomu, aby dodržovali
+stejné pravidlo). Mezi mnohé další významy konstanty <strong>NIL</strong> patří
+například:</p>
+
+<ol>
+<li>Značka pro konec seznamu (například při jeho konstrukci pomocí tečkových párů, viz příklad pod odstavcem).</li>
+<li>Jiná forma reprezentace prázdného seznamu.</li>
+<li>Při práci s&nbsp;pravdivostními hodnotami se <strong>NIL</strong> používá namísto <i>false</i> (viz předchozí kapitolu).</li>
+<li>V&nbsp;aritmetických operacích představuje <strong>NIL</strong> nejmenší možné číslo.</li>
+<li><strong>NIL</strong> taktéž značí řetězec nulové délky.</li>
+<li>Pokud je výsledkem nějaké operace NaN, opět lze použít i <strong>NIL</strong>.</li>
+<li>Při použití OOP je <strong>NIL</strong> prapředkem všech tříd v&nbsp;hierarchii (to je možná překvapivé, ale vychází to z&nbsp;dalších vlastností této konstanty).</li>
+</ol>
+
+<p>Podívejme se na několik příkladů použití této konstanty:</p>
+
+<pre>
+<i>; použití pro ukončení seznamu zapisovaného tečkovými páry</i>
+<strong>(1 . (2 . (3 . (4 . NIL))))</strong>
+(1 2 3 4)
+&nbsp;
+<i>; NIL je považován za ekvivalent prázdného řetězce</i>
+<strong>(sp? NIL)</strong>
+T
+&nbsp;
+<i>; NIL je ekvivalentem prázdného seznamu</i>
+<strong>(= () NIL)</strong>
+T
+&nbsp;
+<i>; NIL je dokonce menší než jakékoli číslo</i>
+<strong>? (&lt; NIL -100000000)</strong>
+T
+</pre>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Konstruktory seznamů &ndash; <strong>cons</strong> a <strong>list</strong></h2>
+
+<p>Vzhledem k&nbsp;tomu, že jediným strukturovaným datovým typem
+<i>PicoLispu</i> je seznam, není divu, že programátoři mají k&nbsp;dispozici
+hned několik konstruktorů seznamů. Jedná se především o dvojici funkcí
+nazvaných <strong>cons</strong> a <strong>list</strong>. Pojmenování těchto
+funkcí má historické důvody, neboť funkce s&nbsp;obdobnou sémantikou se
+v&nbsp;dialektech LISPu vyskytují padesát let. Obě funkce za všech okolností
+vrátí seznam (nikdy ne <strong>NIL</strong> či jiný atom):</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Význam</th></tr>
+<tr><td>1</td><td>cons</td><td>připojení dalšího prvku k&nbsp;existujícímu seznamu či vytvoření jednoprvkového seznamu</td></tr>
+<tr><td>2</td><td>list</td><td>vytvoření seznamu z&nbsp;předaných parametrů (počet parametrů je roven počtu prvků nového seznamu)</td></tr>
+</table>
+
+<p>Nejprve se podívejme na použití funkce <strong>cons</strong> s&nbsp;několika
+variantami parametrů:</p>
+
+<pre>
+<strong>(cons)</strong>
+(NIL)
+&nbsp;
+<strong>(cons 1)</strong>
+(1)
+&nbsp;
+<strong>(cons 1 2)</strong>
+(1 . 2)
+&nbsp;
+<strong>(cons 1 (2))</strong>
+(1 2)
+&nbsp;
+<strong>(cons 0 (1 2 3 4))</strong>
+(0 1 2 3 4)
+</pre>
+
+<p>Pozor je zapotřebí si dát především na to, že funkce <strong>cons</strong>
+nedokáže (alespoň ne přímo) spojit dva seznamy. Namísto jediného
+&bdquo;plochého&ldquo; seznamu totiž získáme seznam, jehož prvním prvkem je
+první parametr funkce <strong>cons</strong>:</p>
+
+<pre>
+<strong>(cons (1 2 3 4) (1 2 3 4))</strong>
+((1 2 3 4) 1 2 3 4)
+</pre>
+
+<p>Funkce nazvaná <strong>list</strong> akceptuje větší množství parametrů,
+z&nbsp;nichž sestrojí seznam. Neprovádí se zde tedy žádné připojení k&nbsp;již
+existujícímu seznamu, což je patrné z&nbsp;vyhodnocení třetího výrazu:</p>
+
+<pre>
+<strong>(list)</strong>
+(NIL)
+&nbsp;
+<strong>(list NIL)</strong>
+(NIL)
+&nbsp;
+<strong>(list 1 2)</strong>
+(1 2)
+&nbsp;
+<strong>(list 1 2 3 4)</strong>
+(1 2 3 4)
+&nbsp;
+<strong>(list 1 (2 3 4))</strong>
+(1 (2 3 4))
+</pre>
+
+<p>Povšimněte si, že se skutečně za všech okolností vrací seznam, i kdyby se
+mělo jednat o seznam s&nbsp;jediným prvkem <strong>NIL</strong>.</p>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Funkce <strong>filter</strong></h2>
+
+<p>Již <a
+href="http://www.root.cz/clanky/picolisp-minimalisticky-a-pritom-prekvapive-vykonny-interpret-lispu/">minule</a>
+jsme se seznámili s&nbsp;funkcí vyššího řádu nazvanou <strong>mapcar</strong>,
+kterou je možné použít pro vytvoření nového seznamu ze seznamu původního, a to
+aplikací nějaké funkce na každý prvek původního seznamu. Jen pro připomenutí,
+jak se funkce <strong>mapcar</strong> může použít, si uveďme příklad:</p>
+
+<pre>
+<strong>(de inc</strong>
+<strong>    (x)</strong>
+<strong>    (+ x 1))</strong>
+&nbsp;
+<strong>(mapcar inc (1 2 3))</strong>
+(2 3 4)
+</pre>
+
+<p>Kromě <strong>mapcar</strong> mají vývojáři k&nbsp;dispozici i další poměrně
+užitečnou funkci, která se příhodně jmenuje <strong>filter</strong>. I
+<strong>filter</strong> je funkcí vyššího řádu, kde předaná funkce (ať už
+pojmenovaná či anonymní) určuje svojí návratovou hodnotou, zda daný prvek
+z&nbsp;původního seznamu má být přenesen do seznamu vytvářeného. Jedná se tedy
+o obdobu klauzule <strong>WHERE</strong> v&nbsp;jazyce SQL. Podívejme se na
+příklad. Nejprve vytvoříme predikát testující, zda je předané číslo kladné:</p>
+
+<pre>
+<strong>(de pos?</strong>
+<strong>    [n]</strong>
+<strong>    (&gt; n 0))</strong>
+</pre>
+
+<p>Následně z&nbsp;předaného seznamu vyfiltrujeme pouze kladné prvky:</p>
+
+<pre>
+<strong>(filter pos? (-5 -4 -3 -2 -1 0 1 2 3 4 5))</strong>
+(1 2 3 4 5)
+</pre>
+
+<p>Podobně můžeme postupovat při získání sudých prvků ze sekvence hodnot 1 až
+10. Zde se používá anonymní funkce zapsaná ve speciální formě
+<strong>quote</strong>:</p>
+
+<pre>
+<strong>(filter (quote (n) (=0 (% n 2))) (range 1 10))</strong>
+(2 4 6 8 10)
+</pre>
+
+<p>Při použití funkce <strong>filter</strong> se s&nbsp;anonymními funkcemi
+setkáme poměrně často.</p>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Funkce <strong>mini</strong>, <strong>maxi</strong>, <strong>sum</strong> a <strong>cnt</strong></h2>
+
+<p>Další čtveřice funkcí vyššího řádu vlastně kombinuje funkci
+<strong>mapcar</strong> popsanou minule a funkci typu <strong>reduce</strong>,
+protože výsledkem není nový seznam, ale jediná hodnota získaná nějakou
+kombinací prvků. Základní popis zmíněných čtyř funkcí nalezneme
+v&nbsp;tabulce:</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Význam</th></tr>
+<tr><td>1</td><td>mini</td><td>aplikuje předanou funkci na seznam a vrátí ten prvek, pro nějž byla zjištěna (po aplikaci funkce) minimální výsledná hodnota</td></tr>
+<tr><td>2</td><td>maxi</td><td>aplikuje předanou funkci na seznam a vrátí ten prvek, pro nějž byla zjištěna (po aplikaci funkce) maximální výsledná hodnota</td></tr>
+<tr><td>3</td><td>sum </td><td>aplikuje předanou funkci na seznam a vrátí součet z&nbsp;výsledku</td></tr>
+<tr><td>4</td><td>cnt </td><td>aplikuje předanou funkci na seznam a vrátí počet prvků výsledku, které jsou odlišné od <strong>NIL</strong></td></tr>
+</table>
+
+<p>Podívejme se na demonstrační příklady, z&nbsp;nichž bude chování těchto čtyř
+funkcí vyššího řádu jasně patrné:</p>
+
+<pre>
+<i>; zjištění, které číslo 1..1000 má nejmenší hashovací kód</i>
+<strong>(mini hash (range 1 1000))</strong>
+384
+&nbsp;
+<i>; zjištění, které číslo 1..1000 má největší hashovací kód</i>
+(maxi hash (range 1 1000))
+778
+&nbsp;
+<i>; nejprve se vytvoří meziseznam s hodnotami od 2 do 11</i>
+<i>; posléze se prvky tohoto seznamu sečtou a vrátí se výsledná suma</i>
+<strong>(sum inc (range 1 10)) </strong>
+65
+&nbsp;
+<i>; suma čtverců číselné řady</i>
+<strong>(de sqr [n] (* n n))</strong>
+sqr
+&nbsp;
+<strong>(sum sqr (range 1 10))</strong>
+385
+&nbsp;
+<i>; vrátí počet čísel mezi 1 a 100, která bezezbytku dělí 100</i>
+<strong>(de dividable [x y] (=0 (% x y)))</strong>
+dividable
+&nbsp;
+<strong>(cnt (quote [n] (dividable 100 n)) (range 1 100))</strong>
+9
+</pre>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Řízení běhu programu &ndash; rozvětvení</h2>
+
+<p>Pro řízení běhu programu, tj.&nbsp;pro rozvětvení, nabízí <i>PicoLisp</i>
+poměrně velké množství různých speciálních forem. Základem je samozřejmě forma
+<strong>if</strong> s&nbsp;klasickým rozvětvením, ovšem skalní LISPaři
+v&nbsp;<i>PicoLispu</i> naleznou například i oblíbené <strong>cond</strong> či
+formy <strong>when</strong> a <strong>unless</strong>, jejichž použití může
+zpřehlednit zdrojový kód:</p>
+
+<table>
+<tr><th>#</th><th></th><th></th></tr>
+<tr><td>1</td><td>if</td><td>rozdělení výpočtu do dvou větví na základě podmínky</td></tr>
+<tr><td>2</td><td>ifn</td><td>znamená if-not, tj.&nbsp;varianta if s&nbsp;negovanou podmínkou</td></tr>
+<tr><td>3</td><td>when</td><td>varianta if pro větší množství příkazů ve větvi &bdquo;then&ldquo;, viz též <a href="#k11">kapitolu 11</a></td></tr>
+<tr><td>4</td><td>unless</td><td>varianta if pro větší množství příkazů ve větvi &bdquo;else&ldquo;, viz též <a href="#k11">kapitolu 11</a></td></tr>
+<tr><td>5</td><td>cond</td><td>vícenásobné rozvětvení, viz též <a href="#12">kapitolu 12</a></td></tr>
+<tr><td>6</td><td>nond</td><td>vícenásobné rozvětvení, viz též <a href="#12">kapitolu 12</a></td></tr>
+<tr><td>7</td><td>if2</td><td>rozvětvení na základě <strong>dvou</strong> podmínek, více viz <a href="#k13">kapitolu 13</a></td></tr>
+</table>
+
+<p>&bdquo;Klasické&ldquo; rozvětvení je řešeno formou <strong>if</strong>,
+kterou lze samozřejmě zanořovat:</p>
+
+<pre>
+<strong>(de gcd</strong>
+<strong>    [x y]</strong>
+<strong>    (if (= x y) x</strong>
+<strong>                (if (&gt; x y)</strong>
+<strong>                    (gcd (- x y) y)</strong>
+<strong>                    (gcd x (- y x)))))</strong>
+</pre>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Použití forem <strong>when</strong> a <strong>unless</strong></h2>
+
+<p>V&nbsp;některé části aplikace většinou potřebujeme na základě nějaké
+podmínky vykonat sekvenci příkazů. I v&nbsp;tomto případě je samozřejmě možné
+použít <strong>if</strong>, ovšem celá sekvence příkazů musí být vytvořena
+v&nbsp;jiné funkci či &bdquo;uzavřena&ldquo; do programového bloku tvořeného
+formou <strong>prog</strong>. Pokud například potřebujeme na základě
+vyhodnocené podmínky vypsat na standardní výstup zprávu a současně vrátit
+nějakou hodnotu, mohl by celý zápis vypadat například takto:</p>
+
+<pre>
+<strong>(setq a 20)</strong>
+<strong>(setq b 10)</strong>
+<strong>(if (=0 (- a a 10))</strong>
+<strong>    (prog</strong>
+<strong>         (println "nulovy vysledek")</strong>
+<strong>         0))</strong>
+&nbsp;
+"nulovy vysledek"
+0
+</pre>
+
+<p>Pro zlepšení čitelnosti zdrojového kódu je možné použít formu
+<strong>when</strong>, která sice nedokáže provést úplné rozvětvení tak, jako
+forma <strong>if</strong>, ale zato se za ni může napsat libovolné množství
+forem (příkazů), které se postupně vyhodnotí při splnění zadané podmínky. Výše
+uvedený příklad se nám tedy zjednoduší:</p>
+
+<pre>
+<strong>(setq a 20)</strong>
+<strong>(setq b 10)</strong>
+<strong>(when (=0 (- a a 10))</strong>
+<strong>      (println "nulovy vysledek")</strong>
+<strong>      0)</strong>
+&nbsp;
+"nulovy vysledek"
+0
+</pre>
+
+<p>Opakem <strong>when</strong> je <strong>unless</strong>. Jediným rozdílem je
+zde negace podmínky, což znamená, že <strong>unless</strong> lze přepsat na
+<strong>when</strong>, ovšem samotnou podmínku je zapotřebí negovat, což je
+samozřejmě daleko méně čitelné, než přímé použití <strong>unless</strong>:</p>
+
+<pre>
+<strong>(unless (=0 (- 1 1))</strong>
+<strong>      (println "nulovy vysledek")</strong>
+<strong>      0)</strong>
+&nbsp;
+NIL
+</pre>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Vícenásobné rozvětvení &ndash; forma <strong>cond</strong> a <strong>nond</strong></h2>
+
+<p>Speciální forma <strong>cond</strong> je pravděpodobně skalním lispařům
+dobře známá, protože se vlastně jedná o zobecnění rozeskoku na libovolný počet
+podmínek a větví. Této formě se předává předem neomezený počet dvojic, kde
+první prvek dvojice představuje podmínku a druhý prvek pak tělo (výraz), který
+se zavolá při splnění této podmínky. Výsledek vybraného výrazu je současně i
+výsledkem vyhodnocení celé formy <strong>cond</strong> (další podmínky se tedy
+již netestují). Podmínek může být specifikováno libovolné množství a bývá
+zvykem u poslední podmínky pouze zapsat <strong>T</strong> (<i>true</i>), což
+by například v&nbsp;Javě či C odpovídalo větvi <strong>default</strong>
+v&nbsp;konstrukci <strong>switch</strong>:</p>
+
+<pre>
+<strong>(de sgn [n]</strong>
+<strong>    (cond</strong>
+<strong>        ((&lt; n 0)        'negative)</strong>
+<strong>        ((&gt; n 0)        'positive)</strong>
+<strong>        ((=0 n)         'zero)))</strong>
+&nbsp;
+<strong>(sgn 10)</strong>
+positive
+&nbsp;
+<strong>(sgn -10)</strong>
+negative
+&nbsp;
+<strong>(sgn 0)</strong>
+zero
+</pre>
+
+<p>Alternativně je možné namísto poslední podmínky vložit T (default):</p>
+
+<pre>
+<strong>(de sgn [n]</strong>
+<strong>    (cond</strong>
+<strong>        ((&lt; n 0)        'negative)</strong>
+<strong>        ((&gt; n 0)        'positive)</strong>
+<strong>        (T              'zero)))</strong>
+&nbsp;
+<strong>(sgn 10)</strong>
+positive
+&nbsp;
+<strong>(sgn -10)</strong>
+negative
+&nbsp;
+<strong>(sgn 0)</strong>
+zero
+</pre>
+
+<p>Funkce <strong>nond</strong> se chová stejně jako <strong>cond</strong>,
+ovšem s&nbsp;tím rozdílem, že všechny podmínky jsou negovány, tj.&nbsp;hledá se
+ta podmínka, která se vyhodnotí na <strong>NIL</strong></p>
+
+<pre>
+<strong>(de sgn [n]</strong>
+<strong>    (nond</strong>
+<strong>        ((&gt;= n 0)        'negative)</strong>
+<strong>        ((&lt;= n 0)        'positive)</strong>
+<strong>        (NIL            'zero)))</strong>
+&nbsp;
+<strong>(sgn 10)</strong>
+positive
+&nbsp;
+<strong>(sgn -10)</strong>
+negative
+&nbsp;
+<strong>(sgn 0)</strong>
+zero
+</pre>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Rozvětvení na základě dvou podmínek &ndash; forma <strong>if2</strong></h2>
+
+<p>Zajímavá a vlastně i velmi užitečná je forma nazvaná <strong>if2</strong>.
+Této formě se nepředává jedna podmínka, ale hned dvě podmínky, které jsou vždy
+obě vyhodnoceny. Výsledkem je tedy kombinace dvou konstant T a NIL (celkem
+čtyři možnosti). Proto také za oběma podmínkami následují čtyři výrazy, přičemž
+první výraz se vyhodnotí jen pokud jsou obě podmínky splněny (T T), druhý výraz
+se vyhodnotí, jen když je splněna první podmínka (T NIL), třetí při splnění
+pouze druhé podmínky (NIL T) a konečně čtvrtý výraz při nesplnění obou podmínek
+současně (NIL NIL). Funkci pro zjištění znaménka tedy můžeme zapsat i
+takto:</p>
+
+<pre>
+<strong>(de sgn [n] (if2 (&lt;= n 0) (&gt;= n 0) 'zero 'negative 'positive 'strange))</strong>
+sgn
+&nbsp;
+<strong>(sgn 10)</strong>
+positive
+&nbsp;
+<strong>(sgn -10)</strong>
+negative
+&nbsp;
+<strong>(sgn 0)</strong>
+zero
+</pre>
+
+<p>Funkci pro výpočet největšího společného dělitele dvou čísel je možné zapsat
+i takto:</p>
+
+<pre>
+<strong>(de gcd</strong>
+<strong>    [x y]</strong>
+<strong>    (if2 (= x y) (&gt; x y)</strong>
+<strong>         NIL</strong>
+<strong>         x</strong>
+<strong>         (gcd (- x y) y)</strong>
+<strong>         (gcd x (- y x))))</strong>
+</pre>
+
+<p>Povšimněte si, že první větev (ta s&nbsp;<strong>NIL</strong>) nikdy nebude
+provedena, protože obě podmínky nebudou platit současně). Ostatní tři větve
+však mohou být provedeny..</p>
+
+<p>Poznámka: tím, že jsou vyhodnoceny obě podmínky, se <strong>if2</strong>
+odlišuje od <strong>cond</strong>, kde se podmínky zkouší vyhodnocovat
+postupně.</p>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Sledování běhu programu s&nbsp;využitím funkcí <strong>trace</strong>, <strong>traceAll</strong> a <strong>untrace</strong></h2>
+
+<p>Při ladění programů, především pak algoritmů využívajících rekurzivní
+funkce, je důležité vědět, jaké funkce se volají, jaké parametry jsou jim
+předávány a taktéž způsob návratu z&nbsp;funkcí (výpočet návratových hodnot
+atd.). Kromě ručního ladění a krokování, které je interpretrem <i>PicoLispu</i>
+samozřejmě taktéž podporováno, je možné použít i funkci <strong>trace</strong>,
+kterou se povoluje trasování zvolené funkce či funkcí. Podívejme se na
+jednoduchý &bdquo;školní&ldquo; příklad, konkrétně na rekurzivní funkci
+sloužící pro výpočet faktoriálu. Definice této funkce může vypadat
+následovně:</p>
+
+<pre>
+<strong>(de recursive-factorial</strong>
+<strong>    [n]</strong>
+<strong>    (if (=0 n)</strong>
+<strong>       1</strong>
+<strong>       (* n (recursive-factorial (dec n)))))</strong>
+</pre>
+
+<p>V&nbsp;případě, že budeme potřebovat trasovat tuto funkci, není nic
+jednoduššího, než funkci <strong>recursive-factorial</strong>
+zaregistrovat:</p>
+
+<pre>
+<strong>(trace 'recursive-factorial)</strong>
+recursive-factorial
+</pre>
+
+<p>Při volání této funkce i při návratu do funkce (obecně z&nbsp;jiné části
+programu) se na standardní výstup zobrazí trasovací informace. Odsazením je
+naznačena hloubka zásobníku při volání. Povšimněte si zde vystřídání dvou fází
+&ndash; rekurzivního zanořování (zabalování, <i>winding</i>) a posléze
+postupného návratu s&nbsp;výpočtem (rozbalování, <i>unwinding</i>). Poslední
+řádek naznačuje, že se z&nbsp;funkce nakonec skutečně vrátila správně vypočtená
+návratová hodnota:</p>
+
+<pre>
+<strong>(recursive-factorial 10)</strong>
+ recursive-factorial : 10
+  recursive-factorial : 9
+   recursive-factorial : 8
+    recursive-factorial : 7
+     recursive-factorial : 6
+      recursive-factorial : 5
+       recursive-factorial : 4
+        recursive-factorial : 3
+         recursive-factorial : 2
+          recursive-factorial : 1
+           recursive-factorial : 0
+           recursive-factorial = 1
+          recursive-factorial = 1
+         recursive-factorial = 2
+        recursive-factorial = 6
+       recursive-factorial = 24
+      recursive-factorial = 120
+     recursive-factorial = 720
+    recursive-factorial = 5040
+   recursive-factorial = 40320
+  recursive-factorial = 362880
+ recursive-factorial = 3628800
+3628800
+</pre>
+
+<p>Můžeme si odzkoušet trasovat i složitější funkci, které se předávají dva
+parametry. Jedná se o funkci pro výpočet největšího společného dělitele dvou
+celých (kladných) čísel:</p>
+
+<pre>
+<strong>(de gcd</strong>
+<strong>    [x y]</strong>
+<strong>    (if (= x y) x</strong>
+<strong>                (if (&gt; x y)</strong>
+<strong>                    (gcd (- x y) y)</strong>
+<strong>                    (gcd x (- y x)))))</strong>
+</pre>
+
+<p>Nejprve otestujeme chování této funkce na několika příkladech:</p>
+
+<pre>
+(gcd 1 1)                                                                 
+1
+&nbsp;
+(gcd 2 1)
+1
+&nbsp;
+(gcd 12 16)
+4
+&nbsp;
+(gcd 54 24)
+6
+</pre>
+
+<p>Následně povolíme výpis trasovacích informací při volání této funkce:</p>
+
+<pre>
+<strong>(trace 'gcd)</strong>
+gcd
+</pre>
+
+<p>Podívejme se nyní na to, jak se vlastně výpočet největšího společného
+dělitele provádí &ndash; je to jasně patrné z&nbsp;parametrů, které se
+rekurzivně volané funkci <strong>gcd</strong> předávají:</p>
+
+<pre>
+<strong>(gcd 54 24)</strong>
+ gcd : 54 24
+  gcd : 30 24
+   gcd : 6 24
+    gcd : 6 18
+     gcd : 6 12
+      gcd : 6 6
+      gcd = 6
+     gcd = 6
+    gcd = 6
+   gcd = 6
+  gcd = 6
+ gcd = 6
+6
+</pre>
+
+<p>Můžeme zkusit použít i větší vstupní hodnoty. K&nbsp;výsledku se
+v&nbsp;tomto případě konverguje poměrně dlouho (existují však i rychlejší
+algoritmy):</p>
+
+<pre>
+<strong>(gcd 1000 756)</strong>
+ gcd : 1000 756
+  gcd : 244 756
+   gcd : 244 512
+    gcd : 244 268
+     gcd : 244 24
+      gcd : 220 24
+       gcd : 196 24
+        gcd : 172 24
+         gcd : 148 24
+          gcd : 124 24
+           gcd : 100 24
+            gcd : 76 24
+             gcd : 52 24
+              gcd : 28 24
+               gcd : 4 24
+                gcd : 4 20
+                 gcd : 4 16
+                  gcd : 4 12
+                   gcd : 4 8
+                    gcd : 4 4
+                    gcd = 4
+                   gcd = 4
+                  gcd = 4
+                 gcd = 4
+                gcd = 4
+               gcd = 4
+              gcd = 4
+             gcd = 4
+            gcd = 4
+           gcd = 4
+          gcd = 4
+         gcd = 4
+        gcd = 4
+       gcd = 4
+      gcd = 4
+     gcd = 4
+    gcd = 4
+   gcd = 4
+  gcd = 4
+ gcd = 4
+4
+</pre>
+
+<p>Možnosti trasování jsou však ve skutečnosti mnohem větší, protože lze
+sledovat i chování funkcí typu = (porovnání) či - (rozdíl). Opět si to můžeme
+snadno vyzkoušet:</p>
+
+<pre>
+<strong>(trace '-)</strong>
+<strong>(trace '=)</strong>
+<strong>(trace 'gcd)</strong>
+</pre>
+
+<p>Nyní se při zavolání funkce <strong>gcd</strong> vypíše mnohem větší
+množství informací (pro funkce + a - se vždy vypíšou dva řádky &ndash; vstupní
+hodnoty a výsledná hodnota):</p>
+
+<pre>
+<strong>(gcd 10 6) </strong>
+ gcd : 10 6
+  = : 10 6
+  = = NIL
+  - : 10 6
+  - = 4
+  gcd : 4 6
+   = : 4 6
+   = = NIL
+   - : 6 4
+   - = 2
+   gcd : 4 2
+    = : 4 2
+    = = NIL
+    - : 4 2
+    - = 2
+    gcd : 2 2
+     = : 2 2
+     = = T
+    gcd = 2
+   gcd = 2
+  gcd = 2
+ gcd = 2
+2
+</pre>
+
+<p>Trasování lze kdykoli selektivně vypnout s&nbsp;využitím funkce
+<strong>untrace</strong>:</p>
+
+<pre>
+<strong>(untrace '-)</strong>
+<strong>(untrace '=)</strong>
+<strong>(untrace 'gcd)</strong>
+</pre>
+
+<p>Volání funkce <strong>gcd</strong> již bude probíhat běžným způsobem:</p>
+
+<pre>
+<strong>(gcd 10 6)    </strong>
+2
+</pre>
+
+<p>Poslední užitečnou funkcí je <strong>traceAll</strong>, která zapne
+trasování, ale pouze pro (zjednodušeně řečeno) všechny uživatelské funkce a
+nikoli pro funkce systémové. Můžeme si to ostatně jednoduše vyzkoušet:</p>
+
+<pre>
+<strong>(traceAll)</strong>
+T
+&nbsp;
+<strong>(gcd 10 6)    </strong>
+ gcd : 10 6
+  gcd : 4 6
+   gcd : 4 2
+    gcd : 2 2
+    gcd = 2
+   gcd = 2
+  gcd = 2
+ gcd = 2
+2
+</pre>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Literatura</h2>
+
+<ol>
+
+<li>Harold Abelson, Gerald Jay Sussman, Julie Sussman:<br />
+<i>Structure and Interpretation of Computer Programs (SICP)</i><br />
+1985, 1996, MIT Press
+</li>
+
+<li>Daniel P. Friedman, Matthias Felleisen:<br />
+<i>The Little Schemer</i><br />
+1995, MIT Press
+</li>
+
+<li>Daniel P. Friedman, Matthias Felleisen:<br />
+<i>The Seasoned Schemer</i><br />
+1995, MIT Press
+</li>
+
+<li>McCarthy:<br />
+<i>&bdquo;Recursive functions of symbolic expressions and their computation by machine, part I&ldquo;</i><br />
+1960
+</li>
+
+<li>Guy L. Steele:<br />
+<i>&bdquo;History of Scheme&ldquo;</i><br />
+2006, Sun Microsystems Laboratories
+</li>
+
+<li>
+Kolář J., Muller K.:<br />
+<i>&bdquo;Speciální programovací jazyky&ldquo;</i><br />
+Praha 1981
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 9, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., October 1987
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 10, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., September 1988
+</li>
+
+<li>McCarthy, John; Abrahams, Paul W.; Edwards, Daniel J.; Hart, Timothy P.; Levin, Michael I.<br />
+<i>&bdquo;LISP 1.5 Programmer's Manual&ldquo;</i><br />
+MIT Press. ISBN 0 262 130 1 1 4
+</li>
+
+<li>Carl Hewitt; Peter Bishop and Richard Steiger:<br />
+<i>&bdquo;A Universal Modular Actor Formalism for Artificial Intelligence&ldquo;</i><br />
+1973
+</li>
+
+<li>Feiman, J.:<br />
+<i>&bdquo;The Gartner Programming Language Survey (October 2001)&ldquo;</i><br />
+Gartner Advisory
+</li>
+
+</ol>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>The German School of Lisp<br />
+<a href="http://blog.fogus.me/2011/05/03/the-german-school-of-lisp-2/">http://blog.fogus.me/2011/05/03/the-german-school-of-lisp-2/</a>
+</li>
+
+<li>PicoLisp<br />
+<a href="http://picolisp.com/wiki/?home">http://picolisp.com/wiki/?home</a>
+</li>
+
+<li>A PicoLisp Tutorial<br />
+<a href="http://software-lab.de/doc/tut.html">http://software-lab.de/doc/tut.html</a>
+</li>
+
+<li>Pico Lisp Documentation<br />
+<a href="http://picolisp.com/wiki/?Documentation">http://picolisp.com/wiki/?Documentation</a>
+</li>
+
+<li>The PicoLisp Machine<br />
+<a href="http://software-lab.de/doc/ref.html#vm">http://software-lab.de/doc/ref.html#vm</a>
+</li>
+
+<li>PicoLisp na OpenHubu<br />
+<a href="https://www.openhub.net/p/PicoLisp">https://www.openhub.net/p/PicoLisp</a>
+</li>
+
+<li>Pico Lisp: A Case for Minimalist Interpreters?<br />
+<a href="http://lambda-the-ultimate.org/node/2124">http://lambda-the-ultimate.org/node/2124</a>
+</li>
+
+<li>PicoLisp na Wikipedii<br />
+<a href="https://en.wikipedia.org/wiki/PicoLisp">https://en.wikipedia.org/wiki/PicoLisp</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">http://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Programovací jazyk LISP (druhá část)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-lisp-druha-cast/">http://www.root.cz/clanky/programovaci-jazyk-lisp-druha-cast/</a>
+</li>
+
+<li>Steel Bank Common Lisp<br />
+<a href="http://www.sbcl.org/">http://www.sbcl.org/</a>
+</li>
+
+<li>CLISP (implementace Common Lispu)<br />
+<a href="http://clisp.org/">http://clisp.org/</a>
+</li>
+
+<li>PLEAC-PicoLisp<br />
+<a href="http://pleac.sourceforge.net/pleac_picolisp/index.html#AEN4">http://pleac.sourceforge.net/pleac_picolisp/index.html#AEN4</a>
+</li>
+
+<li>Rosetta Code &ndash; Category:Lisp<br />
+<a href="http://rosettacode.org/wiki/Category:Lisp">http://rosettacode.org/wiki/Category:Lisp</a>
+</li>
+
+<li>Emacs timeline<br />
+<a href="http://www.jwz.org/doc/emacs-timeline.html">http://www.jwz.org/doc/emacs-timeline.html</a>
+</li>
+
+<li>EINE (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/EINE">http://www.emacswiki.org/emacs/EINE</a>
+</li>
+
+<li>EINE (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EINE">http://texteditors.org/cgi-bin/wiki.pl?EINE</a>
+</li>
+
+<li>ZWEI (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/ZWEI">http://www.emacswiki.org/emacs/ZWEI</a>
+</li>
+
+<li>ZWEI (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?ZWEI">http://texteditors.org/cgi-bin/wiki.pl?ZWEI</a>
+</li>
+
+<li>Zmacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Zmacs">https://en.wikipedia.org/wiki/Zmacs</a>
+</li>
+
+<li>Zmacs (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?Zmacs">http://texteditors.org/cgi-bin/wiki.pl?Zmacs</a>
+</li>
+
+<li>TecoEmacs (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/TecoEmacs">http://www.emacswiki.org/emacs/TecoEmacs</a>
+</li>
+
+<li>Micro Emacs<br />
+<a href="http://www.emacswiki.org/emacs/MicroEmacs">http://www.emacswiki.org/emacs/MicroEmacs</a>
+</li>
+
+<li>Micro Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MicroEMACS">https://en.wikipedia.org/wiki/MicroEMACS</a>
+</li>
+
+<li>EmacsHistory<br />
+<a href="http://www.emacswiki.org/emacs/EmacsHistory">http://www.emacswiki.org/emacs/EmacsHistory</a>
+</li>
+
+<li>Seznam editorů s ovládáním podobným Emacsu či kompatibilních s příkazy Emacsu<br />
+<a href="http://www.finseth.com/emacs.html">http://www.finseth.com/emacs.html</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2016</small></p>
+</body>
+</html>
+
