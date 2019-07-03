@@ -1,0 +1,837 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>PicoLisp: dokončení popisu a několik praktických rad na závěr</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>PicoLisp: dokončení popisu a několik praktických rad na závěr</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Ve třetí a současně i závěrečné části článku o minimalistickém interpretru jazyka LISP nazvaném PicoLisp si popíšeme způsob práce s vlastnostmi symbolů, použití speciálních symbolů @, @@ a @@@ i využití externích knihoven. Na závěr se zmíníme o poměrně komfortním ovládání interaktivní smyčky REPL.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. PicoLisp: dokončení popisu a několik praktických rad na závěr</a></p>
+<p><a href="#k02">2. Použití symbolu @</a></p>
+<p><a href="#k03">3. Interní reprezentace symbolů</a></p>
+<p><a href="#k04">4. Vlastnosti (properties)</a></p>
+<p><a href="#k05">5. Přístup k&nbsp;vlastnostem, změna vlastností atd.</a></p>
+<p><a href="#k06">6. Reakce na chyby vzniklé při běhu programu</a></p>
+<p><a href="#k07">7. Použití externích knihoven</a></p>
+<p><a href="#k08">8. Použití interaktivního prostředí PicoLispu</a></p>
+<p><a href="#k09">9. Editace s&nbsp;použitím klávesových zkratek Vimu</a></p>
+<p><a href="#k10">10. Editace s&nbsp;použitím klávesových zkratek Emacsu</a></p>
+<p><a href="#k11">11. Repositář s&nbsp;demonstračními příklady</a></p>
+<p><a href="#k12">12. Příklady pro první článek o PicoLispu</a></p>
+<p><a href="#k13">13. Příklady pro druhý článek o PicoLispu</a></p>
+<p><a href="#k14">14. Příklady pro třetí článek o PicoLispu</a></p>
+<p><a href="#k15">15. Literatura</a></p>
+<p><a href="#k16">16. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. PicoLisp: dokončení popisu a několik praktických rad na závěr</h2>
+
+<p>Na <a
+href="http://www.root.cz/clanky/picolisp-minimalisticky-a-pritom-prekvapive-vykonny-interpret-lispu/">první</a>
+a <a
+href="http://www.root.cz/clanky/picolisp-uzitecne-funkce-a-specialni-formy-pouzivane-pri-tvorbe-aplikaci/">druhý</a>
+článek o minimalistickém interpretru programovacího jazyka LISP pojmenovaného
+celkem příhodně <i>PicoLisp</i> dnes navážeme a popis tohoto programovacího
+jazyka dokončíme. Nejdříve si řekneme, jak se při ladění aplikací <a
+href="#k02">používá symbol @</a> (což může být velmi užitečné, a to nejenom ve
+smyčce REPL), následně se seznámíme se způsobem <a href="#k03">interní
+reprezentace symbolů</a> (především řetězců), seznámíme se se způsobem využití
+<a href="#k07">externích knihoven</a> a na závěr si řekneme několik praktických
+rad, které se týkají použití <a href="#k08">interaktivního prostředí</a>
+PicoLispu se smyčkou REPL (zajímavé přitom je, že toto prostředí obsahuje
+podporu pro klávesové zkratky kompatibilní jak <a href="#k09">s&nbsp;Vimem</a>,
+tak i <a href="#k10">s&nbsp;konkurenčním Emacsem</a>). Samozřejmě nesmí chybět
+ani odkazy na <a href="#k11">zdrojové kódy demonstračních příkladů</a>.</p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Použití symbolu @</h2>
+
+<p>V&nbsp;interaktivní smyčce REPL interpretru PicoLispu je možné využívat
+symbol pojmenovaný @ (zavináč). Tento symbol obsahuje hodnotu posledního
+vyhodnoceného výrazu. To například znamená, že není zapotřebí ukládat
+mezivýsledek nějaké operace do explicitně pojmenované proměnné. Namísto
+toho se použije @:</p>
+
+<pre>
+<strong>(+ 1 2)</strong>
+3
+&nbsp;
+<strong>@</strong>
+3
+&nbsp;
+<strong>(* @ @)</strong>
+9
+</pre>
+
+<p>Ve skutečnosti si interpret pamatuje hodnoty <strong>tří</strong> posledních
+vyhodnocených výrazů, takže lze použít symboly @, @@ a @@@, přičemž symbol @
+obsahuje výsledek posledního výrazu, symbol @@ výsledek výrazu předposledního
+atd. Podívejme se na příklad:</p>
+
+<pre>
+<strong>(+ 1 2)</strong>
+3
+&nbsp;
+<strong>(* 6 7)</strong>
+42
+&nbsp;
+<strong>(/ 25 5)</strong>
+5
+&nbsp;
+<strong>(+ @ @@ @@@)</strong>
+50
+</pre>
+
+<p>Symbol @ je možné použít i uvnitř řídicích konstrukcí typu
+<strong>if</strong>, <strong>cond</strong>, <strong>while</strong> atd.
+V&nbsp;tomto případě obsahuje výsledek řídicího výrazu, tj.&nbsp;například
+výsledek podmínky. Ten totiž nemusí obsahovat jen hodnotu <strong>T</strong> či
+<strong>NIL</strong>, ale jakoukoli jinou hodnotu (která je většinou
+automaticky považována za pravdivou). Opět se podívejme na poněkud umělý
+příklad:</p>
+
+<pre>
+<strong>(if (* 6 7) (println @))</strong>
+42
+</pre>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Interní reprezentace symbolů</h2>
+
+<p>V&nbsp;<i>PicoLispu</i> se rozeznávají čtyři typy symbolů. Prvním typem je
+samotný <strong>NIL</strong>, dále se pak jedná o interní symboly, dočasné
+symboly (<i>transient</i>) a o externí symboly. Symboly jsou interně
+reprezentovány zcela odlišným způsobem, než například <a
+href="http://www.root.cz/clanky/picolisp-minimalisticky-a-pritom-prekvapive-vykonny-interpret-lispu/#k03">numerické
+hodnoty</a>. Nejjednodušší symbol je reprezentován tečkovým párem, přičemž
+první prvek dvojice obsahuje <strong>NIL</strong> (resp.&nbsp;odkazuje na
+<strong>NIL</strong>, což je však ve skutečnosti jedno, protože tento symbol se
+nemusí dereferencovat) popř.&nbsp;odkaz na vlastnosti (<i>properties</i>) a
+druhý prvek dvojice obsahuje vlastní hodnotu či odkaz na ni:</p>
+
+<pre>
+       Symbol
+            |
+            V
+      +-----+-----+
+      |  /  | VAL |
+      +-----+-----+
+</pre>
+
+<p>Interpret při zpracování jednotlivých tečkových párů uložených na haldě
+dokáže symbol snadno rozpoznat, protože ukazatel na něj vypadá (na 64bitových
+systémech) následovně:</p>
+
+<pre>
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1000
+</pre>
+
+<p>Na 32bitových systémech vypadá ukazatel poněkud odlišně:</p>
+
+<pre>
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxx100
+</pre>
+
+<p>Co to vlastně znamená? Ukazatel v&nbsp;tomto případě obsahuje adresu druhého
+prvku v&nbsp;tečkovém páru a proto je čtvrtý bit nastaven na jedničku.</p>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Vlastnosti (properties)</h2>
+
+<p>Užitečné jsou vlastnosti (<i>properties</i>), které mohou být přiřazeny
+k&nbsp;libovolnému symbolu. Vlastnosti si můžeme představit jako seznam dvojic
+klíč:hodnota, který je k&nbsp;symbolu přiřazen v&nbsp;prvním prvku tečkového
+páru (viz též <a href="#k03">předchozí kapitolu</a>). Pokud existuje alespoň
+jedna dvojice klíč:hodnota, může odkazovat na další dvojici a tvořit tak
+rozsáhlejší strukturu. Posledním prvkem této struktury je jméno symbolu.
+Podívejme se na schéma převzaté z&nbsp;dokumentace k&nbsp;<i>PicoLispu</i>. Zde
+je vytvořen symbol se jménem &bdquo;abcdefghijklmno&ldquo; (znaky jsou uloženy
+opačně kvůli způsobu jejich adresování). K&nbsp;tomuto symbolu náleží
+vlastnosti tvořené dvojicí klíč:hodnota, dále pak samotným klíčem a další
+dvojicí klíč:hodnota:</p>
+
+<pre>
+            Symbol
+            |
+            V
+      +-----+-----+                                +----------+---------+
+      |  |  | VAL |                                |'hgfedcba'|'onmlkji'|
+      +--+--+-----+                                +----------+---------+
+         | tail                                       ^
+         |                                            |
+         V                                            | name
+         +-----+-----+     +-----+-----+     +-----+--+--+
+         |  |  |  ---+---&gt; | KEY |  ---+---&gt; |  |  |  |  |
+         +--+--+-----+     +-----+-----+     +--+--+-----+
+            |                                   |
+            V                                   V
+            +-----+-----+                       +-----+-----+
+            | VAL | KEY |                       | VAL | KEY |
+            +-----+-----+                       +-----+-----+
+</pre>
+
+<p>Poznámka: i řetězce jsou reprezentovány pomocí symbolů. Krátké řetězce o
+délce maximálně sedmi ASCII znaků mohou být uloženy v&nbsp;jednom tečkovém
+páru, delší řetězce (15 znaků) ve dvou párech atd. Jazyk <i>PicoLisp</i> je tak
+jedním z&nbsp;mála programovacích jazyků, v&nbsp;nichž řetězce netvoří
+kontinuální pole znaků (další výjimkou je <a
+href="http://www.root.cz/serialy/letni-skola-programovaciho-jazyka-logo/">Logo</a>,
+v&nbsp;němž jsou řetězce tvořeny seznamem slov).</p>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Přístup k&nbsp;vlastnostem, změna vlastností atd.</h2>
+
+<p>Na práci s&nbsp;vlastnostmi není nic složitého: pro nastavení vlastnosti
+slouží funkce <strong>put</strong>, pro získání hodnoty vlastnosti (či
+vlastností) pak funkce <strong>get</strong>. Opět se podívejme na několik
+příkladů:</p>
+
+<pre>
+<i>; vytvoříme normální proměnnou (symbol navázaný na hodnotu)</i>
+<strong>(setq x 42)</strong>
+42
+&nbsp;
+<i>; skutečně jde o proměnnou</i>
+<strong>x</strong>
+42
+&nbsp;
+<i>; ...běžnou proměnnou s numerickou hodnotou</i>
+<strong>(* x x)</strong>
+1764
+&nbsp;
+<i>; přidáme k proměnné vlastnost (klíč:hodnota)</i>
+<strong>(put 'x 'vyznam 'odpoved)</strong>
+odpoved
+&nbsp;
+<i>; stále se jedná o proměnnou</i>
+<strong>x</strong>
+42
+&nbsp;
+<i>; ...běžnou proměnnou s numerickou hodnotou</i>
+<strong>(* x x)</strong>
+1764
+&nbsp;
+<i>; na hodnotu vlastnosti se můžeme dotázat</i>
+<strong>(get 'x 'vyznam)</strong>
+odpoved
+&nbsp;
+<i>; přidáme druhou vlastnost</i>
+<strong>(put 'x 'vypocet-provedl 'Hlubina-mysleni)</strong>
+Hlubina-mysleni
+&nbsp;
+<i>; přidáme třetí vlastnost (bez hodnoty)</i>
+<strong>(put 'x 'overeno NIL)</strong>
+NIL
+&nbsp;
+<i>; dotaz na druhou vlastnost</i>
+<strong>(get 'x 'vypocet-provedl)</strong>
+Hlubina-mysleni
+&nbsp;
+<i>; dotaz na vlastnost bez hodnoty</i>
+<strong>(get 'x 'overeno)</strong>
+NIL
+&nbsp;
+<i>; dotaz na neexistující vlastnost</i>
+<strong>(get 'x 'neznama)</strong>
+NIL
+</pre>
+
+<p>Pokud potřebujete získat celou vlastnost ve formě tečka dvojice
+(tj.&nbsp;tak, jak je vlastnost uložena na haldě), můžete použít funkci
+<strong>prop</strong>:</p>
+
+<pre>
+<strong>(prop 'x 'vyznam)</strong>
+(odpoved . vyznam)
+&nbsp;
+<strong>(prop 'x 'neznama)</strong>
+(NIL . neznama)
+</pre>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Reakce na chyby vzniklé při běhu programu</h2>
+
+<p>V&nbsp;aplikacích naprogramovaných v&nbsp;<i>PicoLispu</i> je možné (i když
+možná poněkud neobvyklé) používat i řídicí struktury typu try-catch-finally
+známé spíše z&nbsp;běžných imperativních programovacích jazyků. Tyto struktury
+jsou realizovány formou (nelokálních) skoků a funkce, které tyto adresy cílů
+těchto skoků nastavují nebo skoky provádí, se jmenují <strong>quit</strong>,
+<strong>catch</strong>, <strong>finally</strong> a <strong>throw</strong>.
+Následuje několik příkladů na použití těchto funkcí:</p>
+
+<p>Funkce <strong>factorial</strong>, která dokáže vyhodit výjimku při špatném
+vstupu. Výjimka je zde pro jednoduchost reprezentována uživatelským symbolem
+'negative:</p>
+
+<pre>
+<strong>(de factorial</strong>
+<strong>    [n]</strong>
+<strong>    (if (&lt; n 0)</strong>
+<strong>        (throw 'negative)</strong>
+<strong>        (apply * (range 1 n))))</strong>
+</pre>
+
+<pre>
+<i>; výpočet, který může skončit s chybou typu 'negative</i>
+<strong>(catch 'negative</strong>
+    <strong>(finally (println "ukonceni vypoctu")</strong> <i>; větev "finally"</i>
+    <strong>(for n 10 (println (factorial (- 5 n))))))</strong>
+&nbsp;
+24
+6
+2
+1
+0
+"ukonceni vypoctu"
+</pre>
+
+<p>Podívejme se nyní, jakým způsobem je tato konstrukce vytvořena:</p>
+
+<ol>
+<li>Počítáme s&nbsp;tím, že funkce <strong>factorial</strong> pro záporný
+argument vyhodí výjimku reprezentovanou uživatelským symbolem 'negative.</li>
+<li>Celý kód, v&nbsp;němž může dojít k&nbsp;výjimce, je uzavřen do konstrukce
+<strong>catch</strong> se specifikací výjimky.</li>
+<li>Funkce <strong>finally</strong> obsahuje sekvenci výrazů, které se provedou
+nezávisle na tom, zda dojde k&nbsp;výjimce či nikoli.</li>
+<li>Za <strong>finally</strong> (ta je dokonce nepovinná) je libovolně dlouhá
+sekvence výrazů, které se postupně vyhodnocují a případná výjimka se
+zachytí.</li>
+<li>Ve skutečnosti tedy <strong>catch</strong> spíše odpovídá
+<strong>try</strong> v&nbsp;jiných jazycích.</li>
+</ol>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Použití externích knihoven</h2>
+
+<p>V&nbsp;<i>PicoLispu</i> je možné používat dva typy knihoven. Prvním typem
+jsou knihovny, jejichž zdrojové kódy jsou přímo napsány v&nbsp;PicoLispu. Tyto
+knihovny mají většinou příponu <strong>.l</strong>, naleznete je obvykle
+v&nbsp;adresáři <strong>/usr/share/picolisp/lib</strong> a načítají se příkazem
+<strong>load</strong>. Příkladem může být knihovna &bdquo;frac.l&ldquo;
+obsahující užitečné funkce použitelné při práci se zlomky::</p>
+
+<pre>
+# 26may11abu
+# (c) Software Lab. Alexander Burger
+&nbsp;
+(de gcd (A B)
+   (until (=0 B)
+      (let M (% A B)
+         (setq A B B M) ) )
+   (abs A) )
+&nbsp;
+(de lcm (A B)
+   (*/ A B (gcd A B)) )
+&nbsp;
+(de frac (N D)
+   (if (=0 N)
+      (cons 0 1)
+      (and (=0 D) (quit "frac/0" N))
+      (let G (gcd N D)
+         (if (gt0 N)
+            (cons (/ N G) (/ D G))
+            (cons (- (/ N G)) (- (/ D G))) ) ) ) )
+&nbsp;
+(de fabs (A)
+   (cons (abs (car A)) (cdr A)) )
+&nbsp;
+(de 1/f (A)
+   (and (=0 (car A)) (quit "frac/0" A))
+   (if (gt0 (car A))
+      (cons (cdr A) (car A))
+      (cons (- (cdr A)) (- (car A))) ) )
+&nbsp;
+(de f+ (A B)
+   (let D (lcm (cdr A) (cdr B))
+      (let N
+         (+
+            (* (/ D (cdr A)) (car A))
+            (* (/ D (cdr B)) (car B)) )
+         (if (=0 N)
+            (cons 0 1)
+            (let G (gcd N D)
+               (cons (/ N G) (/ D G)) ) ) ) ) )
+&nbsp;
+(de f- (A B)
+   (if B
+      (f+ A (f- B))
+      (cons (- (car A)) (cdr A)) ) )
+&nbsp;
+(de f* (A B)
+   (let (G (gcd (car A) (cdr B))  H (gcd (car B) (cdr A)))
+      (cons
+         (* (/ (car A) G) (/ (car B) H))
+         (* (/ (cdr A) H) (/ (cdr B) G)) ) ) )
+&nbsp;
+(de f/ (A B)
+   (f* A (1/f B)) )
+&nbsp;
+(de f** (A N)
+   (if (ge0 N)
+      (cons (** (car A) N) (** (cdr A) N))
+      (cons (** (cdr A) (- N)) (** (car A) (- N))) ) )
+&nbsp;
+(de fcmp (A B)
+   (if (gt0 (* (car A) (car B)))
+      (let Q (f/ A B)
+         (*
+            (if (gt0 (car A)) 1 -1)
+            (- (car Q) (cdr Q))) )
+      (- (car A) (car B)) ) )
+&nbsp;
+(de f&lt; (A B)
+   (lt0 (fcmp A B)) )
+&nbsp;
+(de f&lt;= (A B)
+   (ge0 (fcmp B A)) )
+&nbsp;
+(de f&gt; (A B)
+   (gt0 (fcmp A B)) )
+&nbsp;
+(de f&gt;= (A B)
+   (ge0 (fcmp A B)) )
+</pre>
+
+<p>Druhým typem jsou externí nativní knihovny. Při jejich použití je nutné
+deklarovat rozhraní mezi lispovskými parametry a parametry nativní funkce.
+Nativní funkce bez parametrů a bez návratové hodnoty vypadá následovně:</p>
+
+<pre>
+void function(void);
+</pre>
+
+<p>V&nbsp;<i>PicoLispu</i> se taková funkce může zavolat příkazem (první
+parametr je názvem knihovny):</p>
+
+<pre>
+(native "library_name.so" "function")
+</pre>
+
+<p>Je možné přesně specifikovat i hodnoty návratových typů:</p>
+
+<pre>
+(native "library_name.so" "function_name" NIL)                    # void fun(void);
+(native "library_name.so" "function_name" 'I)                     # int fun(void);
+(native "library_name.so" "function_name" 'N)                     # long fun(void);
+(native "library_name.so" "function_name" 'N)                     # void *fun(void);
+(native "library_name.so" "function_name" 'S)                     # char *fun(void);
+(native "library_name.so" "function_name" 1.0)                    # double fun(void);
+</pre>
+
+<p>A samozřejmě volat i nativní funkce s&nbsp;parametry (povšimněte si
+automatického přetypování v&nbsp;případě celých čísel):</p>
+
+<pre>
+(native "library_name.so" "function_name" NIL 123)                # void fun(int);
+(native "library_name.so" "function_name" NIL 1 2 3)              # void fun(int, long, short);
+</pre>
+
+<p>Podobně je tomu u řetězců:</p>
+
+<pre>
+(native "library_name.so" "function_name" NIL "hello")            # void fun(char*);
+(native "library_name.so" "function_name" NIL 42 "world")         # void fun(int, char*);
+(native "library_name.so" "function_name" NIL 42 "hello" "world") # void fun(int, char*, char*);
+</pre>
+
+<p>Vzhledem k&nbsp;tomu, že <i>PicoLisp</i> nativně nepodporuje čísla
+s&nbsp;plovoucí řádovou čárkou, musíme si při volání nativních funkcí
+akceptujících parametry typu <i>float</i> či <i>double</i> dopomoci malým
+špinavým trikem:</p>
+
+<pre>
+(native "library_name.so" "function_name" NIL                     # void fun(double, float);
+   (12.3 . 1.0) (4.56 . -1.0) )
+</pre>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Použití interaktivního prostředí PicoLispu</h2>
+
+<p>Podobně jako je tomu u prakticky všech dalších implementací programovacího
+jazyka LISP či Scheme (popř.&nbsp;i Clojure, které nepochybně patří mezi
+Lispovské jazyky), je i <i>PicoLisp</i> vybaven interaktivním prostředím se
+smyčkou <i>REPL (Read-Eval-Print-Loop)</i>. V&nbsp;tomto prostředí je možné
+zadávat jednotlivé výrazy, které jsou ihned vyhodnocovány a výsledky
+vyhodnocených výrazů jsou zapsány na standardní výstup, což je rozdílné od
+vyhodnocování výrazů v&nbsp;již hotových programech (skriptech), kde se
+výsledek výrazu buď předá jiné funkci nebo je zahozen. V&nbsp;interaktivním
+prostředí je možné využít výše popsané speciální symboly @, @@ a @@@, díky nimž
+je umožněno se vracet k&nbsp;posledním třem vyhodnoceným výsledkům. Navíc se
+při inicializaci interaktivního prostředí nahrají všechny základní systémové
+knihovny včetně knihovny používané pro ladění. Aby skutečně k&nbsp;této
+inicializaci došlo, je nutné interpret spouštět následujícím způsobem:</p>
+
+<pre>
+pil +
+</pre>
+
+<p>Interaktivní prostředí je vybaveno pamětí již zapsaných řádků (<i>kill
+ring</i>) a základními schopnostmi editace řádků, podobně jako je tomu
+v&nbsp;BASHi či podobných aplikacích (ty aplikace, které tuto funkcionalitu
+přímo nemají, je možné v&nbsp;některých případech &bdquo;obalit&ldquo; pomocí
+užitečného nástroje <strong>rlwrap</strong>). Možnost přístupu k&nbsp;historii
+již zapsaných výrazů a jejich následné editace je velmi užitečná, ovšem je
+nutné mít na paměti, že <i>PicoLisp</i> není plně kompatibilní s&nbsp;knihovnou
+GNU Readline, takže není možné použít všechny příkazy, které tato knihovna
+aplikacím nabízí. Podle preferencí uživatele je možné REPL ovládat příkazy,
+které jsou kompatibilní s&nbsp;Vimem či s&nbsp;konkurenčním Emacsem. Podívejme
+se nyní na tyto dvě možnosti podrobněji.</p>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Editace s&nbsp;použitím klávesových zkratek Vimu</h2>
+
+<p>Ve výchozím nastavení se používá řádkový editor částečně kompatibilní
+s&nbsp;editory <i>Vi</i> či <i>Vim</i>. To konkrétně znamená, že se při
+spuštění smyčky REPL editor nachází ve vkládacím režimu (<i>insert mode</i>),
+v&nbsp;němž pracují pouze základní příkazy. Pro přepnutí do normálního režimu
+(<i>normal mode</i>) je zapotřebí použít klávesu <strong>Esc</strong>, podobně
+jako ve Vi/Vimu. V&nbsp;normálním režimu, tedy po stisku <strong>Esc</strong>,
+lze používat klasické příkazy <strong>h</strong>, <strong>j</strong>,
+<strong>k</strong>, <strong>l</strong> pro ovládání kurzoru (doleva, doprava,
+listování historií příkazů) i některé další klávesy, například
+<strong>0</strong> pro skok na začátek řádku, <strong>$</strong> pro skok na
+konec řádku, <strong>D</strong> pro vymazání řádku od pozice kurzoru doprava
+atd. Možnosti jsou však ještě větší, neboť funguje i příkaz <strong>f</strong>
+pro vyhledávání znaku (a skok na tento znak) a především lze použít příkaz
+<strong>%</strong> pro přeskok na párovou závorku. Tato funkce je
+v&nbsp;Lispovských jazycích takřka k&nbsp;nezaplacení. Pro přepnutí
+z&nbsp;normálního režimu do režimu vkládacího slouží zkratky
+<strong>a</strong>, <strong>i</strong>, <strong>A</strong> a
+<strong>I</strong>.</p>
+
+<p>Poznámka: pokud se vám nedaří přepnutí do normálního režimu, může to
+znamenat, že interaktivní REPL aktuálně používá mód s&nbsp;Emacsovými
+zkratkami. V&nbsp;tomto případě je nejlepší REPL opustit a z&nbsp;příkazové
+řádky zadat následující příkaz:</p>
+
+<pre>
+pil -vi +
+</pre>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Editace s&nbsp;použitím klávesových zkratek Emacsu</h2>
+
+<p>Smyčku REPL lze spustit v&nbsp;režimu částečně kompatibilním
+s&nbsp;<i>Emacsem</i> takto:</p>
+
+<pre>
+pil -em +
+</pre>
+
+<p>V&nbsp;tomto nastavení se již podle očekávání nerozlišuje mezi normálním a
+vkládacím režimem, protože se veškeré příkazy zadávají s&nbsp;využitím
+přeřaďovačů Ctrl nebo Alt (Meta). Mezi základní podporované příkazy samozřejmě
+patří příkazy pro pohyb kurzoru po textovém řádku, a to jak po znacích, tak i
+po slovech. Nalezneme zde obvyklé klávesové kombinace <strong>Ctrl+B</strong>,
+<strong>Alt+B</strong>, <strong>Ctrl+F</strong> i <strong>Alt+F</strong>, ale i
+příkazy pro přeskok na začátek řádku <strong>Ctrl+A</strong> a přeskok na konec
+řádku <strong>Ctrl+E</strong>. Pro pohyb v&nbsp;historii již dříve zadaných
+řádků slouží klávesové zkratky <strong>Ctrl+P</strong> a
+<strong>Ctrl+N</strong>, vymazání textu od pozice kurzoru až do konce řádku
+(užitečná operace) zajišťuje příkaz <strong>Ctrl+E</strong>. Samotný REPL lze
+opustit klávesovou zkratkou <strong>Ctrl+Q</strong>.</p>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Repositář s&nbsp;demonstračními příklady</h2>
+
+<p>Všechny demonstrační příklady, které jsme si v&nbsp;trojici článků o
+PicoLispu popsali, byly uloženy do Git repositáře dostupného na adrese <a
+href="https://github.com/tisnik/presentations">https://github.com/tisnik/presentations</a>.
+V&nbsp;následujících třech kapitolách naleznete na zdrojové kódy všech
+demonstračních příkladů přímé odkazy.</p>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Příklady pro první článek o PicoLispu</h2>
+
+<p>Odkaz na článek: <a
+href="http://www.root.cz/clanky/picolisp-minimalisticky-a-pritom-prekvapive-vykonny-interpret-lispu/">http://www.root.cz/clanky/picolisp-minimalisticky-a-pritom-prekvapive-vykonny-interpret-lispu/</a></p>
+
+<table>
+<tr><th> #</th><th>Příklad/knihovna</th><th>Github</th></tr>
+<tr><td> 1</td><td>01-hello-world.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/01-hello-world.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/01-hello-world.lsp</a></td></tr>
+<tr><td> 2</td><td>02-dot-pairs.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/02-dot-pairs.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/02-dot-pairs.lsp</a></td></tr>
+<tr><td> 3</td><td>03-lists.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/03-lists.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/03-lists.lsp</a></td></tr>
+<tr><td> 4</td><td>04-stack.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/04-stack.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/04-stack.lsp</a></td></tr>
+<tr><td> 5</td><td>05-queue.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/05-queue.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/05-queue.lsp</a></td></tr>
+<tr><td> 6</td><td>06-fifo.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/06-fifo.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/06-fifo.lsp</a></td></tr>
+<tr><td> 7</td><td>07-functions.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/07-functions.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/07-functions.lsp</a></td></tr>
+<tr><td> 8</td><td>08-higher-order.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/08-higher-order.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/08-higher-order.lsp</a></td></tr>
+<tr><td> 9</td><td>09-loops.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/09-loops.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/09-loops.lsp</a></td></tr>
+<tr><td>10</td><td>10-anonymous-functions.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/10-anonymous-functions.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/10-anonymous-functions.lsp</a></td></tr>
+</table>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Příklady pro druhý článek o PicoLispu</h2>
+
+<p>Odkaz na článek: <a
+href="http://www.root.cz/clanky/picolisp-uzitecne-funkce-a-specialni-formy-pouzivane-pri-tvorbe-aplikaci/">http://www.root.cz/clanky/picolisp-uzitecne-funkce-a-specialni-formy-pouzivane-pri-tvorbe-aplikaci/</a></p>
+
+<table>
+<tr><th> #</th><th>Příklad/knihovna</th><th>Github</th></tr>
+<tr><td> 1</td><td>11-quoting.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/11-quoting.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/11-quoting.lsp</a></td></tr>
+<tr><td> 2</td><td>12-zero-one.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/12-zero-one.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/12-zero-one.lsp</a></td></tr>
+<tr><td> 3</td><td>13-local-variables.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/13-local-variables.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/13-local-variables.lsp</a></td></tr>
+<tr><td> 4</td><td>14-boolean-ops.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/14-boolean-ops.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/14-boolean-ops.lsp</a></td></tr>
+<tr><td> 5</td><td>15-comparison-ops.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/15-comparison-ops.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/15-comparison-ops.lsp</a></td></tr>
+<tr><td> 6</td><td>16-predicates.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/16-predicates.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/16-predicates.lsp</a></td></tr>
+<tr><td> 7</td><td>17-list-constructors.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/17-list-constructors.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/17-list-constructors.lsp</a></td></tr>
+<tr><td> 8</td><td>18-filter.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/18-filter.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/18-filter.lsp</a></td></tr>
+<tr><td> 9</td><td>19-mini-maxi.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/19-mini-maxi.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/19-mini-maxi.lsp</a></td></tr>
+<tr><td>10</td><td>20-control-structures.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/20-control-structures.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/20-control-structures.lsp</a></td></tr>
+</table>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Příklady pro dnešní článek o PicoLispu</h2>
+
+<table>
+<tr><th>#</th><th>Příklad/knihovna</th><th>Github</th></tr>
+<tr><td>1</td><td>21-at-symbol.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/21-at-symbol.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/21-at-symbol.lsp</a></td></tr>
+<tr><td>2</td><td>22-properties.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/22-properties.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/22-properties.lsp</a></td></tr>
+<tr><td>3</td><td>23-catch-finally.lsp</td><td><a href="https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/23-catch-finally.lsp">https://github.com/tisnik/presentations/blob/master/lisp_scheme/picolisp/23-catch-finally.lsp</a></td></tr>
+</table>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Literatura</h2>
+
+<ol>
+
+<li>Harold Abelson, Gerald Jay Sussman, Julie Sussman:<br />
+<i>Structure and Interpretation of Computer Programs (SICP)</i><br />
+1985, 1996, MIT Press
+</li>
+
+<li>Daniel P. Friedman, Matthias Felleisen:<br />
+<i>The Little Schemer</i><br />
+1995, MIT Press
+</li>
+
+<li>Daniel P. Friedman, Matthias Felleisen:<br />
+<i>The Seasoned Schemer</i><br />
+1995, MIT Press
+</li>
+
+<li>McCarthy:<br />
+<i>&bdquo;Recursive functions of symbolic expressions and their computation by machine, part I&ldquo;</i><br />
+1960
+</li>
+
+<li>Guy L. Steele:<br />
+<i>&bdquo;History of Scheme&ldquo;</i><br />
+2006, Sun Microsystems Laboratories
+</li>
+
+<li>
+Kolář J., Muller K.:<br />
+<i>&bdquo;Speciální programovací jazyky&ldquo;</i><br />
+Praha 1981
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 9, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., October 1987
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 10, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., September 1988
+</li>
+
+<li>McCarthy, John; Abrahams, Paul W.; Edwards, Daniel J.; Hart, Timothy P.; Levin, Michael I.<br />
+<i>&bdquo;LISP 1.5 Programmer's Manual&ldquo;</i><br />
+MIT Press. ISBN 0 262 130 1 1 4
+</li>
+
+<li>Carl Hewitt; Peter Bishop and Richard Steiger:<br />
+<i>&bdquo;A Universal Modular Actor Formalism for Artificial Intelligence&ldquo;</i><br />
+1973
+</li>
+
+<li>Feiman, J.:<br />
+<i>&bdquo;The Gartner Programming Language Survey (October 2001)&ldquo;</i><br />
+Gartner Advisory
+</li>
+
+</ol>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>The German School of Lisp<br />
+<a href="http://blog.fogus.me/2011/05/03/the-german-school-of-lisp-2/">http://blog.fogus.me/2011/05/03/the-german-school-of-lisp-2/</a>
+</li>
+
+<li>PicoLisp<br />
+<a href="http://picolisp.com/wiki/?home">http://picolisp.com/wiki/?home</a>
+</li>
+
+<li>A PicoLisp Tutorial<br />
+<a href="http://software-lab.de/doc/tut.html">http://software-lab.de/doc/tut.html</a>
+</li>
+
+<li>Pico Lisp Documentation<br />
+<a href="http://picolisp.com/wiki/?Documentation">http://picolisp.com/wiki/?Documentation</a>
+</li>
+
+<li>The PicoLisp Machine<br />
+<a href="http://software-lab.de/doc/ref.html#vm">http://software-lab.de/doc/ref.html#vm</a>
+</li>
+
+<li>PicoLisp na OpenHubu<br />
+<a href="https://www.openhub.net/p/PicoLisp">https://www.openhub.net/p/PicoLisp</a>
+</li>
+
+<li>Pico Lisp: A Case for Minimalist Interpreters?<br />
+<a href="http://lambda-the-ultimate.org/node/2124">http://lambda-the-ultimate.org/node/2124</a>
+</li>
+
+<li>PicoLisp na Wikipedii<br />
+<a href="https://en.wikipedia.org/wiki/PicoLisp">https://en.wikipedia.org/wiki/PicoLisp</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">http://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Programovací­ jazyk LISP (druhá část)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-lisp-druha-cast/">http://www.root.cz/clanky/programovaci-jazyk-lisp-druha-cast/</a>
+</li>
+
+<li>Steel Bank Common Lisp<br />
+<a href="http://www.sbcl.org/">http://www.sbcl.org/</a>
+</li>
+
+<li>CLISP (implementace Common Lispu)<br />
+<a href="http://clisp.org/">http://clisp.org/</a>
+</li>
+
+<li>PLEAC-PicoLisp<br />
+<a href="http://pleac.sourceforge.net/pleac_picolisp/index.html#AEN4">http://pleac.sourceforge.net/pleac_picolisp/index.html#AEN4</a>
+</li>
+
+<li>Rosetta Code &ndash; Category:Lisp<br />
+<a href="http://rosettacode.org/wiki/Category:Lisp">http://rosettacode.org/wiki/Category:Lisp</a>
+</li>
+
+<li>Emacs timeline<br />
+<a href="http://www.jwz.org/doc/emacs-timeline.html">http://www.jwz.org/doc/emacs-timeline.html</a>
+</li>
+
+<li>EINE (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/EINE">http://www.emacswiki.org/emacs/EINE</a>
+</li>
+
+<li>EINE (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EINE">http://texteditors.org/cgi-bin/wiki.pl?EINE</a>
+</li>
+
+<li>ZWEI (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/ZWEI">http://www.emacswiki.org/emacs/ZWEI</a>
+</li>
+
+<li>ZWEI (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?ZWEI">http://texteditors.org/cgi-bin/wiki.pl?ZWEI</a>
+</li>
+
+<li>Zmacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Zmacs">https://en.wikipedia.org/wiki/Zmacs</a>
+</li>
+
+<li>Zmacs (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?Zmacs">http://texteditors.org/cgi-bin/wiki.pl?Zmacs</a>
+</li>
+
+<li>TecoEmacs (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/TecoEmacs">http://www.emacswiki.org/emacs/TecoEmacs</a>
+</li>
+
+<li>Micro Emacs<br />
+<a href="http://www.emacswiki.org/emacs/MicroEmacs">http://www.emacswiki.org/emacs/MicroEmacs</a>
+</li>
+
+<li>Micro Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MicroEMACS">https://en.wikipedia.org/wiki/MicroEMACS</a>
+</li>
+
+<li>EmacsHistory<br />
+<a href="http://www.emacswiki.org/emacs/EmacsHistory">http://www.emacswiki.org/emacs/EmacsHistory</a>
+</li>
+
+<li>Seznam editorů s ovládáním podobným Emacsu či kompatibilních s příkazy Emacsu<br />
+<a href="http://www.finseth.com/emacs.html">http://www.finseth.com/emacs.html</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2016</small></p>
+</body>
+</html>
+
