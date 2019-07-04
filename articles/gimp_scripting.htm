@@ -1,0 +1,440 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>Tvorba pluginů pro grafický editor GIMP</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>Tvorba pluginů pro grafický editor GIMP</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Mezi jednu z&nbsp;nejužitečnějších vlastností známého bitmapového grafického editoru GIMP patří možnost rozšiřovat jeho funkce s&nbsp;využitím pluginů (modulů), díky nimž je možné implementovat například nové filtry nebo pomocné utility pro tvorbu animací či poloautomatickou retuš snímků. Tyto pluginy lze vytvářet buď s&nbsp;využitím programovacího jazyka Scheme (technologie Script-Fu) nebo &ndash; což bude s&nbsp;velkou pravděpodobností pro mnoho čtenářů užitečnější &ndash; s&nbsp;využitím Pythonu (technologie Python-Fu).</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. Tvorba pluginů pro grafický editor GIMP</a></p>
+<p><a href="#k02">2. Skriptovatelnost GIMPu: základ pro tvorbu pluginů</a></p>
+<p><a href="#k03">3. Použít programovací jazyk Scheme?</a></p>
+<p><a href="#k04">4. Či naopak Python?</a></p>
+<p><a href="#k05">5. Základní typy objektů v&nbsp;GIMPu</a></p>
+<p><a href="#k06">6. Interaktivní konzole dostupná z&nbsp;GIMPu</a></p>
+<p><a href="#k07">7. Prohlížeč API</a></p>
+<p><a href="#k08">8. Jednoduchý skript pro GIMP napsaný v&nbsp;Pythonu</a></p>
+<p><a href="#k09">9. Přidání hladiny do vytvořeného obrázku</a></p>
+<p><a href="#k10">10. Kreslení do obrázku na úrovni jednotlivých pixelů</a></p>
+<p><a href="#k11">11. Vykreslení barvové palety</a></p>
+<p><a href="#k12">12. Aktualizace vrstvy a zobrazení výsledku</a></p>
+<p><a href="#k13">13. Seznam dnes popsaných metod a funkcí</a></p>
+<p><a href="#k14">14. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. Tvorba pluginů pro grafický editor GIMP</h2>
+
+<p><a href="https://mojefedora.cz/bitmapove-graficke-editory-ve-fedore/">V&nbsp;článku o bitmapových grafických editorech pro Fedoru</a>, který na <a href="https://mojefedora.cz/">tomto serveru</a> vyšel minulý měsíc, jsme se samozřejmě nezapomněli zmínit o pokročilém rastrovém grafickém editoru GIMP. Jedná se o známou (vedle konkurenční <i>Krity</i> pravděpodobně i nejznámější) interaktivní aplikaci, kterou je možné použít pro tvorbu a úpravu rastrových obrázků s&nbsp;využitím velkého množství kreslicích, editačních a retušovacích nástrojů. K&nbsp;dispozici jsou například nástroje typu &bdquo;tužka&ldquo;, &bdquo;štětec&ldquo;, &bdquo;razítko&ldquo; či &bdquo;rozprašovač&ldquo;. Nalezneme zde i nástroje vhodné spíše pro úpravy fotografií (rozmazání oblasti, zaostření oblasti, klonování, barevná korekce), tvorbu jednoduchých animací, klikacích map určených pro webové stránky (tato technologie se však již bohudík nepoužívá) apod.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/34.png"><img class="alignnone size-thumbnail wp-image-8198" src="https://mojefedora.cz/wp-content/uploads/2017/01/34-286x254.png" alt="" width="286" height="254" /></a>
+<p><i>Obrázek 1: Původní a současně i výchozí nastavení grafického uživatelského rozhraní GIMPu se samostatnými okny. Takto pojaté grafické uživatelské rozhraní nevyhovovalo všem uživatelům, ovšem dnes existuje i možnost přepnutí GUI.</i></p>
+
+<p>Podobně, jako je tomu v&nbsp;mnohých dalších vyspělých grafických editorech, existuje i v&nbsp;aplikaci <i>GIMP</i> možnost práce s&nbsp;vrstvami (<i>layers</i>), kanály (<i>channels</i>), cestami (<i>paths</i> &ndash; s&nbsp;využitím cest lze provádět i některé jednoduché operace známé například z&nbsp;grafických editorů pracujících s&nbsp;vektorovými výkresy) a výběrovými oblastmi (<i>selections</i>), které lze taktéž použít pro kreslení složitějších geometrických obrazců (výběr lze v&nbsp;případě potřeby převést na cestu nebo ho přímo vykreslit zvoleným kreslicím nástrojem). Nesmíme zapomenout ani na to, že se jedná o multiplatformní program použitelný jak v&nbsp;Linuxu, tak i v&nbsp;Microsoft Windows a dokonce i na macOS (i když na této platformě je uživatelská základna GIMPu poměrně malá).</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/35.png"><img class="alignnone size-thumbnail wp-image-8199" src="https://mojefedora.cz/wp-content/uploads/2017/01/35-406x254.png" alt="" width="406" height="254" /></a>
+<p><i>Obrázek 2: Přepnutí GIMPu do režimu zobrazení s&nbsp;jediným oknem obsahujícím jak upravovaný rastrový obrázek, tak i všechny nástroje.</i></p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Skriptovatelnost GIMPu: základ pro tvorbu pluginů</h2>
+
+<p>Ovšem jednou z&nbsp;nejzajímavějších a taktéž nejužitečnějších vlastností tohoto grafického editoru je jeho aplikační programové rozhraní (API) zpřístupňující programátorům prakticky veškerou funkcionalitu <i>GIMPu</i> a taktéž podpora pro skriptování, přičemž skripty mají přístup k&nbsp;API, nezávisle na tom, ve kterém programovacím jazyce byly vytvořeny. Původně se v&nbsp;<i>GIMPu</i> mohly psát skripty pouze v&nbsp;programovacím jazyce <i>Scheme</i> (pro tyto skripty, resp.&nbsp;pro celou technologii, se používá název <i>Script-Fu</i>), ovšem v&nbsp;současnosti existuje i podpora pro populární programovací jazyk <i>Python</i>, který mimochodem některé své vlastnosti převzal právě ze <i>Scheme</i> a <i>LISPu</i> (což je ideový předchůdce Scheme). V&nbsp;následujících kapitolách si řekneme, jakým způsobem mohou skripty napsané v&nbsp;programovacím jazyce <i>Python</i> vytvářet nové obrázky a provádět nad nimi základní grafické operace &ndash; kreslení na úrovni jednotlivých pixelů a taktéž kreslení s&nbsp;využitím již existujících kreslicích nástrojů, zejména tužky (<i>pen</i>), štětce (<i>brush</i>) či rozprašovače (<i>airbrush</i>).</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/37.png"><img class="alignnone size-thumbnail wp-image-8201" src="https://mojefedora.cz/wp-content/uploads/2017/01/37-286x254.png" alt="" width="286" height="254" /></a>
+<p><i>Obrázek 3: Konzole aplikace GIMP, která je určená pro tvorbu, spouštění a ladění skriptů i pluginů.</i></p>
+
+<p>Poznámka: ve skutečnosti je možné přes PDB (Procedural Database) ovládat GIMP i z&nbsp;dalších jazyků, například z&nbsp;Perlu.</p>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Použít programovací jazyk Scheme?</h2>
+
+<p>Jak jsme se již dozvěděli <a href="#k02">v&nbsp;předchozí kapitole</a>, je možné si při psaní pluginů pro GIMP vybrat ze dvou programovacích jazyků. Nejenom z&nbsp;historických důvodů je podporován programovací jazyk Scheme, a to i proto, že se jeho implementace nazvaná <a href="https://en.wikipedia.org/wiki/GNU_Guile">GNU Guile</a> měla stát standardním jazykem pro projekty vznikající v&nbsp;rámci GNU, nicméně historie samotného Scheme je mnohem starší. Původními autory jsou <i>Guy Lewis Steele</i> a <i>Gerald Jay Sussman</i> (Steele and Sussman, někdy též zkracováno na S and S), kteří v&nbsp;době návrhu tohoto jazyka pracovali ve slavném Massachussetském technologickém institutu (MIT). První verze jazyka <i>Scheme</i> byla v&nbsp;průběhu roku 1975 naprogramována v&nbsp;samotném LISPu, konkrétně v&nbsp;MacLispu. Název tohoto dialektu programovacího jazyka LISP ovšem nemá nic společného s&nbsp;počítači firmy Apple, jednalo se o verzi LISPu vytvořenou taktéž na MIT, která byla původně určena pro počítače <i>PDP-10</i> a operační systém <i>Multics</i>.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/04.jpg"><img class="alignnone size-thumbnail wp-image-8356" src="https://mojefedora.cz/wp-content/uploads/2017/02/04-197x254.jpg" alt="" width="197" height="254" /></a>
+<p><i>Obrázek 4: O programovacím jazyku Scheme vyšlo i několik více či méně úspěšných knížek. Zde je zobrazeno třetí vydání knihy nazvané The Scheme Programming Language.</i></p>
+
+<p>Pro další vývoj programovacího jazyka <i>Scheme</i> byl důležitý rok 1978, kdy došlo ke vzniku jeho prvního standardu, jenž byl popsán v&nbsp;&bdquo;Revidované zprávě o algoritmickém jazyku Scheme&ldquo; (<i>Revised Report on the Algorithmic Language Scheme</i>). Jazyk se samozřejmě dále vyvíjel, takže v&nbsp;roce 1985 vznikl další popis jeho standardu zveřejněný v&nbsp;dokumentu nazvaném &bdquo;Revize revidované zprávy o Scheme, neboli neobvyklý LISP&ldquo;. Tradice ve vydávání revizí (a revizí revizí) původní zprávy o programovacím jazyku <i>Scheme</i> zůstala zachována až do dnešní doby. Postupně vzniklo celkem sedm revizí, což mj.&nbsp;znamená, že většina současných implementací tohoto programovacího jazyka odpovídá buď šesté revizi (&bdquo;The Revised<sup>6</sup> Report on the Algorithmic Language Scheme&ldquo;) nebo se přizpůsobuje revizi sedmé (&bdquo;The Revised<sup>7</sup> Report on the Algorithmic Language Scheme&ldquo;), která byla schválena v&nbsp;roce 2013.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/05.jpg"><img class="alignnone size-thumbnail wp-image-8357" src="https://mojefedora.cz/wp-content/uploads/2017/02/05-254x254.jpg" alt="" width="254" height="254" /></a>
+<p><i>Obrázek 5: Čtvrté vydání známé knihy The Scheme Programming Language.</i></p>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Či naopak Python?</h2>
+
+<p>Alternativním způsobem tvorby pluginů pro bitmapový grafický editor GIMP je použití programovacího jazyka <i>Python</i>. Tento jazyk vznikl již před 25 lety a v&nbsp;současnosti se většinou setkáme se dvěma jeho verzemi: stále ještě používaným Pythonem 2.7 a novějším Pythonem 3.6. Pro většinu uživatelů a vývojářů je použití tohoto známého a populárního programovacího jazyka nepochybně jednodušší a ve skutečnosti i praktičtější, protože se znalost Pythonu může velmi dobře uplatnit i v&nbsp;dalších oblastech informatiky, ať již se jedná o psaní jednodušších skriptů pro vlastní potřebu, tak i o tvorbu webových aplikací (serverová část) či aplikací určených pro desktop. Ostatně na stránkách <a href="https://mojefedora.cz">tohoto serveru</a> jsme se již zabývali jednou z&nbsp;možností uplatnění tohoto programovacího jazyka <a href="https://mojefedora.cz/?s=pygame">společně s&nbsp;multimediální knihovnou Pygame</a> a krátce jsme se zmínili o i projektu <i>pyglet</i>, což je knihovna určená pro tvorbu her a dalších multimediálních aplikací založených taktéž na Pythonu a na grafické knihovně OpenGL (tímto projektem se budeme podrobněji zabývat v&nbsp;samostatně vznikajícím miniseriálu).</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/06.jpg"><img class="alignnone size-thumbnail wp-image-8358" src="https://mojefedora.cz/wp-content/uploads/2017/02/06-192x254.jpg" alt="" width="192" height="254" /></a>
+<p><i>Obrázek 6: Jedna ze známých knih o programovacím jazyce Python: Dive into Python (verze 3).</i></p>
+
+<p>Právě z&nbsp;důvodu <a href="http://www.tiobe.com/tiobe-index/python/">větší popularity</a> i lepšího praktického použití Pythonu (alespoň v&nbsp;současnosti) bude většina ukázek pluginů pro GIMP, s&nbsp;nimiž se seznámíme v&nbsp;navazujících kapitolách i v&nbsp;dalších dílech tohoto seriálu, vytvořena právě v&nbsp;tomto programovacím jazyku. U některých pluginů bude pro porovnání ukázána i jeho implementace v&nbsp;programovacím jazyku Scheme, takže si čtenáři budou moci sami udělat představu, jak se od sebe tyto dva jazyky odlišují a jaké vlastnosti mají naopak podobné (samotné volání API funkcí i implementovaný algoritmus budou totožné).</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/07.jpg"><img class="alignnone size-thumbnail wp-image-8359" src="https://mojefedora.cz/wp-content/uploads/2017/02/07-194x254.jpg" alt="" width="194" height="254" /></a>
+<p><i>Obrázek 7: Další ze známých knih o programovacím jazyce Python: Think Python.</i></p>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Základní typy objektů v&nbsp;GIMPu</h2>
+
+<p>Programátor může při tvorbě skriptů určených pro grafický editor <i>GIMP</i> používat širokou paletu objektů spravovaných samotným editorem. Mnohé z&nbsp;těchto objektů jsou dostupné i uživatelům z&nbsp;grafického uživatelského rozhraní editoru, kde je s&nbsp;nimi možné různým způsobem interaktivně manipulovat. Jedná se především o samotné obrázky, dále pak hladiny umisťované do obrázků (kreslení je prováděno do hladin), kanály, tužky, štětce, barvové palety, výběry atd. Skripty psané v&nbsp;programovacím jazyce <i>Python</i> a <i>Scheme</i> mohou buď při svém běhu vytvořit objekty nové, což například může vést ke skutečnému vytvoření nového obrázku, přidání hladiny do obrázku atd., nebo mohou pomocí rozličných dotazovacích funkcí získat některý z&nbsp;již existujících objektů. Například skript, který má vykreslit nějaký objekt do aktivního obrázku, musí získat identifikátor tohoto obrázku (vždy se jedná o celé číslo, protože API <i>GIMPu</i> je poměrně nízkoúrovňové), následně identifikátor hladiny a teprve poté je možné provést požadovanou činnost.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/38.png"><img class="alignnone size-thumbnail wp-image-8202" src="https://mojefedora.cz/wp-content/uploads/2017/01/38-275x254.png" alt="" width="275" height="254" /></a>
+<p><i>Obrázek 8: Spuštění interaktivní konzole (původní GUI GIMPu).</i></p>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Interaktivní konzole dostupná z&nbsp;GIMPu</h2>
+
+<p>Pro základní seznámení s&nbsp;aplikačním programovým rozhraním grafického editoru <i>GIMP</i> je možné použít interaktivní konzoli jazyka <i>Scheme</i> či <i>Python</i>, z&nbsp;níž lze spouštět (přesněji řečeno vyhodnocovat) výrazy, definovat nové funkce, třídy a proměnné, volat funkce API atd. Každý výraz zapsaný do vstupního řádku interaktivní konzole je předán interpretru zvoleného skriptovacího jazyka, který výraz zpracuje a do textového pole umístěného nad vstupním řádkem vypíše jeho návratovou hodnotu (popř.&nbsp;chybové hlášení). V&nbsp;mnoha případech, zejména při kreslení do obrázku, je mnohem důležitější vedlejší efekt volané funkce či funkcí než jejich návratová hodnota. Interaktivní konzole jazyka <i>Scheme</i> se vyvolá příkazem <strong>Filters &rarr; ScriptFu &rarr; Console</strong>, konzole programovacího jazyka <i>Python</i> pak velmi podobným příkazem <strong>Filters &rarr; PythonFu &rarr; Console</strong>.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/40.png"><img class="alignnone size-thumbnail wp-image-8204" src="https://mojefedora.cz/wp-content/uploads/2017/01/40-194x254.png" alt="" width="194" height="254" /></a>
+<p><i>Obrázek 9: Popis funkcí, které je možné ze skriptů/pluginů volat.</i></p>
+
+<p>Konzole je skutečně interaktivní, protože je podporováno automatické doplňování názvů tříd či funkcí pomocí klávesy <strong>Tab</strong> &ndash; identifikátor je buď přímo doplněn nebo je nabídnut seznam všech identifikátorů začínajících stejným řetězcem. Například po zápisu &bdquo;gimp.&ldquo; se stlačením klávesy <strong>Tab</strong> vypíšou všechny dostupné identifikátory, jichž je v&nbsp;současné verzi GIMPu několik set.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/39.png"><img class="alignnone size-thumbnail wp-image-8203" src="https://mojefedora.cz/wp-content/uploads/2017/01/39-477x254.png" alt="" width="477" height="254" /></a>
+<p><i>Obrázek 10: Dialog pro nastavení parametrů pro uživatelský plugin.</i></p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/01/41.png"><img class="alignnone size-thumbnail wp-image-8205" src="https://mojefedora.cz/wp-content/uploads/2017/01/41-254x254.png" alt="" width="254" height="254" /></a>
+<p><i>Obrázek 11: Výsledek činnosti uživatelského pluginu.</i></p>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Prohlížeč API</h2>
+
+<p>V&nbsp;interaktivní konzoli interpretru vybraného skriptovacího jazyka lze tlačítkem <i>Procházet/Browse</i> spustit velmi užitečný nástroj &ndash; prohlížeč procedur. V&nbsp;tomto nástroji je možné vyhledávat všechny procedury použitelné jak interaktivně (tj.&nbsp;přímo z&nbsp;okna konzole), tak i ze skriptů &ndash; jedná se jak o procedury nabízené samotným <i>GIMPem</i>, tak i procedury definované v&nbsp;externích souborech (skriptech), včetně skriptů uložených v&nbsp;domácím adresáři uživatelů (většinou se v&nbsp;případě Linuxu jedná o adresář <i>~/.gimp-verze/scripts</i>). Procedury je možné vyhledávat podle jejich jména (nejenom prefixu, což je důležité, protože většina interních procedur začíná prefixem <i>gimp-</i> popř.&nbsp;<i>gimp_</i>, který není nutné při vyhledávání zapisovat), autora, typu atd. U nalezené procedury se zobrazí její popis, včetně seznamu a významu všech jejích parametrů. S&nbsp;využitím interaktivní konzole a prohlížeče procedur je možné psát skripty poměrně rychle, včetně možnosti jejich okamžitého testování.</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/12.png"><img class="alignnone size-thumbnail wp-image-8360" src="https://mojefedora.cz/wp-content/uploads/2017/02/12-236x254.png" alt="" width="236" height="254" /></a>
+<p><i>Obrázek 12: Prozatím prázdná interaktivní konzole Pythonu po spuštění.</i></p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/13.png"><img class="alignnone size-thumbnail wp-image-8361" src="https://mojefedora.cz/wp-content/uploads/2017/02/13-242x254.png" alt="" width="242" height="254" /></a>
+<p><i>Obrázek 13: Nabídka funkcí a metod začínajících na &bdquo;g&ldquo;.</i></p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/14.png"><img class="alignnone size-thumbnail wp-image-8362" src="https://mojefedora.cz/wp-content/uploads/2017/02/14-242x254.png" alt="" width="242" height="254" /></a>
+<p><i>Obrázek 14: Nabídka funkcí a metod začínajících na &bdquo;gimp.&ldquo;.</i></p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/15.png"><img class="alignnone size-thumbnail wp-image-8363" src="https://mojefedora.cz/wp-content/uploads/2017/02/15-470x254.png" alt="" width="470" height="254" /></a>
+<p><i>Obrázek 15: Procházení API GIMPu.</i></p>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Jednoduchý skript pro GIMP napsaný v&nbsp;Pythonu</h2>
+
+<p>Zkusme si nyní ukázat, jakým způsobem se používají některé základní funkce dostupné přes aplikační programové rozhraní rastrového grafického editoru <i>GIMP</i>. Ukážeme si vytvoření nového obrázku a přidání jedné hladiny (<i>layer</i>) do tohoto obrázku. Tuto druhou operaci je nutné provést, protože do obrázku bez hladiny není možné provádět žádné vykreslování. Pro vytvoření nového obrázku se používá metoda nazvaná <strong>gimp_image_new</strong> objektu <strong>pdb</strong> jejímiž parametry jsou rozměry obrázku a jeho typ, tj.&nbsp;symbol určující, zda se jedná o obrázek v&nbsp;barvovém prostoru RGB, obrázek ve stupních šedi (GRAYSCALE) atd. Obrázek ležící v&nbsp;barvovém prostoru RGB (což je pro GIMP výchozí nastavení), jehož rozměry mají být 320&times;240 pixelů, se vytvoří následujícím příkazem:</p>
+
+<pre>
+pdb.gimp_image_new(320, 240, RGB)
+</pre>
+
+<p>Popř.&nbsp;si můžeme výsledek volání této metody uložit do proměnné, kterou použijeme později:</p>
+
+<pre>
+image = pdb.gimp_image_new(320, 240, RGB)
+</pre>
+
+<p>Vytvořený obrázek je prozatím neviditelný (<i>GIMP</i> pro něj totiž ani neotevřel nové okno), ovšem to se dá velmi jednoduše napravit zavoláním metody <strong>pdb.gimp_display_new()</strong>, jíž se přes parametr předá objekt reprezentující obrázek. Ten jsme si uložili do proměnné nazvané <strong>image</strong>, takže zobrazení provedeme následovně:</p>
+
+<pre>
+pdb.gimp_display_new(image)
+</pre>
+
+<p>Po zadání tohoto příkazu by se mělo objevit nové okno s&nbsp;obrázkem a taktéž s&nbsp;varováním, že se do obrázku prozatím nedá kreslit:</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/16.png"><img class="alignnone size-thumbnail wp-image-8364" src="https://mojefedora.cz/wp-content/uploads/2017/02/16-438x254.png" alt="" width="438" height="254" /></a>
+<p><i>Obrázek 16: Nově vytvořený obrázek, ovšem prozatím bez hladiny (nelze do něj kreslit, což je zmíněno ve stavovém řádku).</i></p>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Přidání hladiny do vytvořeného obrázku</h2>
+
+<p>Obrázek již máme vytvořený, zbývá nám však ještě provést minimálně jeden důležitý úkol &ndash; vytvořit novou hladinu a přidat tuto hladinu do našeho obrázku. Nová hladina se zkonstruuje pomocí metody <strong>pdb.gimp_layer_new()</strong> a přidání hladiny do obrázku zajistí metoda <strong>pdb.gimp_image_add_layer()</strong>. Při tvorbě hladiny je zapotřebí specifikovat obrázek, pro nějž je hladina vytvářena, její rozměry (mohou se totiž lišit od rozměrů obrázku, ve kterém hladina leží), typ hladiny (RGB, RGB s&nbsp;alfa kanálem atd.), jméno hladiny (to uvidí uživatel v&nbsp;dialogu určeném pro práci s&nbsp;hladinami), její průhlednost a taktéž režim, který udává, jakým způsobem jsou hodnoty jednotlivých pixelů zkombinovány s&nbsp;hodnotami pixelů v&nbsp;níže ležících hladinách. Nejprve tedy vytvoříme novou hladinu pojmenovanou &bdquo;vrstva&ldquo; se stejnými rozměry, jaké má obrázek, tedy 320&times;240 pixelů. Hladina bude neprůhledná (100% neprůhlednost), režim překreslení normální (zde to nehraje velkou roli, protože se jedná o první hladinu v&nbsp;obrázku, pod níž již nic neleží):</p>
+
+<pre>
+layer1 = pdb.gimp_layer_new(image, 320, 240, RGB_IMAGE, "vrstva", 50, NORMAL_MODE)
+</pre>
+
+<p>Následně je nutné hladinu pomocí metody <strong>pdb.gimp_image_add_layer()</strong> vložit na zásobník hladin. Pro každý obrázek existuje zásobník s&nbsp;jednotlivými hladinami, do něhož je možné přidávat další hladiny, měnit jejich pořadí atd. Pokud se jako index hladiny předá konstanta -1, bude nová hladina ležet nad všemi ostatními hladinami. V&nbsp;našem případě použijeme index 0, protože se bude jednat o jedinou hladinu v&nbsp;obrázku:</p>
+
+<pre>
+pdb.gimp_image_add_layer(image, layer1, 0)
+</pre>
+
+<p>Nyní by měl být obrázek připraven na další pokusy:</p>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/17.png"><img class="alignnone size-thumbnail wp-image-8365" src="https://mojefedora.cz/wp-content/uploads/2017/02/17-372x254.png" alt="" width="372" height="254" /></a>
+<p><i>Obrázek 17: Nová vrstva byla přidána do obrázku a stala se současně aktivní vrstvou (viz text označený šipkou).</i></p>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Kreslení do obrázku na úrovni jednotlivých pixelů</h2>
+
+<p>Další důležitou funkcí dostupnou přes aplikační programové rozhraní grafického editoru <i>GIMP</i>, se kterou se v&nbsp;dnešním článku seznámíme, je funkce nazvaná <strong>gimp_drawable_set_pixel()</strong>. Tato funkce je určena pro změnu barvy pixelu objektů, které se souhrnně nazývají <i>drawable</i> (&bdquo;pokreslitelné&ldquo;). Jedná se o masky, kanály a vrstvy &ndash; do všech tří typů objektů je možné kreslit na té nejnižší úrovni tím způsobem, že se mění barvy jednotlivých pixelů. Funkce <strong>gimp_drawable_set_pixel()</strong> vyžaduje při svém volání předání pěti parametrů &ndash; objektu, jehož pixel se má změnit (v&nbsp;našem případě se bude jednat o hladinu, x-ovou a y-ovou souřadnici pixelu, počet měněných kanálů (v&nbsp;případě barvového prostoru RGB se jedná vždy o tři kanály) a jako poslední parametr se předává n-tice obsahující trojici bajtů (opět v&nbsp;případě barvového prostoru RGB), kde každý bajt odpovídá jedné barvové složce modelu RGB.</p>
+
+<p>Vykreslení prostředního pixelu v&nbsp;obrázku bílou barvou se tedy provede takto:</p>
+
+<pre>
+pdb.gimp_drawable_set_pixel(vrstva1, 160, 120, 3, (255, 255, 255))
+</pre>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/18.png"><img class="alignnone size-thumbnail wp-image-8366" src="https://mojefedora.cz/wp-content/uploads/2017/02/18-393x254.png" alt="" width="393" height="254" /></a>
+<p><i>Obrázek 18: Jediný vykreslený pixel v&nbsp;obrázku je zde zvýrazněn červeným čtvercem.</i></p>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Vykreslení barvové palety</h2>
+
+<p>Zkusme nepatrně složitější příklad. Bude se jednat o vykreslení barvové palety, resp.&nbsp;přesněji řečeno pixelů, u nichž se v&nbsp;jedné ose mění červená barvová složka a v&nbsp;ose druhé pak složka modrá (zelená barvová složka zůstává konstantní). Skript je velmi jednoduchý, pouze při jeho zadávání do interaktivní konzole nesmíme zapomenout na odsazení bloků uvnitř programových smyček:</p>
+
+<pre>
+for y in range(0,240):
+    for x in range(0,255):
+        pdb.gimp_drawable_set_pixel(layer1, x, y, 3, (x, 127, y))
+</pre>
+
+<p>Poznámka: jedná se o velmi pomalou metodu modifikace obrázku, takže obě vnořené smyčky budou dokončeny během jednotek sekund (je nutné počkat).</p>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Aktualizace vrstvy a zobrazení výsledku</h2>
+
+<p>Aby se změny skutečně viditelně projevily v&nbsp;obrázku, je nutné provést ještě jednu operaci &ndash; GIMPu je zapotřebí říci, že má celou vrstvu (která je <i>drawable</i>) aktualizovat, a to pomocí metody nazvané <strong>gimp_drawable_update()</strong>. Této metodě se předá objekt, jehož pixely je nutné aktualizovat, a následně obdélník, jehož plocha se bude aktualizovat. Pro jednoduchost budeme předpokládat, že se má aktualizovat celá vrstva s&nbsp;rozměry 320&times;240 pixelů (v&nbsp;rámci optimalizací se však mohou ve skutečných pluginech specifikovat jen skutečně změněné oblasti):</p>
+
+<pre>
+pdb.gimp_drawable_update(layer1, 0, 0, 320, 240)
+</pre>
+
+<a href="https://mojefedora.cz/wp-content/uploads/2017/02/19.png"><img class="alignnone size-thumbnail wp-image-8367" src="https://mojefedora.cz/wp-content/uploads/2017/02/19-436x254.png" alt="" width="436" height="254" /></a>
+<p><i>Obrázek 19: Obrázek s&nbsp;barvovou paletou po aktualizaci vrstvy.</i></p>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Seznam dnes popsaných metod a funkcí</h2>
+
+<p>Na závěr si shrňme, s&nbsp;jakými metodami API GIMPu jsme se prozatím setkali. V&nbsp;Pythonu se všechny metody volají stylem <strong>pdb.jméno_metody(parametry)</strong>:</p>
+
+<table>
+<tr><th>Metoda</th><th>Stručný popis metody</th></tr>
+<tr><td>gimp_image_new</td><td>vytvoření nového obrázku (jen interně, nezobrazí se žádné okno)</td></tr>
+<tr><td>gimp_display_new</td><td>zobrazení okna s&nbsp;obrázkem i příslušným menu a pravítkem</td></tr>
+<tr><td>gimp_layer_new</td><td>vytvoření nové vrstvy</td></tr>
+<tr><td>gimp_image_add_layer</td><td>přidání vrstvy do obrázku</td></tr>
+<tr><td>gimp_drawable_set_pixel</td><td>vykreslení pixelu do libovolného objektu typu &bdquo;drawable&ldquo;</td></tr>
+<tr><td>gimp_drawable_update</td><td>aktualizace plochy (=překreslení) libovolného objektu typu &bdquo;drawable&ldquo;</td></tr>
+</table>
+
+<p>Příště si ukážeme tvorbu skutečných pluginů s&nbsp;vlastním dialogem pro nastavení jejich vlastností atd.</p>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>GIMP Home Page<br />
+<a href="http://www.gimp.org/">http://www.gimp.org/</a>
+</li>
+
+<li>GIMP Python Documentation<br />
+<a href="https://www.gimp.org/docs/python/">https://www.gimp.org/docs/python/</a>
+</li>
+
+<li>Writing GIMP Scripts and Plug-Ins<br />
+<a href="http://gimpbook.com/scripting/">http://gimpbook.com/scripting/</a>
+</li>
+
+<li>GIMP Scripts and Plug-ins (slajdy)<br />
+<a href="http://gimpbook.com/scripting/slides/index.html">http://gimpbook.com/scripting/slides/index.html</a>
+</li>
+
+<li>Use Python to write plug-ins for GIMP<br />
+<a href="http://www.ibm.com/developerworks/library/os-autogimp/index.html">http://www.ibm.com/developerworks/library/os-autogimp/index.html</a>
+</li>
+
+<li>A Script-Fu Tutorial<br />
+<a href="http://www.linuxtopia.org/online_books/graphics_tools/gimp_user_manual/en/gimp-using-script-fu-tutorial.html">http://www.linuxtopia.org/online_books/graphics_tools/gimp_user_manual/en/gimp-using-script-fu-tutorial.html</a>
+</li>
+
+<li>A Script-Fu Tutorial<br />
+<a href="http://docs.gimp.org/en/gimp-using-script-fu-tutorial.html">http://docs.gimp.org/en/gimp-using-script-fu-tutorial.html</a>
+</li>
+
+<li>Digital Watercolor with Mypaint 0.9 and Gimp-painter (video)<br />
+<a href="https://vimeo.com/18157214">https://vimeo.com/18157214</a>
+</li>
+
+<li>Water in Nature - a MyPaint + GIMP tutorial<br />
+<a href="http://www.gimptalk.com/index.php?showtopic=37706">http://www.gimptalk.com/index.php?showtopic=37706</a>
+</li>
+
+<li>MyPaint (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MyPaint">https://en.wikipedia.org/wiki/MyPaint</a>
+</li>
+
+<li>David Revoy (mj.&nbsp;používá MyPaint, GIMP i Kritu)<br />
+<a href="http://davidrevoy.com/">http://davidrevoy.com/</a>
+</li>
+
+<li>Tux Paint Home Page<br />
+<a href="http://www.tuxpaint.org/">http://www.tuxpaint.org/</a>
+</li>
+
+<li>Tux Paint (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Tux_Paint">https://en.wikipedia.org/wiki/Tux_Paint</a>
+</li>
+
+<li>MyPaint Home Page<br />
+<a href="http://mypaint.org/">http://mypaint.org/</a>
+</li>
+
+<li>MyPaint &ndash; Documentation<br />
+<a href="https://github.com/mypaint/mypaint/wiki/Documentation">https://github.com/mypaint/mypaint/wiki/Documentation</a>
+</li>
+
+<li>Gamut<br />
+<a href="https://cs.wikipedia.org/wiki/Gamut">https://cs.wikipedia.org/wiki/Gamut</a>
+</li>
+
+<li>MtPaint Home Page<br />
+<a href="http://mtpaint.sourceforge.net/">http://mtpaint.sourceforge.net/</a>
+</li>
+
+<li>The mtPaint Handbook<br />
+<a href="http://mtpaint.sourceforge.net/handbook/en_GB/chap_00.html">http://mtpaint.sourceforge.net/handbook/en_GB/chap_00.html</a>
+</li>
+
+<li>MtPaint na Free Software Directory<br />
+<a href="https://directory.fsf.org/wiki/MtPaint">https://directory.fsf.org/wiki/MtPaint</a>
+</li>
+
+<li>XPaint (minimalisticky pojatá home page)<br />
+<a href="http://sf-xpaint.sourceforge.net/">http://sf-xpaint.sourceforge.net/</a>
+</li>
+
+<li>XPaint (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/XPaint">https://en.wikipedia.org/wiki/XPaint</a>
+</li>
+
+<li>X Athena Widgets<br />
+<a href="https://en.wikipedia.org/wiki/X_Athena_Widgets">https://en.wikipedia.org/wiki/X_Athena_Widgets</a>
+</li>
+
+<li>Pinta: Painting Made Simple<br />
+<a href="https://pinta-project.com/pintaproject/pinta/">https://pinta-project.com/pintaproject/pinta/</a>
+</li>
+
+<li>Pinta (software)<br />
+<a href="https://en.wikipedia.org/wiki/Pinta_%28software%29">https://en.wikipedia.org/wiki/Pinta_%28software%29</a>
+</li>
+
+<li>Krita Home Page<br />
+<a href="https://krita.org/en/">https://krita.org/en/</a>
+</li>
+
+<li>Krita (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Krita">https://en.wikipedia.org/wiki/Krita</a>
+</li>
+
+<li>Pinta – Image Editing Alternative to The GIMP<br />
+<a href="https://www.maketecheasier.com/pinta-image-editing-alternative-to-the-gimp/">https://www.maketecheasier.com/pinta-image-editing-alternative-to-the-gimp/</a>
+</li>
+
+<li>GNU Paint Homepage<br />
+<a href="https://www.gnu.org/software/gpaint/">https://www.gnu.org/software/gpaint/</a>
+</li>
+
+<li>GNU Paint na FreeCode<br />
+<a href="http://freecode.com/projects/gpaint/">http://freecode.com/projects/gpaint/</a>
+</li>
+
+<li>KolourPaint - Paint Program<br />
+<a href="https://www.kde.org/applications/graphics/kolourpaint/">https://www.kde.org/applications/graphics/kolourpaint/</a>
+</li>
+
+<li>The KolourPaint Handbook<br />
+<a href="https://docs.kde.org/stable5/en/kdegraphics/kolourpaint/index.html">https://docs.kde.org/stable5/en/kdegraphics/kolourpaint/index.html</a>
+</li>
+
+<li>KolourPaint (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/KolourPaint">https://en.wikipedia.org/wiki/KolourPaint</a>
+</li>
+
+<li>KIconEdit - Icon Editor<br />
+<a href="https://www.kde.org/applications/graphics/kiconedit/">https://www.kde.org/applications/graphics/kiconedit/</a>
+</li>
+
+<li>Phatch (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Phatch">https://en.wikipedia.org/wiki/Phatch</a>
+</li>
+
+<li>GrafX2 Home Page<br />
+<a href="http://pulkomandy.tk/projects/GrafX2">http://pulkomandy.tk/projects/GrafX2</a>
+</li>
+
+<li>GrafX2 (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/GrafX2">https://en.wikipedia.org/wiki/GrafX2</a>
+</li>
+
+<li>Resurgence of Pixel art<br />
+<a href="http://www.developmentguruji.com/blog/142/Resurgence-of-Pixel-Art.html">http://www.developmentguruji.com/blog/142/Resurgence-of-Pixel-Art.html</a>
+</li>
+
+<li>Citypixel<br />
+<a href="http://www.citypixel.com/index.htm">http://www.citypixel.com/index.htm</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2017</small></p>
+</body>
+</html>
+
