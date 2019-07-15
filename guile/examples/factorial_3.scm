@@ -10,3 +10,5 @@
             result            ; se vrátí průběžný výsledek
             (fact-iter (- n 1) (* n result)) ; koncové volání
         )))
+
+(print (factorial 10))

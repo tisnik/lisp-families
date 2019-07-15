@@ -6,3 +6,5 @@
     (if (= n 0) ; podmínka pro ukončení rekurzivního zanořování
         1       ; faktoriál nuly je definitoricky roven jedné
         (* n (factorial (- n 1)))))
+
+(print (factorial 10))
