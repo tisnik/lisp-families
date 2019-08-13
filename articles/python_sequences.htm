@@ -1,0 +1,1716 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>Knihovny pro zpracování posloupností (sekvencí) v Pythonu</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>Knihovny pro zpracování posloupností (sekvencí) v Pythonu</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Sekvence, a to včetně sekvencí nekonečných, jsou velmi užitečnou datovou abstrakcí, s níž jsme se již nesčetněkrát setkali při popisu programovacího jazyka Clojure. Podobný koncept ovšem můžeme využít i v Pythonu, a to díky existenci knihovny s výmluvným názvem clj.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. Knihovny pro zpracování posloupností (sekvencí) v&nbsp;Pythonu</a></p>
+<p><a href="#k02">2. Sekvence a lazy sekvence v&nbsp;programovacím jazyku Clojure</a></p>
+<p><a href="#k03">3. Sekvence a lazy sekvence v&nbsp;Pythonu a knihovně <strong>clj</strong></a></p>
+<p><a href="#k04">4. Instalace knihovny <strong>clj</strong></a></p>
+<p><a href="#k05">5. Základní funkce pro práci se sekvencemi</a></p>
+<p><a href="#k06">6. První demonstrační příklad &ndash; použití základních funkcí pro konstrukci sekvencí a pro přístup k&nbsp;prvkům sekvence</a></p>
+<p><a href="#k07">7. Funkce <strong>filter</strong> a <strong>remove</strong></a></p>
+<p><a href="#k08">8. Druhý demonstrační příklad &ndash; použití funkcí <strong>filter</strong> a <strong>remove</strong></a></p>
+<p><a href="#k09">9. Funkce <strong>take-while</strong></a></p>
+<p><a href="#k10">10. Třetí příklad &ndash; kombinace <strong>remove</strong> a <strong>take-while</strong> pro nekonečné sekvence</a></p>
+<p><a href="#k11">11. Přístup k&nbsp;prvkům nekonečné sekvence</a></p>
+<p><a href="#k12">12. Funkce <strong>nth</strong> a <strong>take</strong> v&nbsp;Pythonu</a></p>
+<p><a href="#k13">13. Použití funkce <strong>flatten</strong></a></p>
+<p><a href="#k14">14. Funkce <strong>shuffle</strong></a></p>
+<p><a href="#k15">15. Rozdělení sekvence do podskupin s&nbsp;využitím funkce <strong>group-by</strong></a></p>
+<p><a href="#k16">16. Funkce <strong>group_by</strong> v&nbsp;Pythonu</a></p>
+<p><a href="#k17">17. Sloučení několika sekvencí funkcí <strong>interleave</strong></a></p>
+<p><a href="#k18">18. Funkce <strong>interleave</strong> v&nbsp;Pythonu</a></p>
+<p><a href="#k19">19. Repositář s&nbsp;demonstračními příklady</a></p>
+<p><a href="#k20">20. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. Knihovny pro zpracování posloupností (sekvencí) v&nbsp;Pythonu</h2>
+
+<p>V&nbsp;seriálu o programovacím jazyce Clojure jsme se již mnohokrát setkali
+s&nbsp;pojmem <i>sekvence</i>, popř.&nbsp;<i>nekonečné sekvence</i> nebo
+dokonce <i>lazy sekvence</i>. Jedná se o datovou abstrakci, která je sice velmi
+jednoduchá, ale o to užitečnější v&nbsp;praxi &ndash; ostatně velká část
+standardní knihovny Clojure je na sekvencích založena. Pro ty programátory,
+kteří programovací jazyk Clojure znají a současně používají i Python, je určena
+minimalisticky pojatá knihovna nazvaná <a
+href="https://github.com/bfontaine/clj">clj</a>. V&nbsp;této knihovně nalezneme
+implementaci všech základních funkcí, které jsou v&nbsp;Clojure určeny pro
+práci se sekvencemi. Tyto funkce je možné použít i pro klasické seznamy a
+iterátory, jak ostatně uvidíme v&nbsp;dalším textu.</p>
+
+<p><div class="rs-tip-major">Na tomto místě pro jistotu upozorním na dvojici
+<strong>velmi</strong> užitečných knihoven, o jejichž existenci by měl, alespoň
+podle mého skromného názoru, vědět každý Pythonista. Jedná se o knihovny <a
+href="https://docs.python.org/3.7/library/functools.html">functools</a> a <a
+href="https://docs.python.org/3.7/library/itertools.html">itertools</a>. Mnoho
+dále popsaných funkcí totiž v&nbsp;těchto knihovnách naleznete, i když pod
+jiným názvem (obě knihovny si taktéž zaslouží samostatný článek). Knihovna
+<strong>clj</strong> se určena skutečně pro skalní Clojuristy :-)</div></p>
+
+<p>Abychom pochopili, jaké funkce a generátory nalezneme v&nbsp;knihovně
+<strong>clj</strong>, popišme si nejprve ve stručnosti sekvence a lazy sekvence
+tak, jak jsou implementovány přímo v&nbsp;programovacím jazyce Clojure. Posléze
+se podíváme na to, do jaké míry byl úspěšný převod tohoto konceptu do
+Pythonu.</p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Sekvence a lazy sekvence v&nbsp;programovacím jazyku Clojure</h2>
+
+<p>Mnoho funkcí a maker, které nalezneme ve <a
+href="https://clojuredocs.org/core-library">standardní knihovně</a> <a
+href="https://clojure.org/">programovacího jazyka Clojure</a> souvisí
+s&nbsp;takzvanými <i>sekvencemi</i>. Tímto termínem se označuje programové
+rozhraní, které svými základními možnostmi zhruba odpovídá iterátorům známým
+z&nbsp;programovacího jazyka Java. V&nbsp;Clojure existuje velké množství
+funkcí, které dokážou pracovat se sekvencemi, ať již se jedná o běžné sekvence
+(jejichž prvky jsou přímo uloženy v&nbsp;operační paměti), nebo takzvané
+<i>líné sekvence</i> (<i>lazy sekvence</i>), které nové prvky vytváří či
+zjišťují až při konkrétním přístupu na tyto prvky. Mezi tyto funkce patří
+například <strong>sort</strong>, <strong>sort-by</strong>,
+<strong>take</strong> či <strong>flatten</strong>. Díky tomu, že všechny
+standardní <i>kolekce</i> (seznamy, vektory, ...) jsou současně i sekvencemi,
+lze tyto funkce aplikovat i na kolekce, ovšem ve skutečnosti jsou sekvencemi i
+další typy objektů, zejména pak I/O proudy (tímto směrem se posunuly i
+standardní knihovny Javy), řetězce (což jsou sekvence znaků) atd.</p>
+
+<p>Naprostý základ pro práci se sekvencemi tvoří trojice funkcí nazvaných
+<strong>first</strong>, <strong>rest</strong> a <strong>next</strong>. Funkce
+<strong>first</strong> vrací první prvek v&nbsp;sekvenci, popř.&nbsp;speciální
+hodnotu <strong>nil</strong> v&nbsp;případě, že je sekvence prázdná. Funkce
+<strong>rest</strong> i <strong>next</strong> vrací zbylé prvky
+v&nbsp;sekvenci, ovšem liší se tím, jaká hodnota se vrátí ve chvíli, kdy již
+v&nbsp;sekvenci nezbyly žádné prvky (kromě prvního). V&nbsp;tomto případě vrátí
+<strong>rest</strong> prázdnou sekvenci (například prázdný seznam), zatímco
+funkce <strong>next</strong> vrátí již zmíněnou speciální hodnotu
+<strong>nil</strong>. U běžných sekvencí, například seznamů, jsou tyto funkce
+implementovány přímočaře, ovšem v&nbsp;případě <i>lazy sekvencí</i> se prvky
+vrácené pomocí funkce <strong>first</strong> vyhodnocují až za běhu, například
+pomocí nějaké generátorové funkce. Tímto způsobem je možné pracovat i
+s&nbsp;nekonečnými sekvencemi, u nichž už z&nbsp;principu nelze dopředu znát
+celkový počet prvků atd.</p>
+
+<p>Velmi dobrým příkladem lazy sekvence je funkce <strong>range</strong>, která
+dokonce existuje v&nbsp;několika podobách, jež se od sebe z&nbsp;hlediska
+programátora-uživatele liší především různým počtem parametrů. Pokud se této
+funkci nepředá žádný parametr, vrátí funkce <strong>range</strong> sekvenci
+celých čísel od nuly do nekonečna. Zde je patrné, proč se musí jednat o lazy
+sekvenci &ndash; nekonečnou řadu celých čísel by samozřejmě v&nbsp;případě
+normální sekvence nebylo možné uložit do operační paměti. Pokud se funkci
+<strong>range</strong> předá pouze jediný parametr (kterým musí být celé číslo
+&ndash; je kontrolováno v&nbsp;runtime), je vrácena sekvence celých čísel od 0
+do zadané hodnoty-1. Opět se jedná o nefalšovanou lazy sekvenci, takže se
+nemusíte bát používat i velké <strong>n</strong>. Dále již následují
+v&nbsp;podstatě jen kosmetické úpravy &ndash; volání funkce
+<strong>range</strong> se dvěma parametry <strong>m</strong>,
+<strong>n</strong> vytvoří sekvenci celých čísel od <strong>m</strong> do
+<strong>n-1</strong> a pokud je použit ještě třetí parametr, určuje se jím
+krok, který může být i záporný.</p>
+
+<p>Takto navrženou funkci <strong>range</strong> nalezneme i v&nbsp;knihovně
+<strong>clj</strong>. Je přitom zachováno standardní chování
+<strong>range</strong> ze <a
+href="https://docs.python.org/3.7/library/functions.html#func-range">základní
+knihovny Pythonu</a>, ovšem v&nbsp;případě potřeby může tato funkce (volaná bez
+parametrů) vytvořit nekonečnou lazy sekvenci!</p>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Sekvence a lazy sekvence v&nbsp;Pythonu a knihovně <strong>clj</strong></h2>
+
+<p>V&nbsp;Pythonu se chování skutečných sekvencí a lazy sekvencí může napodobit
+pomocí <i>generátorů</i>. Ty byly původně do Pythonu přidány mj.&nbsp;i
+z&nbsp;důvodu kratšího a přehlednějšího zápisu iterátorů. U generátorů se
+nemusí psát celá třída s&nbsp;metodami <strong>__iter__()</strong> a
+<strong>__next__()</strong> atd.) a celý zápis generátoru je většinou
+realizován jedinou funkcí, v&nbsp;níž se nová hodnota generuje příkazem
+<strong>yield</strong> (současně se předává řízení koprogramu, který generátor
+používá). Stav generátoru je typicky uložen právě v&nbsp;této funkci
+v&nbsp;lokálních proměnných (což je na druhou stranu odlišné od chování jazyka
+Clojure a vede k&nbsp;nepříjemným vedlejším efektům).</p>
+
+<p>Příkladem použití generátoru může být funkce <strong>range</strong>, která
+sice vychází ze standardní Pythonovské funkce téhož jména, ovšem přidává
+možnost tvorby nekonečné sekvence:</p>
+
+<pre>
+def range(*args):
+    """
+    Usage: range()
+           range(end)
+           range(start, end)
+           range(start, end, step)
+&nbsp;
+    Returns a generator of numbers from ``start`` (inclusive) to ``end``
+    (exclusive), by ``step``, where ``start`` defaults to ``0``, ``step`` to
+    ``1``, and ``end`` to infinity. When ``step`` is equal to ``0``, returns an
+    infinite sequence of ``start``.
+&nbsp;
+    Note that this delegates to Python’s built-in ``range`` (or ``xrange`` in
+    Python 2) if there are arguments.
+    """
+    if args:
+        for e in _range(*args):
+            yield e
+        return
+&nbsp;
+    n = 0
+    while True:
+        yield n
+        n += 1
+</pre>
+
+<p>Samotná implementace nekonečné sekvence je zapsána v&nbsp;posledních čtyřech
+řádcích.</p>
+
+<p>Naproti tomu v&nbsp;programovacím jazyku Clojure je podobná sekvence interně
+vytvářena takto (což je do značné míry totožné s&nbsp;implementací iterátoru
+v&nbsp;Pythonu):</p>
+
+<pre>
+private class RangeIterator implements Iterator {
+    private Object next;
+&nbsp;
+    public RangeIterator() {
+        this.next = start;
+    }
+&nbsp;
+    public boolean hasNext() {
+        return(! boundsCheck.exceededBounds(next));
+    }
+&nbsp;
+    public Object next() {
+        if (hasNext()) {
+            Object ret = next;
+            next = Numbers.addP(next, step);
+            return ret;
+        } else {
+            throw new NoSuchElementException();
+        }
+    }
+&nbsp;
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+}
+</pre>
+
+<p>Ve skutečnosti se chování sekvencí v&nbsp;Clojure a Pythonu odlišuje, a to
+ve chvíli, kdy nějaká funkce musí &bdquo;zkonzumovat&ldquo; data
+z&nbsp;generátoru, například při přístupu k&nbsp;n-tému prvku.  V&nbsp;Clojure
+získáme vždy stejný (desátý) prvek nekonečné sekvence:</p>
+
+<pre>
+<strong>(def s (range))</strong>
+<strong>(def i1 (nth s 10))</strong>
+<strong>(def i2 (nth s 10))</strong>
+<strong>(def i3 (nth s 10))</strong>
+<strong>(println i1 i2 i3)</strong>
+&nbsp;
+10 10 10
+</pre>
+
+<p>V&nbsp;Pythonu se ovšem používá společný stav generátoru a dostame výsledky
+rozdílné:</p>
+
+<pre>
+<strong>from clj.seqs import range, nth</strong>
+<strong>s = range()</strong>
+<strong>i1 = nth(s, 10)</strong>
+<strong>i2 = nth(s, 10)</strong>
+<strong>i3 = nth(s, 10)</strong>
+<strong>print(i1, i2, i3)</strong>
+&nbsp;
+10 21 32
+</pre>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Instalace knihovny <strong>clj</strong></h2>
+
+<p>Po krátkém úvodu nastal čas si vyzkoušet některé možnosti nabízené knihovnou
+<strong>clj</strong>. Samotná instalace této knihovny je velmi snadná, ostatně
+jedná se vlastně o pouhé dva zdrojové soubory. Vzhledem k&nbsp;tomu, že
+<strong>clj</strong> je <a href="https://pypi.org/project/clj/">dostupná na
+PyPi</a>, můžeme pro instalaci použít nástroj <strong>pip</strong>:</p>
+
+<pre>
+$ <strong>pip3 install --user clj</strong>
+Collecting clj
+  Downloading https://files.pythonhosted.org/packages/46/de/6d06743f2327f070602eb1f6dff525c92397de17fb418e206b13945e8468/clj-0.1.0.tar.gz
+Installing collected packages: clj
+  Running setup.py install for clj ... done
+Successfully installed clj-0.1.0
+</pre>
+
+<p>Od této chvíle by mělo být možné provést například:</p>
+
+<pre>
+<strong>from clj.seqs import range, first, rest</strong>
+&nbsp;
+<strong>help("clj.seqs.first")</strong>
+&nbsp;
+Help on function first in clj.seqs:
+&nbsp;
+clj.seqs.first = first(coll)
+    Returns the first item in the collection. If ``coll`` is ``None`` or empty,
+    returns ``None``.
+&nbsp;
+&nbsp;
+<strong>help("clj.seqs.range")</strong>
+&nbsp;
+Help on function range in clj.seqs:
+&nbsp;
+clj.seqs.range = range(*args)
+    Usage: range()
+           range(end)
+           range(start, end)
+           range(start, end, step)
+&nbsp;   
+    Returns a generator of numbers from ``start`` (inclusive) to ``end``
+    (exclusive), by ``step``, where ``start`` defaults to ``0``, ``step`` to
+    ``1``, and ``end`` to infinity. When ``step`` is equal to ``0``, returns an
+    infinite sequence of ``start``.
+&nbsp;
+    Note that this delegates to Python’s built-in ``range`` (or ``xrange`` in
+    Python 2) if there are arguments.
+</pre>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Základní funkce pro práci se sekvencemi</h2>
+
+<p>Připomeňme si, že sekvence jsou v&nbsp;programovacím jazyce Clojure důležité
+především z&nbsp;toho důvodu, že ve standardní knihovně tohoto jazyka se
+nachází velké množství funkcí a maker pro práci s&nbsp;nimi. Tvůrci LISPu a
+z&nbsp;něho odvozeného jazyka Clojure totiž zastávají názor, že je lepší
+používat relativně malé množství datových typů a mít pro tyto typy
+k&nbsp;dispozici velké množství obecných funkcí, které je možné vzájemně
+kombinovat. Naproti tomu se v&nbsp;klasickém OOP spíše upřednostňuje mít větší
+počet specializovaných datových typů (tříd) s&nbsp;relativně malým množstvím
+specializovaných funkcí aplikovatelných na tyto typy (metody). Obecně asi nelze
+říci, který přístup je lepší, protože záleží na povaze řešené úlohy. Vraťme se
+však k&nbsp;jazyku Clojure a k&nbsp;jeho kolekcím. V&nbsp;následující tabulce
+jsou vypsány některé zcela základní funkce, které lze při práci
+s&nbsp;kolekcemi použít. Povšimněte si, že žádná z&nbsp;těchto funkcí nemění
+původní kolekci, maximálně vrátí jako svůj výsledek kolekci novou, která ve
+většině případů používá stejné prvky, jako kolekce původní (tím se zamezuje
+zbytečným kopiím v&nbsp;paměti):</p>
+
+<table>
+<tr><th>#</th><th>Funkce</th><th>Podpora v&nbsp;<strong>clj</strong></th><th>Stručný popis funkce</th></tr>
+<tr><td>1</td><td>count</td><td>ano</td><td>vrátí počet prvků v&nbsp;sekvenci</td></tr>
+<tr><td>2</td><td>cons</td><td>ano</td><td>vrátí novou kolekci s&nbsp;přidaným prvkem (odkaz jazyka LISP)</td></tr>
+<tr><td>3</td><td>concat</td><td>ano</td><td>spojení dvou sekvencí (rozdílné od cons!)</td></tr>
+<tr><td>4</td><td>first</td><td>ano</td><td>první prvek sekvence</td></tr>
+<tr><td>5</td><td>second</td><td>ano</td><td>druhý prvek sekvence</td></tr>
+<tr><td>6</td><td>rest</td><td>ano</td><td>sekvence bez prvního prvku</td></tr>
+<tr><td>7</td><td>nth</td><td>ano</td><td>získání n-tého prvku sekvence</td></tr>
+<tr><td>8</td><td>distinct</td><td>ano</td><td>vrátí se nová sekvence s&nbsp;unikátními prvky (bez duplicit)</td></tr>
+</table>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. První demonstrační příklad &ndash; použití základních funkcí pro konstrukci sekvencí a pro přístup k&nbsp;prvkům sekvence</h2>
+
+<p>V&nbsp;prvním demonstračním příkladu si popíšeme způsob použití většiny
+funkcí popsaných v&nbsp;předchozí kapitole. Nejprve si ukážeme původní tvar
+příkladu naprogramovaného v&nbsp;jazyce Clojure. Zde jsou sekvence základním
+abstraktním typem; konkrétním typem může být například vektor:</p>
+
+<pre>
+(def s [1 2 3 1 2 3])
+&nbsp;
+(println "Count:")
+(println (count s))
+(println)
+&nbsp;
+(println "Reversed:")
+(println (reverse s))
+&nbsp;
+(println "First:")
+(println (first s))
+(println "Second:")
+(println (second s))
+(println "Rest:")
+(println (rest s))
+&nbsp;
+(println "Distinct items:")
+&nbsp;
+(println (distinct s))
+&nbsp;
+(println "Cons 1:")
+(def new_sequence (cons s ["A" "B" "C"]))
+(println new_sequence)
+&nbsp;
+(println "Cons 2:")
+(def new_sequence_2 (cons ["A" "B" "C"] s))
+(println new_sequence_2)
+&nbsp;
+(println "Concat 1:")
+(def new_sequence (concat s ["A" "B" "C"])) 
+(println new_sequence)
+&nbsp;
+(println "Concat 2:")
+(def new_sequence_2 (concat ["A" "B" "C"] s))
+(println new_sequence_2)
+</pre>
+
+<p>Výsledky tohoto příkladu po jeho spuštění v&nbsp;REPLu:</p>
+
+<pre>
+Count:
+6
+&nbsp;
+Reversed:
+(3 2 1 3 2 1)
+&nbsp;
+First:
+1
+&nbsp;
+Second:
+2
+&nbsp;
+Rest:
+(2 3 1 2 3)
+&nbsp;
+Distinct items:
+(1 2 3)
+&nbsp;
+Cons 1:
+([1 2 3 1 2 3] A B C)
+&nbsp;
+Cons 2:
+([A B C] 1 2 3 1 2 3)
+&nbsp;
+Concat 1:
+(1 2 3 1 2 3 A B C)
+&nbsp;
+Concat 2:
+(A B C 1 2 3 1 2 3)
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, jak se odlišuje chování
+funkcí <strong>cons</strong> a <strong>concat</strong>. Pokud potřebujete
+k&nbsp;existující sekvenci přidat další prvek, použijte <strong>cons</strong>;
+pokud naopak potřebuje dvě sekvence spojit, využijete
+<strong>concat</strong>.</div></p>
+
+<p>Nyní se pokusme tento příklad převést do Pythonu. Na začátku musíme
+naimportovat všechny používané funkce:</p>
+
+<pre>
+from clj.seqs import count, first, second, rest, cons, concat, distinct
+</pre>
+
+<p>Dále si vytvoříme pomocné funkce pro tisk sekvence na standardní výstup:</p>
+
+<pre>
+def hr():
+    print(40*"-")
+    print()
+&nbsp;
+&nbsp;
+def print_sequence(sequence):
+    for item in sequence:
+        print(item)
+    hr()
+</pre>
+
+<p>A můžeme začít s&nbsp;přepisováním. Povšimněte si například toho, že namísto
+<strong>reverse</strong> je nutné použít standardní funkci
+<strong>reversed</strong>:</p>
+
+<pre>
+sequence = [1, 2, 3, 1, 2, 3]
+&nbsp;
+print("Original:")
+print_sequence(sequence)
+&nbsp;
+<i># puvodni funkce len() a nova funkce count()</i>
+print("Len and count:")
+print(len(sequence))
+print(count(sequence))
+hr()
+&nbsp;
+<i># puvodni (standardni) funkce reversed()</i>
+print("Reversed:")
+print_sequence(reversed(sequence))
+&nbsp;
+<i># funkce first(), second() a rest()</i>
+print("First:")
+print(first(sequence))
+print("Second:")
+print(second(sequence))
+print("Rest:")
+print(rest(sequence))
+print_sequence(rest(sequence))
+&nbsp;
+<i># nova funkce distinct()</i>
+print("Distinct items:")
+&nbsp;
+print(distinct(sequence))
+print_sequence(distinct(sequence))
+&nbsp;
+<i># prevod sekvence zpet na seznam</i>
+print(list(distinct(sequence)))
+&nbsp;
+<i># funkce cons</i>
+print("Cons 1:")
+new_sequence = cons(sequence, ["A", "B", "C"])
+print_sequence(new_sequence)
+&nbsp;
+print("Cons 2:")
+new_sequence_2 = cons(["A", "B", "C"], sequence)
+print_sequence(new_sequence_2)
+&nbsp;
+<i># funkce concat</i>
+print("Concat 1:")
+new_sequence = concat(sequence, ["A", "B", "C"])
+print_sequence(new_sequence)
+&nbsp;
+print("Concat 2:")
+new_sequence_2 = concat(["A", "B", "C"], sequence)
+print_sequence(new_sequence_2)
+</pre>
+
+<p>Výsledky by měly vypadat přesně takto:</p>
+
+<pre>
+Original:
+1
+2
+3
+1
+2
+3
+----------------------------------------
+&nbsp;
+Len and count:
+6
+6
+----------------------------------------
+&nbsp;
+Reversed:
+3
+2
+1
+3
+2
+1
+----------------------------------------
+&nbsp;
+First:
+1
+Second:
+2
+Rest:
+&lt;generator object drop at 0x7f255594b678&gt;
+2
+3
+1
+2
+3
+----------------------------------------
+&nbsp;
+Distinct items:
+&lt;generator object distinct at 0x7f255594b678&gt;
+1
+2
+3
+----------------------------------------
+&nbsp;
+[1, 2, 3]
+Cons 1:
+[1, 2, 3, 1, 2, 3]
+A
+B
+C
+----------------------------------------
+&nbsp;
+Cons 2:
+['A', 'B', 'C']
+1
+2
+3
+1
+2
+3
+----------------------------------------
+&nbsp;
+Concat 1:
+1
+2
+3
+1
+2
+3
+A
+B
+C
+----------------------------------------
+&nbsp;
+Concat 2:
+A
+B
+C
+1
+2
+3
+1
+2
+3
+----------------------------------------
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, že sekvenci nemůžeme
+přímo vytisknout funkcí <strong>print</strong>, ovšem můžeme ji převést na
+seznam, který již vytisknou umíme.</div></p>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Funkce <strong>filter</strong> a <strong>remove</strong></h2>
+
+<p>Velmi často se při zpracování sekvencí používají funkce nazvané
+<strong>filter</strong> a <strong>remove</strong>. Ve skutečnosti je funkce
+<strong>filter</strong> součástí <a
+href="https://docs.python.org/3.5/library/functions.html#filter">standardní
+knihovny Pythonu</a>, takže v&nbsp;knihovně <strong>clj</strong> musela být
+implementována pouze funkce <strong>remove</strong>. Obě funkce, tj.&nbsp;jak
+<strong>filter</strong> tak i <strong>remove</strong>, jsou funkcemi vyššího
+řádu, což znamená, že jejich parametrem je další funkce (typicky funkce
+anonymní). Funkce <strong>filter</strong> se používá pro vytvoření nové
+sekvence, která bude obsahovat jen ty prvky ze sekvence původní, které
+odpovídají nějakému predikátu (predikát je obecně funkce vracející pro svůj
+jediný vstup pravdivostní hodnotu). Funkce <strong>remove</strong> pracuje
+přesně naopak, tj.&nbsp;odstraňuje ze sekvence ty prvky, které odpovídají
+predikátu.</p>
+
+<p>Vzhledem k&nbsp;tomu, že knihovna <strong>clj</strong> realizuje sekvence
+formou generátorů, je implementace funkce <strong>remove</strong> značně
+strohá:</p>
+
+<pre>
+def <strong>remove</strong>(pred, coll):
+    <i>"""</i>
+    <i>Return a generator of the items in ``coll`` for which ``pred(item)``</i>
+    <i>returns a falsy value.</i>
+    <i>"""</i>
+    for e in coll:
+        if not pred(e):
+            yield e
+</pre>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Druhý demonstrační příklad &ndash; použití funkcí <strong>filter</strong> a <strong>remove</strong></h2>
+
+<p>Ve druhém demonstračním příkladu si popíšeme chování funkcí
+<strong>filter</strong> a <strong>remove</strong>. Opět si nejprve uvedeme
+variantu určenou pro programovací jazyk Clojure. Ze sekvence s&nbsp;původně
+devíti prvky 1..9 nejprve vytvoříme sekvenci se všemi prvky dělitelnými třemi,
+posléze sekvenci se všemi prvky NEdělitelnými třemi, dále sekvenci získanou
+filtrací prvků, pro něž predikát vždy vrátí pravdivostní hodnotu True a konečně
+sekvenci získanou odstraněním prvků, pro něž predikát vždy vrací True:</p>
+
+<pre>
+(def s (range 1 10))
+&nbsp;
+<i>; kratky zapis anonymni funkce pomoci #()</i>
+(def filtered (filter #(zero? (mod % 3)) s))
+(println filtered)
+&nbsp;
+<i>; kratky zapis anonymni funkce pomoci #()</i>
+(def removed (remove #(zero? (mod % 3)) s))
+(println removed)
+&nbsp;
+<i>; zde nelze kratky zapis pouzit - musi se specifikovat argument</i>
+(def filtered (filter (fn [x] true) s))
+(println filtered)
+&nbsp;
+<i>; zde nelze kratky zapis pouzit - musi se specifikovat argument</i>
+(def removed (remove (fn [x] true) s))
+(println removed)
+</pre>
+
+<p>Výsledky postupně vypadají takto:</p>
+
+<pre>
+<i>; prvky delitelne tremi</i>
+(3 6 9)
+&nbsp;
+<i>; prvky nedelitelne tremi</i>
+(1 2 4 5 7 8)
+&nbsp;
+<i>; prvky filtrovane s vyuzitim predikatu, ktery vraci True</i>
+(1 2 3 4 5 6 7 8 9)
+&nbsp;
+<i>; prvky odstranene s vyuzitim predikatu, ktery vraci True</i>
+()
+</pre>
+
+<p>Přepis do Pythonu je přímočarý a použijeme v&nbsp;něm anonymní funkce
+vytvářené pomocí konstrukce <strong>lambda</strong>:</p>
+
+<pre>
+from clj.seqs import remove
+&nbsp;
+&nbsp;
+def hr():
+    print(40*"-")
+    print()
+&nbsp;
+&nbsp;
+def print_sequence(sequence):
+    for item in sequence:
+        print(item)
+    hr()
+&nbsp;
+&nbsp;
+sequence = range(1, 10)
+&nbsp;
+print("Original:")
+print_sequence(sequence)
+&nbsp;
+filtered = filter(lambda x: x % 3 == 0, sequence)
+print("Filtered:")
+print_sequence(filtered)
+&nbsp;
+removed = remove(lambda x: x % 3 == 0, sequence)
+print("Removed:")
+print_sequence(removed)
+&nbsp;
+filtered = filter(lambda _: True, sequence)
+print("Filtered:")
+print_sequence(filtered)
+&nbsp;
+removed = remove(lambda _: True, sequence)
+print("Removed:")
+print_sequence(removed)
+</pre>
+
+<p>Výsledky odpovídají Clojure:</p>
+
+<pre>
+Original:
+1
+2
+3
+4
+5
+6
+7
+8
+9
+----------------------------------------
+Filtered:
+3
+6
+9
+----------------------------------------
+Removed:
+1
+2
+4
+5
+7
+8
+----------------------------------------
+Filtered:
+1
+2
+3
+4
+5
+6
+7
+8
+9
+----------------------------------------
+Removed:
+<i>(zde nic není :-)</i>
+----------------------------------------
+</pre>
+
+
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Funkce <strong>take-while</strong></h2>
+
+<p>V&nbsp;některých případech nám bude užitečná i poněkud komplikovanější
+funkce, která je nazvaná <strong>take-while</strong>. Zatímco u funkce
+<strong>take</strong> popsané dále se přímo zadává počet prvků lazy sekvence,
+která se má vrátit, je v&nbsp;případě funkce <strong>take-while</strong>
+namísto konstantního počtu prvků výsledné sekvence předán predikát,
+tj.&nbsp;funkce s (v&nbsp;tomto případě) jedním parametrem, jejímž výsledkem by
+měla být pravdivostní hodnota <strong>true</strong> nebo
+<strong>false</strong>.</p>
+
+<p>Návratovou hodnotou funkce <strong>take-while</strong> je (obecně) opět lazy
+sekvence získaná ze vstupní sekvence, ovšem vráceno je pouze prvních
+<strong>n</strong> prvků, pro něž predikát vrací hodnotu <strong>true</strong>.
+Nejedná se však o klasický filtr (viz též předchozí dvě kapitoly), protože
+ihned ve chvíli, kdy predikát poprvé vrátí hodnotu <strong>false</strong>, je
+lazy sekvence ukončena. Pokud vrátí predikát hodnotu <strong>false</strong> již
+při prvním volání, je výsledkem prázdná sekvence, pokud naopak vrací hodnotu
+<strong>true</strong> vždy, vrátí se potenciálně nekonečná lazy sekvence (což
+však někdy nemusí vadit, pokud se tedy nebudeme snažit o výpis všech prvků).
+Vzhledem k&nbsp;určitým omezením <strong>take-while</strong> je nutné, aby měl
+predikát pouze jeden parametr, což většinou znamená, že si musíme vypomoci
+novou funkcí (popř.&nbsp;anonymní funkcí).</p>
+
+<p>Příklad použití funkce <strong>take-while</strong> v&nbsp;Clojure:</p>
+
+<pre>
+(def my-sequence (range))
+&nbsp;
+<i>; prvni pouziti nekonecne sekvence</i>
+(println (take-while #(&lt; % 10) my-sequence))
+&nbsp;
+<i>; druhe pouziti nekonecne sekvence</i>
+(println (take-while #(&lt; % 10) my-sequence))
+&nbsp;
+<i>; false se vrati ihned v prvnim volani</i>
+(println (take-while (fn [x] false) my-sequence))
+</pre>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Třetí příklad &ndash; kombinace <strong>remove</strong> a <strong>take-while</strong> pro nekonečné sekvence</h2>
+
+<p>Výše zmíněné funkce <strong>remove</strong> a <strong>take-while</strong>
+nyní použijeme v&nbsp;Pythonu, a to vlastně naprosto stejným způsobem, jako
+tomu bylo v&nbsp;programovacím jazyku Clojure:</p>
+
+<pre>
+from clj.seqs import count, range, take_while, remove
+&nbsp;
+&nbsp;
+def hr():
+    print(40*"-")
+    print()
+&nbsp;
+&nbsp;
+def print_sequence(sequence):
+    for item in sequence:
+        print(item)
+    hr()
+&nbsp;
+&nbsp;
+sequence = range()
+&nbsp;
+# toto NE: print(count(sequence))
+&nbsp;
+print("Vyber prvku mensich nez 10 ze vsech prirozenych cisel:")
+&nbsp;
+new_sequence_1 = take_while(lambda x: x &lt; 10, sequence)
+print_sequence(new_sequence_1)
+&nbsp;
+&nbsp;
+def podminka(x):
+    return x &lt; 10
+&nbsp;
+&nbsp;
+sequence = range()
+&nbsp;
+print("Vyber prvku mensich nez 10 ze vsech prirozenych cisel:")
+&nbsp;
+new_sequence_2 = take_while(podminka, sequence)
+print_sequence(new_sequence_2)
+&nbsp;
+print("Vyber prvku delitelnych tremi a mensich nez 20 ze vsech prirozenych cisel:")
+&nbsp;
+<i># nekonecna lazy sekvence</i>
+sequence = range()
+&nbsp;
+<i># lze ji filtrovat</i>
+filtered = filter(lambda x: x % 3 == 0, sequence)
+&nbsp;
+<i># a vybrat n prvku z nekonecneho poctu</i>
+new_sequence = take_while(lambda x: x &lt; 20, filtered)
+print_sequence(new_sequence)
+&nbsp;
+&nbsp;
+print()
+&nbsp;
+print("Kombinace remove() a take_while():")
+&nbsp;
+<i># nekonecna lazy sekvence</i>
+sequence = range()
+&nbsp;
+<i># lze ji filtrovat</i>
+removed = remove(lambda x: x % 3 != 0, sequence)
+&nbsp;
+<i># a vybrat n prvku z nekonecneho poctu</i>
+new_sequence = take_while(lambda x: x &lt; 30, removed)
+print_sequence(new_sequence)
+&nbsp;
+print()
+&nbsp;
+print("Predikat vracejici vzdy False:")
+&nbsp;
+<i># nekonecna lazy sekvence</i>
+sequence = range()
+&nbsp;
+<i># predikat ktery vzdy vraci False</i>
+new_sequence = take_while(lambda _: False, sequence)
+print_sequence(new_sequence)
+</pre>
+
+<p>Výsledky vygenerované předchozím příkladem:</p>
+
+<pre>
+Vyber prvku mensich nez 10 ze vsech prirozenych cisel:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+----------------------------------------
+Vyber prvku mensich nez 10 ze vsech prirozenych cisel:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+----------------------------------------
+Vyber prvku delitelnych tremi a mensich nez 20 ze vsech prirozenych cisel:
+0
+3
+6
+9
+12
+15
+18
+----------------------------------------
+Kombinace remove() a take_while():
+0
+3
+6
+9
+12
+15
+18
+21
+24
+27
+----------------------------------------
+Predikat vracejici vzdy False:
+----------------------------------------
+</pre>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Přístup k&nbsp;prvkům nekonečné sekvence</h2>
+
+<p>Při práci s&nbsp;lazy sekvencemi, které obsahují nekonečný počet prvků, si
+musíme dát pozor na to, aby se náhodou nespustilo vyhodnocení celé (nekonečné)
+sekvence. V&nbsp;reálných programech k&nbsp;tomuto problému v&nbsp;naprosté
+většině případů nedochází, už jen z&nbsp;toho důvodu, že například funkce
+<strong>map</strong> (tu jsme si nepopsali, ale je taktéž součástí knihovny)
+jako svůj parametr akceptuje lazy sekvenci a jejím výsledkem je taktéž lazy
+sekvence.</p>
+
+<p>My ovšem v&nbsp;následujících příkladech budeme muset zjistit a vypsat
+hodnotu alespoň několika prvků nekonečných lazy sekvencí. K&nbsp;tomuto účelu
+nám velmi dobře poslouží funkce <strong>nth</strong>, <strong>take</strong> a
+někdy taktéž poněkud složitější funkce <strong>take-while</strong> zmíněna
+v&nbsp;textu výše. Nejjednodušší z&nbsp;této trojice funkcí je nepochybně
+funkce <strong>nth</strong>, jež &ndash; jak jste již pravděpodobně
+z&nbsp;jejího názvu uhodli &ndash; vrací <strong>n</strong>-tý prvek sekvence,
+což většinou znamená, že se vyhodnotí i předchozích n-1 prvků (ovšem ve
+skutečnosti se výsledky ukládají do vyrovnávací paměti, takže někdy
+k&nbsp;vyhodnocení nedochází, alespoň ne v&nbsp;Clojure).</p>
+
+<p>Příklad napsaný v&nbsp;Clojure:</p>
+
+<pre>
+user=&gt; <strong>(def s (range))</strong>
+#'user/s
+&nbsp;
+user=&gt; <strong>(println (nth s 10))</strong>
+10
+&nbsp;
+user=&gt; <strong>(println (nth s 10))</strong>
+10
+&nbsp;
+user=&gt; <strong>(println (nth s 10))</strong>
+10
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, že se skutečně vždy vrátí
+desátý prvek <i>původní sekvence</i>.</div></p>
+
+<p>Zatímco funkce <strong>nth</strong> vrátí konkrétní prvek z&nbsp;lazy
+sekvence, je další užitečná funkce nazvaná <strong>take</strong> nepatrně
+obecnější, neboť ta vrací prvních <strong>n</strong> prvků lazy sekvence. Ovšem
+výsledkem není vektor či seznam těchto prvků, ale taktéž lazy sekvence, což
+znamená, že k&nbsp;vyhodnocení (získání) prvků dochází později a někdy taktéž
+vůbec ne. My ovšem v&nbsp;našich příkladech budeme výsledek funkce take
+vypisovat pomocí REPL, takže k&nbsp;vyhodnocení dojde vždy:</p>
+
+<pre>
+(user=&gt; <strong>(println (take 10 s))</strong>
+(0 1 2 3 4 5 6 7 8 9)
+&nbsp;
+user=&gt; <strong>(println (take 5 (drop  10 s)))</strong>
+(10 11 12 13 14)
+&nbsp;
+user=&gt; <strong>(->> (range) (drop 10) (take 5) println)</strong>
+(10 11 12 13 14)
+</pre>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Funkce <strong>nth</strong> a <strong>take</strong> v&nbsp;Pythonu</h2>
+
+<p>Nyní se pokusíme použít funkce <strong>nth</strong> a <strong>take</strong>
+v&nbsp;Pythonu. Obě zmíněné funkce jsou v&nbsp;knihovně <strong>clj</strong>
+implementovány, takže by s&nbsp;jejich použitím neměl být &ndash; alespoň
+zdánlivě &ndash; žádný problém. Začátek skriptu je stejný, jako
+v&nbsp;předchozích příkladech:</p>
+
+<pre>
+from clj.seqs import nth, take, range
+&nbsp;
+&nbsp;
+def hr():
+    print(40*"-")
+    print()
+&nbsp;
+&nbsp;
+def print_sequence(sequence):
+    for item in sequence:
+        print(item)
+    hr()
+</pre>
+
+<p>Vytvoříme nekonečnou sekvenci a třikrát po sobě se pokusíme přečíst její
+desátý prvek:</p>
+
+<pre>
+sequence = range()
+&nbsp;
+item = nth(sequence, 10)
+print(item)
+&nbsp;
+<i># pozor na rozdilne chovani!</i>
+item = nth(sequence, 10)
+print(item)
+&nbsp;
+<i># pozor na rozdilne chovani!</i>
+item = nth(sequence, 10)
+print(item)
+</pre>
+
+<p>Výsledek může být překvapující &ndash; pokaždé totiž dostaneme jiný
+prvek!:</p>
+
+<pre>
+10
+21
+32
+</pre>
+
+<p>Je tomu tak z&nbsp;toho důvodu, že v&nbsp;Pythonu nemáme skutečné lazy
+sekvence, ale &bdquo;pouze&ldquo; generátory, které si pamatují svůj stav a
+funkce <strong>nth</strong> tento stav nenávratně změní.</p>
+
+<p>Podobně je tomu při použití funkce <strong>take</strong>, která
+v&nbsp;Clojure vrátí prvních deset prvků (nekonečné) (lazy) sekvence:</p>
+
+<pre>
+sequence = range()
+s1 = take(10, sequence)
+s2 = take(10, sequence)
+s3 = take(10, sequence)
+</pre>
+
+<p>Výsledek bude opět odlišný od očekávaného stavu:</p>
+
+<pre>
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+[20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+</pre>
+
+<p><div class="rs-tip-major">Kvůli tomu, že sekvence jsou v&nbsp;Pythonu
+realizovány přes generátory, nemusí všechny funkce pracovat stejně, jako je
+tomu v&nbsp;Clojure!</div></p>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Použití funkce <strong>flatten</strong></h2>
+
+<p>V&nbsp;komunitě vývojářů používajících programovací jazyk Python se poměrně
+<a
+href="https://softwareengineering.stackexchange.com/questions/254279/why-doesnt-python-have-a-flatten-function-for-lists">často
+diskutuje</a> o &bdquo;správné&ldquo; implementaci funkce typu
+<strong>flatten</strong>, tj.&nbsp;funkce, která dostane na vstupu rekurzivní
+datovou strukturu (například seznam seznamů) a vytvoří z&nbsp;ní jednorozměrnou
+sekvenci. V&nbsp;knihovně <strong>clj</strong> samozřejmě tato funkce existuje
+a její chování do značné míry odpovídá stejnojmenné funkci implementované
+v&nbsp;programovacím jazyce Clojure. Podívejme se tedy nejdříve na to, jak se
+tato užitečná funkce používá v&nbsp;Clojure:</p>
+
+<pre>
+(def colors ["red", "blue", "green", "yellow", "cyan", "magenta", "black", "white"])
+(def c1 [colors [1 [2 [3 [4 [5 6 7 8 9]]]]]])
+(def c2 [[c1] c1])
+&nbsp;
+(println (flatten colors))
+(println (flatten c1))
+(println (flatten c2))
+</pre>
+
+<p>Výsledek by měl vypadat následovně:</p>
+
+<pre>
+(red blue green yellow cyan magenta black white)
+&nbsp;
+(red blue green yellow cyan magenta black white 1 2 3 4 5 6 7 8 9)
+&nbsp;
+(red blue green yellow cyan magenta black white 1 2 3 4 5 6 7 8 9 red blue green yellow cyan magenta black white 1 2 3 4 5 6 7 8 9)
+</pre>
+
+<p>V&nbsp;Pythonu můžeme postupovat naprosto stejným způsobem, pouze nesmíme
+zapomenout naimportovat správnou funkci:</p>
+
+<pre>
+from clj.seqs import flatten
+&nbsp;
+colors = ["red", "blue", "green", "yellow", "cyan", "magenta", "black", "white"]
+c1 = [colors, [1, [2, [3, [4, [5, 6, 7, 8, 9]]]]]]
+c2 = [[c1], c1]
+&nbsp;
+print(list(colors))
+print(list(flatten(colors)))
+print()
+&nbsp;
+print(list(c1))
+print(list(flatten(c1)))
+print()
+&nbsp;
+print(list(c2))
+print(list(flatten(c2)))
+</pre>
+
+<p>Výsledky budou vypadat podobně, i když samozřejmě reprezentace seznamů a
+sekvencí bude při tisku odlišná od programovacího jazyka Clojure:</p>
+
+<pre>
+['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white']
+['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white']
+&nbsp;
+[['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white'], [1, [2, [3, [4, [5, 6, 7, 8, 9]]]]]]
+['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white', 1, 2, 3, 4, 5, 6, 7, 8, 9]
+&nbsp;
+[[[['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white'], [1, [2, [3, [4, [5, 6, 7, 8, 9]]]]]]], [['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white'], [1, [2, [3, [4, [5, 6, 7, 8, 9]]]]]]]
+['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white', 1, 2, 3, 4, 5, 6, 7, 8, 9, 'red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'black', 'white', 1, 2, 3, 4, 5, 6, 7, 8, 9]
+</pre>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Funkce <strong>shuffle</strong></h2>
+
+<p>V&nbsp;některých situacích (v&nbsp;mém případě například při psaní testů) je
+zapotřebí vzít vstupní sekvenci a náhodně v&nbsp;ní proházet jednotlivé prvky.
+Tuto operaci zajišťuje funkce nazvaná <strong>shuffle</strong>. Opět se
+nejdříve podívejme na to, jak se tato funkce používá v&nbsp;programovacím
+jazyce Clojure. Není to nic těžkého &ndash; pouze desetkrát vypíšeme sekvenci
+s&nbsp;náhodně proházenými prvky:</p>
+
+<pre>
+(def colors ["red", "blue", "green", "yellow", "cyan", "magenta", "black", "white"])
+&nbsp;
+(dotimes [n 10]
+    (println (shuffle colors)))
+</pre>
+
+<p>Výsledek bude vypadat například takto (pokaždé ovšem bude jiný):</p>
+
+<pre>
+[green cyan black white red magenta yellow blue]
+[cyan white black green yellow red blue magenta]
+[red green white black yellow blue cyan magenta]
+[black magenta red yellow blue green white cyan]
+[yellow blue white cyan magenta green red black]
+[cyan black yellow white green magenta red blue]
+[blue black magenta white yellow green red cyan]
+[yellow blue cyan white magenta red black green]
+[red cyan yellow black white blue green magenta]
+[green cyan black blue magenta red yellow white]
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: ve skutečnosti se tato funkce poněkud
+odlišuje od ostatních funkcí, s&nbsp;nimiž jsme se prozatím seznámili. Je tomu
+tak z&nbsp;toho důvodu, že vyhodnocení této funkce není &bdquo;líné&ldquo;, ale
+výsledná sekvence je ihned takzvaně &bdquo;realizována&ldquo;, tj.&nbsp;jsou
+vypočteny její prvky, aniž by jazyk Clojure čekal, jestli někdo sekvenci či
+její prvky bude ve skutečnosti potřebovat.</div></p>
+
+<p>Použití stejnojmenné funkce v&nbsp;Pythonu:</p>
+
+<pre>
+from clj.seqs import shuffle
+&nbsp;
+colors = ["red", "blue", "green", "yellow", "magenta", "cyan", "white", "black"]
+&nbsp;
+for i in range(1, 10):
+    print(list(shuffle(colors)))
+</pre>
+
+<p>Výsledky budou vypadat následovně:</p>
+
+<pre>
+['yellow', 'green', 'cyan', 'magenta', 'blue', 'black', 'white', 'red']
+['magenta', 'green', 'yellow', 'white', 'red', 'cyan', 'blue', 'black']
+['blue', 'red', 'black', 'cyan', 'yellow', 'white', 'magenta', 'green']
+['green', 'cyan', 'red', 'black', 'white', 'yellow', 'blue', 'magenta']
+['black', 'yellow', 'white', 'cyan', 'green', 'blue', 'red', 'magenta']
+['blue', 'cyan', 'white', 'black', 'magenta', 'red', 'green', 'yellow']
+['magenta', 'white', 'blue', 'green', 'yellow', 'cyan', 'black', 'red']
+['cyan', 'red', 'black', 'magenta', 'white', 'green', 'yellow', 'blue']
+['green', 'yellow', 'blue', 'black', 'red', 'cyan', 'magenta', 'white']
+</pre>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Rozdělení sekvence do podskupin s&nbsp;využitím funkce <strong>group-by</strong></h2>
+
+<p>Sekvenci je možné rozdělit do skupin s&nbsp;využitím funkce vyššího řádu
+pojmenované <strong>group-by</strong>. Této funkci se kromě rozdělované
+sekvence předává i další funkce, jejíž návratová hodnota je použita pro
+rozpoznání skupiny (může se jednat o libovolnou hodnotu kromě
+<strong>nil</strong>). Podívejme se například na způsob rozdělení sekvence
+přirozených čísel na tři skupiny:</p>
+
+<ol>
+<li>Čísla dělitelná třemi</li>
+<li>Čísla, u kterých po vydělení třemi dostaneme zbytek 1</li>
+<li>Čísla, u kterých po vydělení třemi dostaneme zbytek 2</li>
+</ol>
+
+<pre>
+(def s (range 1 100))
+&nbsp;
+(def groups (group-by #(mod % 3) s))
+&nbsp;
+(def k (sort (keys groups)))
+&nbsp;
+(doseq [key k]
+    (println key (get groups key)))
+</pre>
+
+<p>Výsledky:</p>
+
+<pre>
+0 [3 6 9 12 15 18 21 24 27 30 33 36 39 42 45 48 51 54 57 60 63 66 69 72 75 78 81 84 87 90 93 96 99]
+1 [1 4 7 10 13 16 19 22 25 28 31 34 37 40 43 46 49 52 55 58 61 64 67 70 73 76 79 82 85 88 91 94 97]
+2 [2 5 8 11 14 17 20 23 26 29 32 35 38 41 44 47 50 53 56 59 62 65 68 71 74 77 80 83 86 89 92 95 98]
+</pre>
+
+<p>Podobně můžeme rozdělit názvy barev podle délky názvu:</p>
+
+<pre>
+(def colors ["red", "blue", "green", "yellow", "cyan", "magenta", "black", "white"])
+&nbsp;
+(def groups (group-by #(count %) colors))
+&nbsp;
+(println groups)
+</pre>
+
+<p>Výsledky:</p>
+
+<pre>
+{3 [red],
+ 4 [blue cyan],
+ 5 [green black white],
+ 6 [yellow],
+ 7 [magenta]}
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: tato funkce je zvláštní tím, že jejím
+výsledkem je slovník (dictionary), jehož klíče jsou získány z&nbsp;funkce
+předané do <strong>group-by</strong> a hodnoty jsou nově vypočtené
+podsekvence.</div></p>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Funkce <strong>group_by</strong> v&nbsp;Pythonu</h2>
+
+<p>Naprosto stejným způsobem budeme postupovat v&nbsp;Pythonu, ovšem jméno
+funkce se pochopitelně muselo změnit z&nbsp;<strong>group-by</strong> na
+<strong>group_by</strong>:</p>
+
+<pre>
+from clj.seqs import group_by
+&nbsp;
+sequence = range(1, 100)
+&nbsp;
+print(group_by(lambda x: x % 3, sequence))
+&nbsp;
+groups = group_by(lambda x: x % 3, sequence)
+&nbsp;
+keys = sorted(groups.keys())
+&nbsp;
+for key in keys:
+    print(key, groups[key])
+</pre>
+
+<p>Výsledek rozdělení čísel do tří skupin:</p>
+
+<pre>
+0 [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 93, 96, 99]
+1 [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70, 73, 76, 79, 82, 85, 88, 91, 94, 97]
+2 [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 95, 98]
+</pre>
+
+<p>Rozdělení jmen barev podle délky jmen:</p>
+
+<pre>
+colors = ["red", "blue", "green", "yellow", "cyan", "magenta", "black", "white"]
+&nbsp;
+groups = group_by(lambda color: len(color), colors)
+print(groups)
+</pre>
+
+<p>Výsledkem je slovník s&nbsp;pěticí dvojic klíč-hodnota:</p>
+
+<pre>
+{3: ['red'],
+ 4: ['blue', 'cyan'],
+ 5: ['green', 'black', 'white'],
+ 6: ['yellow'],
+ 7: ['magenta']}
+</pre>
+
+
+
+<p><a name="k17"></a></p>
+<h2 id="k17">17. Sloučení několika sekvencí funkcí <strong>interleave</strong></h2>
+
+<p>Dalo by se říci, že opakem funkce <strong>group-by</strong> je funkce
+pojmenovaná <strong>interleave</strong>. Ta slouží pro proložení prvků ze dvou
+či více sekvencí do sekvence nové. Nejprve se ze všech vstupních sekvencí získá
+stejný počet prvků určený nejkratší sekvencí. Následně se postupně vytvoří
+sekvence nová pravidelným prokládáním prvků všech (obecně zkrácených) vstupních
+sekvencí. Podívejme se na jednoduchý příklad, v&nbsp;němž nejprve vytvoříme
+sekvenci celých čísel a barev a posléze sekvenci celých čísel, barev a znaků
+hvězdičky:</p>
+
+<pre>
+(def s (range 1 10))
+&nbsp;
+(def colors ["red", "blue", "green", "yellow", "cyan", "magenta", "black", "white"])
+&nbsp;
+(println (interleave s colors))
+&nbsp;
+(println)
+&nbsp;
+(println (interleave s colors (repeat 10 "*")))
+</pre>
+
+<p>Výsledky:</p>
+
+<pre>
+(1 red 2 blue 3 green 4 yellow 5 cyan 6 magenta 7 black 8 white)
+(1 red * 2 blue * 3 green * 4 yellow * 5 cyan * 6 magenta * 7 black * 8 white *)
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, jak jsme elegantně
+vytvořili sekvenci s&nbsp;deseti hvězdičkami. Taktéž stojí za pošimnutí, že
+sekvence s&nbsp;celými čísly i hvězdičkami byly zkráceny na délku osmi
+prvků.</div></p>
+
+
+
+<p><a name="k18"></a></p>
+<h2 id="k18">18. Funkce <strong>interleave</strong> v&nbsp;Pythonu</h2>
+
+<p>Použití funkce <strong>interleave</strong> v&nbsp;Pythonu je prakticky
+totožné s&nbsp;výše uvedeným příkladem určeným pro Clojure. Takže jen
+krátce:</p>
+
+<pre>
+from clj.seqs import interleave, repeat
+&nbsp;
+def hr():
+    print(40*"-")
+    print()
+&nbsp;
+&nbsp;
+def print_sequence(sequence):
+    for item in sequence:
+        print(item)
+    hr()
+&nbsp;
+&nbsp;
+sequence1 = range(1, 10)
+sequence2 = ["red", "blue", "green", "yellow", "orange", "cyan", "white", "black"]
+&nbsp;
+print("Two sequences interleaved:")
+print_sequence(interleave(sequence1, sequence2))
+&nbsp;
+print("Three sequences interleaved:")
+print_sequence(interleave(sequence1, sequence2, repeat("*", 10)))
+</pre>
+
+<p>Výsledky (nyní jsou prvky sekvencí vypsané pod sebou):</p>
+
+<pre>
+Two sequences interleaved:
+1
+red
+2
+blue
+3
+green
+4
+yellow
+5
+orange
+6
+cyan
+7
+white
+8
+black
+----------------------------------------
+Three sequences interleaved:
+1
+red
+*
+2
+blue
+*
+3
+green
+*
+4
+yellow
+*
+5
+orange
+*
+6
+cyan
+*
+7
+white
+*
+8
+black
+*
+----------------------------------------
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: ve skutečnosti nalezneme v&nbsp;knihovně
+<strong>clj</strong> ještě větší množství více či méně užitečných funkcí, ovšem
+ty nejdůležitější již byly popsány.</div></p>
+
+
+
+<p><a name="k19"></a></p>
+<h2 id="k19">19. Repositář s&nbsp;demonstračními příklady</h2>
+
+<p>Zdrojové kódy všech dnes zmíněných demonstračních příkladů byly uloženy do
+Git repositáře dostupného na adrese <a
+href="https://github.com/tisnik/lisps-for-python-vm">https://github.com/tisnik/lisps-for-python-vm</a>.
+V&nbsp;případě, že nebudete chtít klonovat celý repositář (ten je ovšem stále
+velmi malý, stále doslova několik kilobajtů), můžete namísto toho použít odkazy
+na jednotlivé příklady, které naleznete v&nbsp;následující tabulce:</p>
+
+<table>
+<tr><th>#</th><th>Příklad</th><th>Adresa</th></tr>
+<tr><td>1</td><td>basic_usage.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/basic_usage.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/basic_usage.py</a></td></tr>
+<tr><td>2</td><td>filters.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/filters.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/filters.py</a></td></tr>
+<tr><td>3</td><td>group_by.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/group_by.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/group_by.py</a></td></tr>
+<tr><td>4</td><td>interleave.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/interleave.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/interleave.py</a></td></tr>
+<tr><td>5</td><td>lazy_sequence_nth_take.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence_nth_take.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence_nth_take.py</a></td></tr>
+<tr><td>6</td><td>lazy_sequence.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence.py</a></td></tr>
+<tr><td>7</td><td>flatten.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/flatten.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/flatten.py</a></td></tr>
+<tr><td>8</td><td>shuffle.py</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/shuffle.py">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/shuffle.py</a></td></tr>
+</table>
+
+<p>Alternativní (a přibližně ekvivalentní) příklady naprogramované přímo
+v&nbsp;Clojure:</p>
+
+<table>
+<tr><th>#</th><th>Příklad</th><th>Adresa</th></tr>
+<tr><td>1</td><td>basic_usage.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/basic_usage.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/basic_usage.clj</a></td></tr>
+<tr><td>2</td><td>filters.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/filters.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/filters.clj</a></td></tr>
+<tr><td>3</td><td>group_by.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/group_by.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/group_by.clj</a></td></tr>
+<tr><td>4</td><td>interleave.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/interleave.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/interleave.clj</a></td></tr>
+<tr><td>5</td><td>lazy_sequence_nth_take.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence_nth_take.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence_nth_take.clj</a></td></tr>
+<tr><td>6</td><td>lazy_sequence_take_while.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence_take_while.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/lazy_sequence_take_while.clj</a></td></tr>
+<tr><td>7</td><td>flatten.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/flatten.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/flatten.clj</a></td></tr>
+<tr><td>7</td><td>shuffle.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/shuffle.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/clj-library/shuffle.clj</a></td></tr>
+</table>
+
+
+
+<p><a name="k20"></a></p>
+<h2 id="k20">20. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>clj - repositář s knihovnou<br />
+<a href="https://github.com/bfontaine/clj">https://github.com/bfontaine/clj</a>
+</li>
+
+<li>clj 0.1.0 - stránka na PyPi<br />
+<a href="https://pypi.python.org/pypi/clj/0.1.0">https://pypi.python.org/pypi/clj/0.1.0</a>
+</li>
+
+<li>Clojure aneb jazyk umožňující tvorbu bezpečných vícevláknových aplikací pro JVM (4.část - kolekce, sekvence a lazy sekvence) <br />
+<a href="https://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-4-cast-kolekce-sekvence-a-lazy-sekvence/">https://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-4-cast-kolekce-sekvence-a-lazy-sekvence/</a>
+</li>
+
+<li>Clojure a bezpečné aplikace pro JVM: sekvence, lazy sekvence a paralelní programy <br />
+<a href="https://www.root.cz/clanky/clojure-a-bezpecne-aplikace-pro-jvm-sekvence-lazy-sekvence-a-paralelni-programy/">https://www.root.cz/clanky/clojure-a-bezpecne-aplikace-pro-jvm-sekvence-lazy-sekvence-a-paralelni-programy/</a>
+</li>
+
+<li>Python becomes a platform<br />
+<a href="https://khinsen.wordpress.com/2012/03/15/python-becomes-a-platform/">https://khinsen.wordpress.com/2012/03/15/python-becomes-a-platform/</a>
+</li>
+
+<li>Python becomes a platform. Thoughts on the release of clojure-py<br />
+<a href="https://news.ycombinator.com/item?id=3708974">https://news.ycombinator.com/item?id=3708974</a>
+</li>
+
+<li>SchemePy<br />
+<a href="https://pypi.org/project/SchemePy/">https://pypi.org/project/SchemePy/</a>
+</li>
+
+<li>lispy<br />
+<a href="https://pypi.org/project/lispy/">https://pypi.org/project/lispy/</a>
+</li>
+
+<li>Lython<br />
+<a href="https://pypi.org/project/Lython/">https://pypi.org/project/Lython/</a>
+</li>
+
+<li>Lizpop<br />
+<a href="https://pypi.org/project/lizpop/">https://pypi.org/project/lizpop/</a>
+</li>
+
+<li>Budoucnost programovacích jazyků<br />
+<a href="http://www.knesl.com/budoucnost-programovacich-jazyku">http://www.knesl.com/budoucnost-programovacich-jazyku</a>
+</li>
+
+<li>LISP Prolog and Evolution<br />
+<a href="http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html">http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html</a>
+</li>
+
+<li>List of Lisp-family programming languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages">https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages</a>
+</li>
+
+<li>clojure_py na indexu PyPi<br />
+<a href="https://pypi.python.org/pypi/clojure_py">https://pypi.python.org/pypi/clojure_py</a>
+</li>
+
+<li>PyClojure<br />
+<a href="https://github.com/eigenhombre/PyClojure">https://github.com/eigenhombre/PyClojure</a>
+</li>
+
+<li>Hy na GitHubu<br />
+<a href="https://github.com/hylang/hy">https://github.com/hylang/hy</a>
+</li>
+
+<li>Hy: The survival guide<br />
+<a href="https://notes.pault.ag/hy-survival-guide/">https://notes.pault.ag/hy-survival-guide/</a>
+</li>
+
+<li>Hy běžící na monitoru terminálu společnosti Symbolics<br />
+<a href="http://try-hy.appspot.com/">http://try-hy.appspot.com/</a>
+</li>
+
+<li>Welcome to Hy’s documentation!<br />
+<a href="http://docs.hylang.org/en/stable/">http://docs.hylang.org/en/stable/</a>
+</li>
+
+<li>Hy na PyPi<br />
+<a href="https://pypi.org/project/hy/#description">https://pypi.org/project/hy/#description</a>
+</li>
+
+<li>Getting Hy on Python<br />
+<a href="https://lwn.net/Articles/596626/">https://lwn.net/Articles/596626/</a>
+</li>
+
+<li>Programming Can Be Fun with Hy<br />
+<a href="https://opensourceforu.com/2014/02/programming-can-fun-hy/">https://opensourceforu.com/2014/02/programming-can-fun-hy/</a>
+</li>
+
+<li>Přednáška o projektu Hy (pětiminutový lighttalk)<br />
+<a href="http://blog.pault.ag/day/2013/04/02">http://blog.pault.ag/day/2013/04/02</a>
+</li>
+
+<li>Hy (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Hy">https://en.wikipedia.org/wiki/Hy</a>
+</li>
+
+<li>Clojure home page<br />
+<a href="http://clojure.org/">http://clojure.org/</a>
+</li>
+
+<li>Clojure Sequences<br />
+<a href="http://clojure.org/sequences">http://clojure.org/sequences</a>
+</li>
+
+<li>Making Clojure Lazier<br />
+<a href="https://clojure.org/reference/lazy">https://clojure.org/reference/lazy</a>
+</li>
+
+<li>Clojure Data Structures<br />
+<a href="http://clojure.org/data_structures">http://clojure.org/data_structures</a>
+</li>
+
+<li>Clojure<br />
+<a href="https://en.wikipedia.org/wiki/Clojure">https://en.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>Clojars<br />
+<a href="https://clojars.org/">https://clojars.org/</a>
+</li>
+
+<li>Seznam knihoven na Clojars<br />
+<a href="https://clojars.org/projects">https://clojars.org/projects</a>
+</li>
+
+<li>Clojure - Functional Programming for the JVM<br />
+<a href="http://java.ociweb.com/mark/clojure/article.html">http://java.ociweb.com/mark/clojure/article.html</a>
+</li>
+
+<li>Clojure quick reference<br />
+<a href="http://faustus.webatu.com/clj-quick-ref.html">http://faustus.webatu.com/clj-quick-ref.html</a>
+</li>
+
+<li>4Clojure<br />
+<a href="http://www.4clojure.com/">http://www.4clojure.com/</a>
+</li>
+
+<li>ClojureDoc (rozcestník s&nbsp;dokumentací jazyka Clojure)<br />
+<a href="http://clojuredocs.org/">http://clojuredocs.org/</a>
+</li>
+
+<li>SICP (The Structure and Interpretation of Computer Programs)<br />
+<a href="http://mitpress.mit.edu/sicp/">http://mitpress.mit.edu/sicp/</a>
+</li>
+
+<li>Pure function<br />
+<a href="http://en.wikipedia.org/wiki/Pure_function">http://en.wikipedia.org/wiki/Pure_function</a>
+</li>
+
+<li>Funkcionální programování<br />
+<a href="http://cs.wikipedia.org/wiki/Funkcionální_programování">http://cs.wikipedia.org/wiki/Funkcionální_programování</a>
+</li>
+
+<li>Čistě funkcionální (datové struktury, jazyky, programování)<br />
+<a href="http://cs.wikipedia.org/wiki/Čistě_funkcionální">http://cs.wikipedia.org/wiki/Čistě_funkcionální</a>
+</li>
+
+<li>Dynamic Languages Strike Back<br />
+<a href="http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html">http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html</a>
+</li>
+
+<li>Scripting: Higher Level Programming for the 21st Century<br />
+<a href="http://www.tcl.tk/doc/scripting.html">http://www.tcl.tk/doc/scripting.html</a>
+</li>
+
+<li>Threading macro (dokumentace k&nbsp;jazyku Clojure)<br />
+<a href="https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/-&gt;">https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/-&gt;</a>
+</li>
+
+<li>Understanding the Clojure -&gt; macro<br />
+<a href="http://blog.fogus.me/2009/09/04/understanding-the-clojure-macro/">http://blog.fogus.me/2009/09/04/understanding-the-clojure-macro/</a>
+</li>
+
+<li>Emacs LISP<br />
+<a href="https://www.root.cz/clanky/historie-vyvoje-textovych-editoru-eine-zwei-emacs/#k08">https://www.root.cz/clanky/historie-vyvoje-textovych-editoru-eine-zwei-emacs/#k08</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Speciální formy, lambda výrazy a makra v programovacím jazyku LISP <br />
+<a href="https://www.root.cz/clanky/specialni-formy-lambda-vyrazy-a-makra-v-programovacim-jazyku-lisp/">https://www.root.cz/clanky/specialni-formy-lambda-vyrazy-a-makra-v-programovacim-jazyku-lisp/</a>
+</li>
+
+<li>Programovací jazyky používané (nejen) v SSSR (část 3 – LISP)<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyky-pouzivane-nejen-v-nbsp-sssr-cast-3-ndash-lisp/">https://www.root.cz/clanky/programovaci-jazyky-pouzivane-nejen-v-nbsp-sssr-cast-3-ndash-lisp/</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2018</small></p>
+</body>
+</html>
