@@ -1,0 +1,1843 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>Možnosti nabízené jazykem Hy: moderním dialektem LISPu určeným pro Python VM</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>Možnosti nabízené jazykem Hy: moderním dialektem LISPu určeným pro Python VM</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Ve druhé části článku o programovacím jazyku Hy si ukážeme jak použití některých typicky LISPovských technik, například deklaraci maker, tak i možnosti velmi dobře navržené kooperace mezi Hy a Pythonem. Také si ukážeme, jak lze Hy přeložit do Pythonu 2 i 3.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. Možnosti nabízené jazykem Hy: moderním dialektem LISPu určeným pro Python VM</a></p>
+<p><a href="#k02">2. Zpracování kolekcí &ndash; vektorů a slovníků</a></p>
+<p><a href="#k03">3. Funkce a makra určená pro práci s&nbsp;vektory</a></p>
+<p><a href="#k04">4. Modifikace obsahu vektoru s&nbsp;využitím funkcí <strong>cut</strong>, <strong>del</strong>, <strong>assoc</strong> a metody <strong>append</strong></a></p>
+<p><a href="#k05">5. Funkce a makra určená pro práci se slovníky</a></p>
+<p><a href="#k06">6. Generátorová notace slovníku a použití funkce <strong>zip</strong> pro vytvoření slovníku</a></p>
+<p><a href="#k07">7. Pravidla pro pojmenování funkcí v&nbsp;jazyku Hy</a></p>
+<p><a href="#k08">8. Volání funkcí a metod definovaných v&nbsp;Pythonu</a></p>
+<p><a href="#k09">9. Volání funkcí definovaných v&nbsp;jazyku Hy z&nbsp;Pythonu</a></p>
+<p><a href="#k10">10. Použití maker v&nbsp;jazyku Hy</a></p>
+<p><a href="#k11">11. Smyčka REPL (Read-Eval-Print-Loop) a systém maker v tradičních LISPech</a></p>
+<p><a href="#k12">12. Využití <strong>eval</strong></a></p>
+<p><a href="#k13">13. Makra &bdquo;quote&ldquo; a &bdquo;syntax-quote&ldquo;</a></p>
+<p><a href="#k14">14. Praktické použití &ndash; jednoduchá makra</a></p>
+<p><a href="#k15">15. Transpřeklad programů z&nbsp;jazyka Hy do Pythonu</a></p>
+<p><a href="#k16">16. Složitější příklad &ndash; vygenerování SVG souboru s&nbsp;logem</a></p>
+<p><a href="#k17">17. Porovnání SVG generátoru s&nbsp;podobným příkladem naprogramovaným v&nbsp;Clojure a Pixie</a></p>
+<p><a href="#k18">18. Repositář s&nbsp;demonstračními příklady</a></p>
+<p><a href="#k19">19. Odkazy na předchozí části seriálu o jazyku Clojure</a></p>
+<p><a href="#k20">20. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. Možnosti nabízené jazykem Hy: moderním dialektem LISPu určeným pro Python VM</h2>
+
+<p><a
+href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">V&nbsp;předchozím článku</a> jsme se ve stručnosti seznámili se dvěma <a
+href="https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages">dialekty
+programovacího jazyka LISP</a> určenými pro běh ve virtuálním stroji Pythonu
+(přesněji řečeno CPythonu, protože Python je dnes možné provozovat i nad JVM či
+CLR). Připomeňme si, že se jedná o projekty <i>Hy</i> a <i>Clojure-py</i>,
+přičemž první zmíněný projekt <i>Hy</i> je aktivně vyvíjený, používaný
+v&nbsp;praxi a především umožňuje velmi dobrou kooperaci s&nbsp;Pythonem
+(dokonce do větší míry, než je zajištěna kooperace mezi <i>Clojure</i> a
+<i>Javou</i>). Dnes se seznámíme s&nbsp;dalšími možnostmi nabízenými jazykem
+<i>Hy</i>. Nejprve si podrobněji ukážeme, jakým způsobem se pracuje
+s&nbsp;kolekcemi, dále si ukážeme možnosti makrosystému jazyka <i>Hy</i> a
+konečně si řekneme, jakým způsobem je možné z&nbsp;jazyka <i>Hy</i> volat
+funkce a metody naprogramované v&nbsp;Pythonu a naopak &ndash; jak volat funkce
+vytvořené v&nbsp;jazyku <i>Hy</i> z&nbsp;Pythonu. Ostatně právě tato
+oboustranná interoperabilita dělá z&nbsp;<i>Hy</i> prakticky použitelný
+projekt.</p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Zpracování kolekcí &ndash; vektorů a slovníků</h2>
+
+<p>V&nbsp;úvodní části dnešního článku se ještě jednou vrátíme
+k&nbsp;problematice práce s&nbsp;kolekcemi (tj.&nbsp;zejména s&nbsp;vektory a
+se slovníky), protože to je jedna z&nbsp;oblastí, v&nbsp;níž se programovací
+jazyk <i>Hy</i> odlišuje od <i>Clojure</i>. Důvody pro všechny dále zmíněné
+rozdíly jsou ve skutečnosti velmi pragmatické &ndash; vzhledem k&nbsp;tomu, že
+jsou vektory představované Pythonovskými seznamy, není například možné zachovat
+neměnnost (<i>immutability</i>), což je jeden z&nbsp;hlavních konceptů, na
+nichž je postaven programovací jazyk <i>Clojure</i>. Většina základních funkcí
+navíc vrací přímo vektor a nikoli tzv.&nbsp;línou sekvenci (<i>lazy
+sequence</i>) tak, jak je tomu v&nbsp;Clojure.</p>
+
+<p>Na začátek si připomeňme, že <i>Hy</i> rozlišuje mezi seznamem
+(<i>list</i>), což je datová struktura podobná klasickému LISPovskému seznamu
+tvořenému tečka-dvojicemi a mezi vektorem (<i>vector</i>), který odpovídá
+Pythonovskému seznamu, jehož obsah i tvar (shape) je měnitelný. Vektor se
+vytvoří následovně:</p>
+
+<pre>
+=&gt; <i>; vektory nejsou neměnné (immutable) tak jako v Clojure!</i>
+=&gt; <strong>(setv vektor [1 2 3 4])</strong>
+</pre>
+
+<p>Takto vytvořený vektor je možné modifikovat &ndash; měnit hodnotu jeho
+prvků, měnit jeho tvar (<i>shape</i>), tj.&nbsp;počet prvků atd.</p>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Funkce a makra určená pro práci s&nbsp;vektory</h2>
+
+<p>V&nbsp;dalších příkladech si ukážeme základní funkce určené pro práci
+s&nbsp;vektory. Jedná se v&nbsp;první řadě o funkci <strong>get</strong>
+určenou pro přečtení jednoho prvku ze seznamu na zadaném indexu (indexuje se od
+nuly) a taktéž o funkce nazvané příznačně <strong>first</strong> a
+<strong>last</strong> pro přístup k&nbsp;prvnímu resp.&nbsp;k&nbsp;poslednímu
+prvku. Povšimněte si, že funkce <strong>get</strong> akceptuje i záporné indexy
+pro přístup k&nbsp;prvkům od konce vektoru, což vlastně není překvapivé,
+protože se tato funkce překládá na Pythonovské
+<strong>vektor[index]</strong>:</p>
+
+<pre>
+=&gt; <i>; výraz pro přečtení prvku vektoru</i>
+=&gt; <strong>(get vektor 1)</strong>
+2
+=&gt; <strong>(get vektor -1)</strong>
+4
+=&gt; <strong>(get vektor -2)</strong>
+3
+&nbsp;
+=&gt; <i>; speciální funkce pro významné prvky vektoru</i>
+=&gt; <strong>(first vektor)</strong>
+1
+=&gt; <strong>(last vektor)</strong>
+4
+</pre>
+
+<p>Další funkce se jmenuje <strong>rest</strong> a její chování již více
+odpovídá Clojure, protože tato funkce nevrací seznam ani vektor, ale iterátor,
+což je možné považovat za obdobu líné sekvence. Pro převod iterátoru na vektor
+se používá funkce <strong>list</strong>, což je sice matoucí, ale musíme si
+uvědomit, že snahou je zachování co největší úrovně kompatibility
+s&nbsp;Pythonem:</p>
+
+<pre>
+=&gt; <i>; převod na sekvenci bez prvního prvku</i>
+=&gt; <strong>(rest vektor)</strong>
+&lt;itertools.islice object at 0x7f1237a16f98&gt;
+&nbsp;
+=&gt; <i>; zpětný převod sekvence na vektor</i>
+=&gt; <strong>(list (rest vektor))</strong>
+[2, 3, 4]
+&nbsp;
+=&gt; <i>; vylepšený způsob zápisu předchozího výrazu</i>
+=&gt; <strong>(-> vektor rest list)</strong>
+[2, 3, 4]
+</pre>
+
+<p>Následuje ukázka použití vektoru vektorů neboli matic, ať již pravidelných
+nebo nepravidelných:</p>
+
+<pre>
+=&gt; <i>; dvourozměrný vektor (matice)</i>
+=&gt; <strong>(setv matice [[1 2 3] [4 5 6] [7 8 9]])</strong>
+&nbsp;
+=&gt; <strong>matice</strong>
+[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+&nbsp;
+=&gt; <i>; nepravidelná matice</i>
+=&gt; <strong>(setv matice2 [[1] [2 3] [4 5 6] [7 8 9 10]])</strong>
+&nbsp;
+=&gt; <strong>matice2</strong>
+[[1], [2, 3], [4, 5, 6], [7, 8, 9, 10]]
+</pre>
+
+<p>Při snaze o vytvoření &bdquo;plochého&ldquo; vektoru použijeme funkci
+<strong>flatten</strong>:</p>
+
+<pre>
+=&gt; <strong>(flatten matice)</strong>
+[1, 2, 3, 4, 5, 6, 7, 8, 9]
+</pre>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Modifikace obsahu vektoru s&nbsp;využitím funkcí <strong>cut</strong>, <strong>del</strong>, <strong>assoc</strong> a metody <strong>append</strong></h2>
+
+<p>Další užitečná funkce <strong>cut</strong> slouží pro vytvoření dalšího
+vektoru z&nbsp;vybraných prvků vektoru prvního. Překlad této funkce odpovídá
+Pythonovskému <strong>vektor[od:do]</strong>, a to včetně možnosti použití
+záporných indexů:</p>
+
+<pre>
+=&gt; <i>; získání subvektoru</i>
+=&gt; <strong>(cut vektor 1 5)</strong>
+[2, 3, 4]
+=&gt; <strong>(cut vektor 1)</strong>
+[2, 3, 4]
+=&gt; <strong>(cut vektor -5 -2)</strong>
+[1, 2]
+=&gt; <strong>(cut vektor -3 -2)</strong>
+[2]
+</pre>
+
+<p>Třetím nepovinným parametrem je možné určit krok, ať již kladný či
+záporný:</p>
+
+<pre>
+=&gt; <strong>(setv vektor2 (list (range 20)))</strong>
+&nbsp;
+=&gt; <i>; sudé prvky</i>
+=&gt; <strong>(cut vektor2 2 -1 2)</strong>
+[2, 4, 6, 8, 10, 12, 14, 16, 18]
+=&nbsp;
+=&gt; <i>; otočení vektoru</i>
+=&gt; <strong>(cut vektor2 -1 0 -1)</strong>
+[19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+=&nbsp;
+=&gt; <i>; otočení se získáním jen lichých prvků</i>
+=&gt; <strong>(cut vektor2 -1 0 -2)</strong>
+[19, 17, 15, 13, 11, 9, 7, 5, 3, 1]
+</pre>
+
+<p>Pro změnu hodnoty prvku ve vektoru se používá makro <strong>assoc</strong>,
+ovšem musíme si dát pozor na to, aby prvek s&nbsp;daným indexem již ve vektoru
+existoval:</p>
+
+<pre>
+=&gt; <i>; změna prvku ve vektoru je možná</i>
+=&gt; <strong>(assoc vektor 2 42)</strong>
+=&nbsp;
+=&gt; <i>; POZOR: vyhodí výjimku!</i>
+=&gt; <strong>(assoc vektor 10 -1)</strong>
+Traceback (most recent call last):
+  File "/home/tester/.local/lib/python3.6/site-packages/hy/importer.py", line 198, in hy_eval
+    eval(ast_compile(_ast, &lt;eval_body&gt;", "exec"), namespace)
+  File "&lt;eval_body&gt;", line 1, in &lt;module&gt;
+IndexError: list assignment index out of range
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, že makro
+<strong>asocc</strong> nevrací žádnou hodnotu, resp.&nbsp;přesněji řečeno vrací
+<strong>None</strong> (odpovídá <strong>nil</strong> v&nbsp;LISPu). Je tomu tak
+z&nbsp;toho důvodu, že dochází k&nbsp;modifikaci původního vektoru.</div></p>
+
+<p>Při mazání prvků z&nbsp;vektoru použijeme funkci <strong>del</strong>,
+typicky společně s&nbsp;funkcí <strong>cut</strong>:</p>
+
+<pre>
+=&gt; <strong>(setv vektor2 ["A" "B" "C" "D" "E" "F"])</strong>
+&nbsp;
+=&gt; <strong>vektor2</strong>
+['A', 'B', 'C', 'D', 'E', 'F']
+&nbsp;
+=&gt; <strong>(cut vektor2 2 4)</strong>
+['C', 'D']
+&nbsp;
+=&gt; <strong>(del (cut vektor2 2 4))</strong>
+&nbsp;
+=&gt; <strong>vektor2</strong>
+&nbsp;
+['A', 'B', 'E', 'F']
+&nbsp;
+=&gt; <strong>(-&gt; (cut vektor2 2 4) del)</strong>
+&nbsp;
+=&gt; <strong>vektor2</strong>
+['A', 'B']
+</pre>
+
+<p>A konečně pro přidání nového prvku do vektoru můžete použít metodu
+<strong>.append</strong>, která se zapisuje dvěma způsoby &ndash; funkcionálně
+nebo objektově:</p>
+
+<pre>
+=&gt; <i>; přidání prvku do vektoru (na jeho konec)</i>
+=&gt; <strong>(.append vektor 5)</strong>
+&nbsp;
+=&gt; <i>; přidání prvku do vektoru (na jeho konec)</i>
+=&gt; <strong>(vektor.append 5)</strong>
+</pre>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Funkce a makra určená pro práci se slovníky</h2>
+
+<p>Další funkce a makra, která si popíšeme, se týkají práce se slovníky
+(<i>dictionary</i>). I v&nbsp;této oblasti vidíme inspiraci programovacím
+jazykem <i>Clojure</i> (konstruktory slovníků), ovšem současně je patrná
+poměrně úzká návaznost i na samotný jazyk Python. Nejprve si zopakujme, jak
+vypadá konstruktor slovníku. Ten je jednoduchý &ndash; všechny dvojice
+klíč+hodnota se uvedou do složených závorek:</p>
+
+<pre>
+=&gt; <strong>{"prvni" "first" "druhy" "second" "treti" "third"}</strong>
+{'prvni': 'first', 'druhy': 'second', 'treti': 'third'}
+</pre>
+
+<p>Pro získání hodnoty uložené pod nějakým klíčem se opět používá funkce
+<strong>get</strong>, které se ovšem pochopitelně namísto indexu prvku předává
+klíč. V&nbsp;případě, že prvek s&nbsp;daným klíčem není nalezen, dojde
+k&nbsp;běhové výjimce:</p>
+
+<pre>
+=&gt; <strong>(setv d1 {:id 1 :name "Eda" :surname "Wasserfall"})</strong>
+&nbsp;
+=&gt; <strong>(get d1 :name)</strong>
+'Eda'
+=&gt; <strong>(get d1 :xyname)</strong>
+Traceback (most recent call last):
+  File "/home/tester/.local/lib/python3.6/site-packages/hy/importer.py", line 201, in hy_eval
+    return eval(ast_compile(expr, "&lt;eval&gt;", "eval"), namespace)
+  File "&lt;eval&gt;", line 1, in &lt;module&gt;
+KeyError: '\ufdd0:xyname'
+</pre>
+
+<p>V&nbsp;případě, že se ve funkci <strong>get</strong> použije větší množství
+selektorů (indexů popř.&nbsp;klíčů), je možné vybírat hodnoty z&nbsp;vnořených
+datových struktur. Opět si to ukažme na jednoduchém příkladu, konkrétně na
+slovníku, který v&nbsp;jednom prvku obsahuje seznam:</p>
+
+<pre>
+=&gt; <strong>(setv d2 {:id 1 :name "Eda" :surname "Wasserfall" :actors ["Genadij Rumlena" "Pavel Vondruška"]})</strong>
+&nbsp;
+=&gt; <strong>(get d2 :actors 1)</strong>
+'Pavel Vondruška'
+&nbsp;
+=&gt; <strong>(get d2 :actors 0)</strong>
+'Genadij Rumlena'
+</pre>
+
+<p>I u slovníků lze použít funkci <strong>assoc</strong> pro přidání další
+dvojice klíč+hodnota. Slovník je tedy možné vytvořit postupně:</p>
+
+<pre>
+=&gt; <strong>(setv d3 {})</strong>
+&nbsp;
+=&gt; <strong>(assoc d3 :id 10)</strong>
+&nbsp;
+=&gt; <strong>(assoc d3 :name "Eda")</strong>
+&nbsp;
+=&gt; <strong>(assoc d3 :surname "Wasserfall")</strong>
+&nbsp;
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: funkce <strong>assoc</strong> mění
+původní slovník, na rozdíl od stejně pojmenované funkce v&nbsp;jazyku Clojure,
+která vytváří slovník nový.</div></p>
+
+<p>Funkce <strong>assoc</strong> dokáže přepsat hodnotu prvku, a to ve chvíli,
+kdy použijeme stejný klíč, který je již ve slovníku obsažen:</p>
+
+<pre>
+=&gt; <strong>(assoc d3 :id 10)</strong>
+</pre>
+
+<p>Vymazání dvojice klíč+hodnota zajišťuje funkce <strong>del</strong>:</p>
+
+<pre>
+=&gt; <strong>(del (get d3 :surname))</strong>
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: v&nbsp;jazyce Clojure pro tento účel
+slouží funkce <strong>dissoc</strong>.</div></p>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Generátorová notace slovníku a použití funkce <strong>zip</strong> pro vytvoření slovníku</h2>
+
+<p>Velmi užitečná je funkce nazvaná <strong>dict-comp</strong>. Tato funkce
+implementuje známou &bdquo;generátorovou notaci slovníku&ldquo;. Zkusme si nyní
+vytvořit slovník s&nbsp;deseti prvky, přičemž každý prvek (dvojice
+klíč+hodnota) obsahuje číslo+řetězec obsahující stejné cifry:</p>
+
+<pre>
+=&gt; <strong>(dict-comp x (str x) [x (range 1 11)])</strong>
+{1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10'}
+&nbsp;
+=&gt; <strong>(dict-comp x (* x x) [x (range 1 11)])</strong>
+{1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81, 10: 100}
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: další srovnání s&nbsp;Clojure.
+V&nbsp;Clojure se pro generátorovou notaci seznamu popř.&nbsp;slovníku používá
+funkce <strong>for</strong>, která je ovšem v&nbsp;Hy rezervována pro
+implementaci programové smyčky stejného jména.</div></p>
+
+<p>Při tvorbě slovníku je dokonce možné použít i filtraci prvků:</p>
+
+<pre>
+=&gt; <strong>(dict-comp x (str x) [x (range 1 11)] (even? x))</strong>
+{2: '2', 4: '4', 6: '6', 8: '8', 10: '10'}
+&nbsp;
+=&gt; <strong>(dict-comp x (str x) [x (range 1 11)] (odd? x))</strong>
+{1: '1', 3: '3', 5: '5', 7: '7', 9: '9'}
+</pre>
+
+<p>Samozřejmě lze využít i vlastní funkci (predikát) pro filtraci:</p>
+
+<pre>
+=&gt; <strong>(defn div3 [n] (= 0 (% n 3)))</strong>
+&nbsp;
+=&gt; <strong>(dict-comp x (* x x) [x (range 1 11)] (div3 x))</strong>
+{3: 9, 6: 36, 9: 81}
+</pre>
+
+<p>Další možností, jak vytvořit slovník, je použití funkce
+<strong>zip</strong>, ovšem výsledek je nutné na slovník převést:</p>
+
+<pre>
+=&gt; <strong>(dict (zip [:id :name :surname] [1 "Eda" "Wasserfall"]))</strong>
+</pre>
+
+<p>Nepatrně složitější příklady:</p>
+
+<pre>
+=&gt; <strong>(repeat "A" 10)</strong>
+repeat('A', 10)
+&nbsp;
+=&gt; <strong>(dict (zip (range 10) (repeat "A" 10)))</strong>
+{0: 'A', 1: 'A', 2: 'A', 3: 'A', 4: 'A', 5: 'A', 6: 'A', 7: 'A', 8: 'A', 9: 'A'}
+&nbsp;
+=&gt; <strong>(-&gt; (zip (range 10) (range 10 1 -1)) dict)</strong>
+{0: 10, 1: 9, 2: 8, 3: 7, 4: 6, 5: 5, 6: 4, 7: 3, 8: 2}
+</pre>
+
+<p>Počet hodnot může přesahovat počet klíčů, ovšem hodnoty, které nelze na
+klíče namapovat, se budou jednoduše ignorovat:</p>
+
+<pre>
+=&gt; <strong>(-> (zip (range 10) (range 50 1 -1)) dict)</strong>
+{0: 50, 1: 49, 2: 48, 3: 47, 4: 46, 5: 45, 6: 44, 7: 43, 8: 42, 9: 41}
+</pre>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Pravidla pro pojmenování funkcí v&nbsp;jazyku Hy</h2>
+
+<p>V&nbsp;programovacím jazyku <i>Hy</i> je možné funkce pojmenovávat stejným
+způsobem, jako je tomu u většiny dalších dialektů LISPu. Podívejme se tedy na
+několik typických příkladů. Funkce, jejichž jména jsou složena z&nbsp;většího
+množství slov, se většinou zapisují s&nbsp;využitím pomlčky:</p>
+
+<pre>
+<i>; příklad jména funkce zapisované tak, jak je zvykem v LISPu</i>
+(defn <strong>calculate-multiplication</strong>
+    [x y]
+    (* x y))
+</pre>
+
+<p>Predikáty, tj.&nbsp;funkce, které na základě hodnoty svého parametru
+(parametrů) vracejí pravdivostní hodnotu True/False, se typicky zapisují
+s&nbsp;otazníkem na konci:</p>
+
+<pre>
+<i>; predikáty</i>
+(defn <strong>zero?</strong>
+    [x]
+    (== x 0))
+&nbsp;
+(defn <strong>even?</strong>
+    [x]
+    (zero? (mod x 2)))
+&nbsp;
+(defn <strong>odd?</strong>
+    [x]
+    (not (even? x)))
+</pre>
+
+<p>Konverzní funkce mohou ve svém jménu používat šipku -&gt;, ovšem takové
+funkce nebude možné volat z&nbsp;Pythonu:</p>
+
+<pre>
+<i>; konverzní funkce</i>
+(defn <strong>string-&gt;bool</strong>
+    [s]
+    (== s "true"))
+&nbsp;
+(defn <strong>deg-&gt;rad</strong>
+    [angle]
+    (* angle (/ 3.1415 180)))
+</pre>
+
+<p>A konečně privátní popř.&nbsp;skryté funkce se mohou zapisovat se dvěma
+hvězdičkami nebo, což je lepší, s&nbsp;pomlčkou na začátku:</p>
+
+<pre>
+<i>; privátní funkce</i>
+(defn <strong>**hidden**</strong>
+    [x]
+    (+ x 1))
+&nbsp;
+<i>; privátní funkce - lepší pojmenování</i>
+(defn <strong>-hidden</strong>
+    [x]
+    (+ x 1))
+</pre>
+
+<p>Podívejme se nyní na to, jak se takto pojmenované funkce přeloží do Pythonu.
+Povšimněte si, že ne všechny názvy jsou korektní Pythonovské identifikátory.
+Také stojí za zapamatování způsob překladu názvů predikátů:</p>
+
+<pre>
+from hy.core.language import is_even, is_odd, is_zero
+&nbsp;
+&nbsp;
+def <strong>calculate_multiplication</strong>(x, y):
+    return x * y
+&nbsp;
+&nbsp;
+def <strong>is_zero</strong>(x):
+    return ==(x, 0)
+&nbsp;
+&nbsp;
+def <strong>is_even</strong>(x):
+    return is_zero(mod(x, 2))
+&nbsp;
+&nbsp;
+def <strong>is_odd</strong>(x):
+    return not is_even(x)
+&nbsp;
+&nbsp;
+def <strong>string_&gt;bool</strong>(s):
+    return ==(s, 'true')
+&nbsp;
+&nbsp;
+def <strong>deg_&gt;rad</strong>(angle):
+    return angle * (3.1415 / 180)
+&nbsp;
+&nbsp;
+def <strong>*HIDDEN*</strong>(x):
+    return x + 1
+&nbsp;
+&nbsp;
+def <strong>_hidden</strong>(x):
+    return x + 1
+</pre>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Volání funkcí a metod definovaných v&nbsp;Pythonu</h2>
+
+<p>V&nbsp;této kapitole si ukážeme, jakým způsobem můžeme v&nbsp;jazyku
+<i>Hy</i> použít funkce a metody definované v&nbsp;Pythonu. Pro tento účel si
+připravíme malý testovací modul nazvaný <strong>test_module.py</strong>, který
+obsahuje jak několik funkcí, tak i třídu s&nbsp;konstruktorem a jednou metodou.
+Navíc je deklarována jedna konstanta:</p>
+
+<pre>
+THE_ANSWER = 42
+&nbsp;
+&nbsp;
+def <strong>multiply_two_numbers</strong>(x, y):
+    return x * y
+&nbsp;
+&nbsp;
+class <strong>uber_class</strong>:
+    def <strong>__init__</strong>(self, x):
+        self._x = x
+&nbsp;
+    def <strong>compute_square</strong>(self):
+        return self._x * self._x
+</pre>
+
+<p>Použití tříd a metod z&nbsp;modulu <strong>datetime</strong> je snadné.
+Povšimněte si, že metody lze volat jak stylem <strong>(.metoda objekt
+parametry)</strong>, tak i stylem <strong>(objekt.metoda
+parametry)</strong>:</p>
+
+<pre>
+(import [datetime [date :as d]])
+&nbsp;
+(setv date (d 2018 02 28))
+(print date)
+(print date.year)
+(print date.month)
+(print date.day)
+&nbsp;
+(setv now1 (.today d))
+(print now1)
+(setv now2 (d.today))
+(print now2)
+</pre>
+
+<p>Příklad použití konstanty a funkce z&nbsp;našeho testovacího modulu ukazuje,
+že lze použít jak původní jména (vytvořená podle konvencí Pythonu), tak i jména
+odpovídající konvencím programovacího jazyka Hy:</p>
+
+<pre>
+(import [test_module [*]])
+&nbsp;
+(print THE_ANSWER)
+(print *the-answer*)
+(print (multiply_two_numbers 6 7))
+(print (multiply-two-numbers 6 7))
+</pre>
+
+<p>Alternativní způsob importu do vlastního jmenného prostoru
+<strong>t</strong>:</p>
+
+<pre>
+(import [test_module :as t])
+&nbsp;
+(print t.THE_ANSWER)
+(print t.*the-answer*)
+(print (t.multiply_two_numbers 6 7))
+(print (t.multiply-two-numbers 6 7))
+</pre>
+
+<p>Konstrukce objektu a volání jeho metody (opět oběma podporovanými
+způsoby):</p>
+
+<pre>
+(setv u (uber_class 42))
+(print u)
+(print (u.compute_square))
+(print (.compute_square u))
+</pre>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Volání funkcí definovaných v&nbsp;jazyku Hy z&nbsp;Pythonu</h2>
+
+<p>Nyní si ukážeme opačný směr spolupráce mezi programovacím jazykem <i>Hy</i>
+a <i>Pythonem</i>. Nejdříve nadefinujeme několik funkcí v&nbsp;jazyku Hy a
+posléze tyto funkce (resp.&nbsp;jen ty funkce, které mají korektní jméno)
+zavoláme z&nbsp;Pythonu. Nutné přitom je, aby se použilo následující
+pojmenování souboru s&nbsp;modulem naprogramovaným v&nbsp;Hy:</p>
+
+<pre>
+jméno_modulu.hy
+</pre>
+
+<p>Vytvoříme tedy soubor nazvaný <strong>interop2.hy</strong>, který bude mít
+následující obsah:</p>
+
+<pre>
+<i>; Běžná funkce zapisovaná ve stylu LISPu</i>
+(defn <strong>calculate-multiplication</strong>
+    [x y]
+    (* x y))
+&nbsp;
+&nbsp;
+<i>; Predikáty</i>
+(defn <strong>zero?</strong>
+    [x]
+    (= x 0))
+&nbsp;
+(defn <strong>even?</strong>
+    [x]
+    (zero? (% x 2)))
+&nbsp;
+(defn <strong>odd?</strong>
+    [x]
+    (not (even? x)))
+&nbsp;
+&nbsp;
+<i>; Konverzní funkce</i>
+(defn <strong>string-&gt;bool</strong>
+    [s]
+    (= s "true"))
+&nbsp;
+(defn <strong>deg-&gt;rad</strong>
+    [angle]
+    (* angle (/ 3.1415 180)))
+&nbsp;
+&nbsp;
+<i>; Privátní funkce</i>
+(defn <strong>-hidden</strong>
+    [x]
+    (+ x 1))
+&nbsp;
+<i>; Funkce psaná velkými písmeny</i>
+(defn <strong>*major*</strong>
+    [x]
+    (+ x 1))
+</pre>
+
+<p>Všechny funkce, u nichž se podařilo vytvoření korektního pythonovského
+jména, lze zavolat přímo z&nbsp;Pythonu, a to stejným způsobem, jako jakékoli
+jiné funkce. Nesmíme zapomenout na import modulu <strong>hy</strong> a
+samozřejmě i testovaného modulu (ten se nijak nepřekládá!):</p>
+
+<pre>
+import hy
+from interop2 import *
+&nbsp;
+print(calculate_multiplication(6, 7))
+&nbsp;
+print(is_zero(0))
+print(is_zero(1))
+print(is_zero(2))
+&nbsp;
+print(is_even(0))
+print(is_even(1))
+print(is_even(2))
+&nbsp;
+print(is_odd(0))
+print(is_odd(1))
+print(is_odd(2))
+&nbsp;
+print(MAJOR(1))
+&nbsp;
+import interop2
+print(interop2._hidden(1))
+</pre>
+
+<p><div class="rs-tip-major">Můžeme vidět, že interoperabilita Hy &rarr; Python
+i Python &rarr; Hy je na velmi dobré úrovni a oba programátor může vcelku bez
+problémů využívat možností obou jazyků v&nbsp;jediném projektu.</div></p>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Použití maker v&nbsp;jazyku Hy</h2>
+
+<p>V&nbsp;navazujících kapitolách se seznámíme s&nbsp;možnostmi makrosystému
+nabízeného programovacím jazykem Hy. Před zápisem uživatelských maker si však
+ukažme takzvaná <i>reader makra</i>, která jsou aplikována již ve chvíli
+načítání jednotlivých výrazů do interpretru. Samotná reader makra jsou velmi
+jednoduchá, protože nemají přístup k&nbsp;AST (jsou aplikována příliš
+brzy):</p>
+
+<table>
+<tr><th>#</th><th>Makro</th><th>Název</th><th>Význam</th></tr>
+<tr><td>1</td><td>;</td><td>comment</td><td>umožňuje obejít zápis (comment nějaký text) u komentářů</td></tr>
+<tr><td>2</td><td>'</td><td>quote</td><td>nahrazuje zápis (quote …)</td></tr>
+<tr><td>3</td><td>`</td><td>syntax-quote</td><td>provádí plnou kvalifikaci symbolů + zde lze použít makra ~ a ~@</td></tr>
+<tr><td>4</td><td>~</td><td>unquote</td><td>zajistí, že se vyhodnotí pouze označená část formy (= provede substituci této části výsledkem)</td></tr>
+<tr><td>5</td><td>~@</td><td>unquote-splicing</td><td>podobné předchozími makru, ovšem výsledná sekvence se vloží ve formě samostatných prvků do „obalující“ sekvence</td></tr>
+<tr><td>6</td><td>#</td><td>dispatch</td><td>má různé funkce: donutí reader, aby použil makro z jiné tabulky maker</td></tr>
+</table>
+
+<p>Makro <i>dispatch</i> (poslední v&nbsp;předchozí tabulce) má ve skutečnosti
+několik významů v&nbsp;závislosti na tom, jaký znak je uveden ihned po křížku
+(#):</p>
+
+<table>
+<tr><th>#</th><th>Dvojice znaků</th><th>Způsob použití</th><th>Význam</th></tr>
+<tr><td>1</td><td>#{</td><td>#{prvky} 	</td><td>zápis množiny</td></tr>
+<tr><td>2</td><td>#_</td><td>#_text 	</td><td>text je ignorován – alternativní způsob komentáře</td></tr>
+</table>
+
+<p>V&nbsp;uživatelských makrech (těch plnohodnotných) se velmi často používají
+reader makra <i>syntax-quote</i> a <i>unquote</i>.</p>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Smyčka REPL (Read-Eval-Print-Loop) a systém maker v tradičních LISPech</h2>
+
+<p>Jednoduchý interpret LISPu mohl být teoreticky implementován pouze
+s&nbsp;využitím trojice funkcí <strong>read</strong> (načtení výrazu/formy ze
+standardního vstupu), <strong>print</strong> (tisk výsledku vyhodnocení
+výrazu/formy na standardní výstup), <strong>eval</strong> (většinou rekurzivně
+implementovaná funkce určená pro vyhodnocení načtené formy), které byly
+doplněny speciální formou či makrem <strong>loop</strong> (nekonečná smyčka
+&ndash; při striktním pohledu se v&nbsp;tomto případě nemůže jednat o funkci).
+Ve skutečnosti je však samozřejmě nutné, aby byl prakticky použitelný
+programovací jazyk doplněn o alespoň minimální množství základních funkcí a
+speciálních forem. V&nbsp;případě původního LISPu se jednalo o sedm funkcí a
+dvě speciální formy: <strong>atom</strong>, <strong>car</strong>,
+<strong>cdr</strong>, <strong>cond</strong>, <strong>cons</strong>,
+<strong>eq</strong>, <strong>quote</strong>, <strong>lambda</strong> a konečně
+<strong>label</strong>.</p>
+
+<p>Původně relativně velmi jednoduše a přitom elegantně implementovaný
+interpret programovacího jazyka LISP se postupně začal vyvíjet a jednou
+z&nbsp;nových a přitom mocných technik, které do něj byly přidány, jsou
+takzvaná makra, která se však v&nbsp;mnoha ohledech liší od maker používaných
+například v&nbsp;programovacích jazycích C a C++. Zatímco v&nbsp;céčku jsou
+makra zpracovávána poměrně &bdquo;hloupým&ldquo; preprocesorem, který dokáže
+provádět textové substituce, načítat vkládané soubory a vyhodnocovat jednoduché
+podmínky, mohou makra implementovaná v&nbsp;programovacím jazyce LISP pracovat
+přímo se zadávanými formami, které makra mohou různým způsobem modifikovat
+&ndash; přitom se zde využívá faktu, že v&nbsp;LISPu a tudíž i v&nbsp;jazyku
+<i>Hy</i> jsou programy reprezentovány ve formě (obvykle rekurzivně vnořených)
+seznamů, a změnou obsahu těchto seznamů lze vlastně přímo manipulovat
+s&nbsp;takzvaným abstraktním syntaktickým stromem (<i>AST – Abstract Syntax
+Tree</i>).</p>
+
+<p>Není bez zajímavosti, že s&nbsp;AST se v&nbsp;LISPu nebo Hy může manipulovat
+za použití stejných mechanismů (funkcí/forem/maker), které se používají i při
+běžném programování &ndash; jinými slovy to znamená, že jazyk maker je stále
+jazykem, v&nbsp;němž se zapisují programy (na rozdíl od zmíněného céčka a C++,
+kde je jazyk maker zcela odlišný). Jinými slovy to znamená, že se při tvorbě
+maker musíme seznámit pouze se způsobem zápisu maker, ale v&nbsp;samotných
+makrech se mohou používat funkce, které jsme si již v&nbsp;tomto článku popsali
+&ndash; většinou se bude jednat o funkce pro práci se seznamy, což je vzhledem
+ke způsobu reprezentace programů (jako do sebe vnořených seznamů)
+pochopitelné.</p>
+
+<p><div class="rs-tip-major">Poznámka: tato vlastnost se nazývá
+<i>homoikonicita</i> a v&nbsp;důsledku znamená, že dialekty LISPu vlastně stojí
+na vrcholu hierarchie programovacích jazyků. Jakoukoli novou sémantickou
+konstrukci, která se objeví v&nbsp;jiném programovacím jazyku, je totiž možné
+díky homoikonicitě implementovat i v&nbsp;LISPech (za předpokladu že LISP je
+Turingovsky úplný, což bezpochyby je).</div></p>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Využití <strong>eval</strong></h2>
+
+<p><a href="#k11">V&nbsp;předchozí kapitole</a> jsme si řekli, že do funkce
+<strong>eval</strong> je možné předat pouze korektně zapsanou formu.
+V&nbsp;některých případech je však určitý výraz nebo i větší část programů
+dostupná pouze ve formě řetězce &ndash; ten může být přečten například ze
+souboru, zadán uživatelem v&nbsp;nějakém GUI dialogu atd. Problém nastane
+v&nbsp;případě, kdy se pokusíme tento řetězec předat funkci
+<strong>eval</strong> v&nbsp;domnění, že se předávaný řetězec
+&bdquo;automagicky&ldquo; bude transformovat na korektní formu a ta se následně
+vyhodnotí.</p>
+
+<p>Předpoklad, že <strong>eval</strong> bude jako svůj parametr akceptovat
+řetězec, může vycházet ze zkušeností vývojáře s&nbsp;jinými programovacími
+jazyky, kde tomu tak skutečně může být, ovšem v&nbsp;Hy a ani v&nbsp;dalších
+dialektech LISPu to neplatí a pro toto chování jsou i dobré důvody &ndash; mimo
+jiné i bezpečnost (a taktéž to, že parsování řetězce skutečně není prací pro
+<strong>eval</strong>). Podívejme se nyní, co se stane, pokud se pokusíme
+nechat vyhodnotit řetězec obsahující zápis korektní formy, ovšem pouze
+v&nbsp;textové podobě:</p>
+
+<pre>
+<i>; vytvoření nové globální proměnné</i>
+<i>; a přiřazení SEZNAMU do této proměnné</i>
+=&gt; <strong>(setv hello-code '(print "Hello world!"))</strong>
+&nbsp;
+<i>; hodnotu proměnné (tedy obsah seznamu)</i>
+<i>; lze samozřejmě kdykoli získat</i>
+=&gt; <strong>hello-code</strong>
+HyExpression([
+  HySymbol('print'),
+  HyString('Hello world!')])
+&nbsp;
+<i>; i když proměnná obsahuje seznam s korektním</i>
+<i>; voláním funkce, není možné použít následující</i>
+<i>; formu pro zavolání této funkce</i>
+=&gt; <strong>(hello-code)</strong>
+Traceback (most recent call last):
+  File "/home/tester/.local/lib/python3.4/site-packages/hy/importer.py", line 201, in hy_eval
+    return eval(ast_compile(expr, "&lt;eval&gt;", "eval"), namespace)
+  File "&lt;eval&gt;", line 1, in &lt;module&gt;
+TypeError: 'HyExpression' object is not callable
+&nbsp;
+<i>; namísto toho se musí použít funkce eval</i>
+=&gt; <strong>(eval hello-code)</strong>
+Hello world!
+</pre>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Makra &bdquo;quote&ldquo; a &bdquo;syntax-quote&ldquo;</h2>
+
+<p>Konečně se dostáváme k&nbsp;zajímavým a užitečným reader makrům. Jedno
+z&nbsp;nejdůležitějších a nejčastěji používaných maker se jmenuje <i>quote</i>
+a zapisuje se pomocí apostrofu. Toto makro zakazuje vyhodnocování seznamů,
+protože pokud by objekt reader načetl formu ve tvaru <strong>(a b c)</strong>,
+předal by ji do funkce <strong>eval</strong>, kde by se tato forma vyhodnotila
+jako volání funkce <strong>a</strong> s&nbsp;parametry <strong>b</strong> a
+<strong>c</strong>. Pokud však reader načte formu <strong>'(a b c)</strong>,
+ztransformuje ji do tvaru <strong>(quote (a b c))</strong>, přičemž
+<strong>quote</strong> je speciální forma zakazující vyhodnocení. Na většinu
+ostatních objektů kromě seznamů nemá makro <i>quote</i> většinou žádný
+vliv:</p>
+
+<pre>
+=&gt; <strong>'42</strong>
+HyInteger(42)
+=&gt; <strong>'(1 2 3)</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3)])
+=&gt; <strong>'[1 2 3]</strong>
+HyList([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3)])
+=&gt; <strong>[1 2 3]</strong>
+[1, 2, 3]
+=&gt; <strong>'(* 6 7)</strong>
+HyExpression([
+  HySymbol('*'),
+  HyInteger(6),
+  HyInteger(7)])
+=&gt; <strong>(* 6 7)</strong>
+42
+</pre>
+
+<p>Kromě makra <i>quote</i> ještě objekt reader rozeznává poněkud
+komplikovanější makro nazývané <i>syntax-quote</i>, které se zapisuje pomocí
+zpětného apostrofu: `. Chování tohoto makra se liší podle toho, s&nbsp;jakým
+typem objektu je použito, ovšem ve všech případech se makro chová tak, aby
+nedocházelo k&nbsp;vyhodnocení jeho argumentů, popř.&nbsp;ani
+k&nbsp;vyhodnocení vnořených forem. V&nbsp;následujících příkladech dochází
+k&nbsp;jednoduchému zákazu vyhodnocení předané formy:</p>
+
+<pre>
+=&gt; <strong>`42</strong>
+HyInteger(42)
+=&gt; <strong>`(1 2 3)</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3)])
+=&gt; <strong>`[1 2 3]</strong>
+HyList([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3)])
+</pre>
+
+<p>Další možnosti:</p>
+
+<pre>
+=&gt; <strong>`(* 6 7)</strong>
+HyExpression([
+  HySymbol('*'),
+  HyInteger(6),
+  HyInteger(7)])
+=&gt; <strong>`(str "Hello" "world")</strong>
+HyExpression([
+  HySymbol('str'),
+  HyString('Hello'),
+  HyString('world')])
+=&gt; <strong>`[* seq str xyzzy neznamy]</strong>
+HyList([
+  HySymbol('*'),
+  HySymbol('seq'),
+  HySymbol('str'),
+  HySymbol('xyzzy'),
+  HySymbol('neznamy')])
+</pre>
+
+<p>Makro nazvané <i>unquote</i>, které se zapisuje pomocí znaku ~ (tilda)
+dokáže vynutit vyhodnocení určité části výrazu, a to tehdy, pokud je tento
+výraz umístěn v&nbsp;makru ` (<i>syntax-quote</i>), nikoli však '
+(<i>quote</i>). Nejprve si ukažme způsob zápisu tohoto makra i to, jaký má toto
+makro vliv na zapisované výrazy:</p>
+
+<pre>
+<i>; makro quote zakáže vyhodnocení celého seznamu</i>
+=&gt; <strong>'(1 2 (* 6 7) (/ 4 2))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyExpression([
+    HySymbol('*'),
+    HyInteger(6),
+    HyInteger(7)]),
+  HyExpression([
+    HySymbol('/'),
+    HyInteger(4),
+    HyInteger(2)])])
+&nbsp;
+<i>; makro syntax-quote zakáže vyhodnocení celého seznamu</i>
+=&gt; <strong>`(1 2 (* 6 7) (/ 4 2))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyExpression([
+    HySymbol('*'),
+    HyInteger(6),
+    HyInteger(7)]),
+  HyExpression([
+    HySymbol('/'),
+    HyInteger(4),
+    HyInteger(2)])])
+</pre>
+
+<p>Použití ~ uvnitř `:</p>
+
+<pre>
+<i>; pomocí ~ vynutíme vyhodnocení podvýrazu (* 6 7)</i>
+=&gt; <strong>`(1 2 ~(* 6 7) (/ 4 2))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  42,
+  HyExpression([
+    HySymbol('/'),
+    HyInteger(4),
+    HyInteger(2)])])
+&nbsp;
+<i>; pomocí ~ vynutíme vyhodnocení podvýrazu (/ 4 2)</i>
+=&gt; <strong>`(1 2 (* 6 7) ~(/ 4 2))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyExpression([
+    HySymbol('*'),
+    HyInteger(6),
+    HyInteger(7)]),
+  2.0])
+&nbsp;
+<i>; pomocí dvou ~ vynutíme vyhodnocení obou podvýrazů</i>
+=&gt; <strong>`(1 2 ~(* 6 7) ~(/ 4 2))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  42,
+  2.0])
+</pre>
+
+<p>Podobným způsobem pracuje i makro ~@, ovšem to navíc ještě provádí
+&bdquo;zplošťování seznamů&ldquo;. Prozatím si chování tohoto makra ukážeme na
+velmi jednoduchém umělém příkladu:</p>
+
+<pre>
+<i>; uživatelsky definovaný seznam</i>
+=&gt; <strong>(setv s '(1 2 3))</strong>
+&nbsp;
+=&gt; <strong>'(1 2 3 (cons s s))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3),
+  HyExpression([
+    HySymbol('cons'),
+    HySymbol('s'),
+    HySymbol('s')])])
+=&gt; <strong>`(1 2 3 (cons s s))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3),
+  HyExpression([
+    HySymbol('cons'),
+    HySymbol('s'),
+    HySymbol('s')])])
+=&gt; <strong>`(1 2 3 ~(cons s s))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3),
+  HyExpression([
+    HyExpression([
+      HyInteger(1),
+      HyInteger(2),
+      HyInteger(3)]),
+    HyInteger(1),
+    HyInteger(2),
+    HyInteger(3)])])
+=&gt; <strong>`(1 2 3 ~@(cons s s))</strong>
+HyExpression([
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3),
+  HyExpression([
+    HyInteger(1),
+    HyInteger(2),
+    HyInteger(3)]),
+  HyInteger(1),
+  HyInteger(2),
+  HyInteger(3)])
+</pre>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Praktické použití &ndash; jednoduchá makra</h2>
+
+<p>Uživatelská makra se vytváří s&nbsp;využitím <strong>defmacro</strong>.
+Podívejme se nyní na velmi jednoduché makro, které po svém zavolání
+(v&nbsp;době zpracování vstupního textu!) provede expanzi na <strong>(print
+'výraz)</strong>, tj.&nbsp;vypíše se původní (nevyhodnocený!) výraz, což se
+může hodit například při ladění programů:</p>
+
+<pre>
+(defmacro <strong>print-expression-1</strong>
+    [expression]
+    `(print '~expression))
+</pre>
+
+<p>Makro můžeme upravit i tak, aby se nejprve vypsal nevyhodnocený výraz a
+posléze i jeho výsledek. Použijeme zde speciální formu <strong>do</strong> pro
+spojení většího množství funkcí do jediného bloku. Povšimněte si, že celý blok
+je uvozen zpětným apostrofem a uvnitř bloku tedy můžeme využít ~:</p>
+
+<pre>
+(defmacro <strong>print-expression-2</strong>
+    [expression]
+    `(do (print '~expression)
+         (print ~expression)))
+</pre>
+
+<p>Příklady použití:</p>
+
+<pre>
+<strong>(print-expression-1 (* 6 7))</strong>
+&nbsp;
+HyExpression([
+  HySymbol('*'),
+  HyInteger(6),
+  HyInteger(7)])
+&nbsp;
+&nbsp;
+(print-expression-2 (* 6 7))
+&nbsp;
+HyExpression([
+  HySymbol('*'),
+  HyInteger(6),
+  HyInteger(7)])
+42
+</pre>
+
+<p>Další makro nalezneme v&nbsp;doplňkové knihovně jazyka Hy. Umožňuje pro
+každý prvek seznamu zavolat nějakou funkci, která může mít vedlejší efekt.
+Uvnitř této funkce je příslušný prvek seznamu představován symbolem
+<strong>it</strong>. Makro nazvané <strong>ap-each</strong> vypadá následovně a
+jeho chování při expanzi je zřejmý, protože známe význam ` ~ i ~@:</p>
+
+<pre>
+(defmacro ap-each [lst &amp;rest body]
+  `(for [it ~lst] ~@body))
+</pre>
+
+<p>Příklad použití:</p>
+
+<pre>
+=&gt; <strong>(ap-each [1 2 3] (print it))</strong>
+1
+2
+3
+&nbsp;
+=&gt; <strong>(ap-each [1 2 3] (print (* it it)))</strong>
+1
+4
+9
+</pre>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Transpřeklad programů z&nbsp;jazyka Hy do Pythonu</h2>
+
+<p>S&nbsp;využitím nástrojů nazvaných <strong>hy2py</strong> a
+<strong>hy2py3</strong> lze provést překlad zdrojových kódů naprogramovaných
+v&nbsp;jazyce Hy do Pythonu 2 či do Pythonu 3. Možnosti těchto nástrojů si
+ukážeme na třech variantách výpočtu faktoriálu. Povšimněte si, že výsledkem
+jsou většinou velmi pěkně čitelné zdrojové kódy, což při transpřekladu není
+vždy zvykem:</p>
+
+<pre>
+<i>; nerekurzivní výpočet faktoriálu</i>
+&nbsp;
+(defn <strong>factorial</strong>
+    [n]
+    (if (neg? n)
+        (raise (ValueError "natural number expected"))
+        (reduce * (range 1 (inc n)))))
+&nbsp;
+(print (factorial 10))
+&nbsp;
+(for [n (range 1 11)]
+     (print n (factorial n)))
+&nbsp;
+(print (factorial -10))
+</pre>
+
+<p>Výsledek přeložený nástrojem <strong>hy2py3</strong> &ndash; příkaz od
+příkazu obdoba předchozího skriptu:</p>
+
+<pre>
+from hy.core.language import inc, is_neg, reduce
+from hy.core.shadow import *
+&nbsp;
+&nbsp;
+def <strong>factorial</strong>(n):
+    if is_neg(n):
+        raise ValueError('natural number expected')
+        _hy_anon_var_1 = None
+    else:
+        _hy_anon_var_1 = reduce(*, range(1, inc(n)))
+    return _hy_anon_var_1
+&nbsp;
+&nbsp;
+print(factorial(10))
+for n in range(1, 11):
+    print(n, factorial(n))
+print(factorial(-10))
+</pre>
+
+<p>Druhá varianta, tentokrát rekurzivního výpočtu:</p>
+
+<pre>
+<i>; rekurzivní výpočet faktoriálu</i>
+&nbsp;
+(defn <strong>factorial</strong>
+    [n]
+    (if (&lt;= n 1)
+        1
+        (* n (factorial (- n 1)))))
+&nbsp;
+(print (factorial 10))
+&nbsp;
+(for [n (range 1 11)]
+     (print n (factorial n)))
+</pre>
+
+<p>Výsledek přeložený nástrojem <strong>hy2py3</strong>; opět prakticky totožný
+s&nbsp;originálem:</p>
+
+<pre>
+def <strong>factorial</strong>(n):
+    return 1 if n &lt;= 1 else n * factorial(n - 1)
+&nbsp;
+&nbsp;
+print(factorial(10))
+for n in range(1, 11):
+    print(n, factorial(n))
+</pre>
+
+<p>Třetí varianta, tentokrát založená na TCO (<i>tail call
+optimization</i>):</p>
+
+<pre>
+<i>; rekurzivní výpočet faktoriálu - TCO</i>
+&nbsp;
+(require [hy.contrib.loop [loop]])
+&nbsp;
+(defn <strong>factorial</strong>
+    [n]
+    (loop [[cnt n]
+           [acc 1]]
+        (if (zero? cnt)
+             acc
+             (recur (dec cnt) (* acc cnt)))))
+&nbsp;
+(print (factorial 10))
+&nbsp;
+(for [n (range 1 11)]
+     (print n (factorial n)))
+</pre>
+
+<p>Výsledek přeložený nástrojem <strong>hy2py3</strong>. Nyní si transpřekladač
+musel vypomoci takzvanou &bdquo;trampolínou&ldquo; (<a
+href="https://en.wikipedia.org/wiki/Trampoline_%28computing%29#High-level_programming">trampoline</a>):</p>
+
+<pre>
+from hy.core.language import dec, is_zero
+&nbsp;
+&nbsp;
+def <strong>factorial</strong>(n):
+    from hy.contrib.loop import __trampoline__
+&nbsp;
+    @__trampoline__
+    def _;recur_fn|1236(cnt, acc):
+        return acc if is_zero(cnt) else _;recur_fn|1236(dec(cnt), acc * cnt)
+    _;recur_fn|1235 = _;recur_fn|1236
+    return _;recur_fn|1235(n, 1)
+&nbsp;
+&nbsp;
+print(factorial(10))
+for n in range(1, 11):
+    print(n, factorial(n))
+</pre>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Složitější příklad &ndash; vygenerování SVG souboru s&nbsp;logem</h2>
+
+<p>Jako příklad použití některých základních funkcí z&nbsp;modulů
+<strong>hy.contrib.loop</strong> a <strong>math</strong> si ukažme krátký
+prográmek, který vygeneruje obrázek ukázaný níže. Při výpočtu vektorového
+obrázku ukládaného do formátu SVG se používají funkce sinus a kosinus, při
+ukládání obrázku pak uživatelsky definovaná funkce <strong>spit</strong>
+založená na pythonovských I/O funkcích:</p>
+
+<pre>
+<i>; vykreslení vektorového loga do souboru (formát SVG)</i>
+&nbsp;
+(require [hy.contrib.loop [loop]])
+(import [math [sin cos]])
+&nbsp;
+(setv s 480)
+&nbsp;
+(defn spit
+    [filename content]
+    (with [fout (open filename "w")]
+        (.write fout content)))
+&nbsp;
+(-&gt;&gt;
+    (+ "&lt;svg xmlns='http://www.w3.org/2000/svg' version='1.1' width='" (str s) "' height='" (str s) "'&gt;"
+         (loop [[i 0] [R 255] [G 255] [B 0] [out ""]]
+             (setv r (- 128 i)
+                   a (/ i 12.)
+                   b (+ i 80)
+                   x (+ (/ s 2) (* b (cos a)))
+                   y (+ (/ s 2) (* b (sin a)))
+                   p (+ "&lt;circle cx='" (str x) "' cy='" (str y) "' r='" (str r) "' ")
+                   q (+ "fill='rgb(" (str R) "," (str G) "," (str B) ")' style='fill-opacity:.06'/&gt;\n"))
+             (if (&lt; i 128)
+                 (recur (inc i) (- R 2) G (+ B 2) (+ out p q p "fill='none' stroke='black'/&gt;\n"))
+                 out))
+         "&lt;/svg&gt;")
+    (spit "logo.svg"))
+</pre>
+
+<img src="https://i.iinfo.cz/images/336/pixie-full-1.png" class="image-268621" alt="Logo.clj" width="438" height="438" />
+<p><i>Obrázek 1: Vektorový obrazec vytvořený předchozím demonstračním příkladem.</i></p>
+
+
+
+<p><a name="k17"></a></p>
+<h2 id="k17">17. Porovnání SVG generátoru s&nbsp;podobným příkladem naprogramovaným v&nbsp;Clojure a Pixie</h2>
+
+<p>Pro porovnání si předchozí skript ukažme ve variantě naprogramované
+v&nbsp;Clojure:</p>
+
+<pre>
+(def s 480)
+&nbsp;
+(-&gt;&gt;
+    (str (format "&lt;svg xmlns='http://www.w3.org/2000/svg' version='1.1' width='%d' height='%d'&gt;" s s)
+         (loop [i 0 R 255 G 255 B 0 o ""]
+             (let [r (- 128 i)
+                   a (/ i 12.)
+                   b (+ i 80)
+                   x (+ (/ s 2) (* b (Math/cos a)))
+                   y (+ (/ s 2) (* b (Math/sin a)))
+                   p (format"&lt;circle cx='%f' cy='%f' r='%d' " x y r)
+                   q (str "fill='rgb(" R "," G "," B ")' style='fill-opacity:.06'/&gt;\n")]
+                   (if (&lt; i 128)
+                       (recur (inc i) (- R 2) G (+ B 2) (str o p q p "fill='none' stroke='black'/&gt;\n"))
+                       o)))
+         "&lt;/svg&gt;")
+    (spit "logo.svg"))
+</pre>
+
+<p>A taktéž ve variantě vytvořené v&nbsp;programovacím jazyku Pixie:</p>
+
+<pre>
+(ns logo (:require [pixie.math :refer :all]
+                   [pixie.io :refer :all]))
+&nbsp;
+(def s 480)
+&nbsp;
+(-&gt;&gt;
+    (str "&lt;svg xmlns='http://www.w3.org/2000/svg' version='1.1' width='" s "' height='" s "'&gt;"
+    (loop [i 0 R 255 G 255 B 0 o ""]
+        (let [r (- 128 i)
+              a (/ i 12.)
+              b (+ i 80)
+              x (+ (/ s 2) (* b (cos a)))
+              y (+ (/ s 2) (* b (sin a)))
+              c (str R "," G "," B)
+              p (str "&lt;circle cx='" x "' cy='" y "' r='" r "' ")
+              q (str "fill='rgb(" R "," G "," B ")' style='fill-opacity:.06'/&gt;\n")]
+              (if (&lt; i 128)
+                  (recur (inc i) (- R 2) G (+ B 2) (str o p q p "fill='none' stroke='black'/&gt;\n"))
+                  o)))
+         "&lt;/svg&gt;")
+    (spit "logo.svg"))
+</pre>
+
+<p>Vidíme, že až na několik maličkostí jsou všechny tři programy prakticky
+shodné.</p>
+
+
+
+<p><a name="k18"></a></p>
+<h2 id="k18">18. Repositář s&nbsp;demonstračními příklady</h2>
+
+<p>Zdrojové kódy všech dnes zmíněných demonstračních příkladů byly uloženy do
+Git repositáře dostupného na adrese <a
+href="https://github.com/tisnik/lisps-for-python-vm">https://github.com/tisnik/lisps-for-python-vm</a>.
+V&nbsp;případě, že nebudete chtít klonovat celý repositář (ten je ovšem stále
+velmi malý, stále doslova několik kilobajtů), můžete namísto toho použít odkazy
+na jednotlivé příklady, které naleznete v&nbsp;následující tabulce:</p>
+
+<table>
+<tr><th>#</th><th>Příklad</th><th>Adresa</th></tr>
+<tr><td>1</td><td>10_vectors.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/10_vectors.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/10_vectors.clj</a></td></tr>
+<tr><td>2</td><td>11_dictionaries.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/11_dictionaries.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/11_dictionaries.clj</a></td></tr>
+<tr><td>3</td><td>12_names.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/12_names.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/12_names.clj</a></td></tr>
+<tr><td>4</td><td>13_interop.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/13_interop.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/13_interop.clj</a></td></tr>
+<tr><td>5</td><td>14_interop2.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/14_interop2.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/14_interop2.clj</a></td></tr>
+<tr><td>6</td><td>15_macros.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/15_macros.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/15_macros.clj</a></td></tr>
+<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>7</td><td>logo.clj</td><td><a href="https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/logo.clj">https://github.com/tisnik/lisps-for-python-vm/blob/master/hy/logo.clj</a></td></tr>
+</table>
+
+<p>Kromě zdrojových kódů příkladů najdete v&nbsp;repositáři i soubory pro
+Python 2 i Python 3 vygenerované výše zmíněnými nástroji <strong>hy2py</strong>
+a <strong>hy2py3</strong>.</p>
+
+
+
+<p><a name="k19"></a></p>
+<h2 id="k19">19. Odkazy na předchozí části seriálu o jazyku Clojure</h2>
+
+<ol>
+
+<li>Clojure  1: Úvod<br />
+<a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm/">http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm/</a>
+</li>
+
+<li>Clojure  2: Symboly, kolekce atd.<br />
+<a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-2-cast/">http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-2-cast/</a>
+</li>
+
+<li>Clojure  3: Funkcionální programování<br />
+<a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-3-cast-funkcionalni-programovani/">http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-3-cast-funkcionalni-programovani/</a>
+</li>
+
+<li>Clojure  4: Kolekce, sekvence a lazy sekvence<br />
+<a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-4-cast-kolekce-sekvence-a-lazy-sekvence/">http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-4-cast-kolekce-sekvence-a-lazy-sekvence/</a>
+</li>
+
+<li>Clojure  5: Sekvence, lazy sekvence a paralelní programy<br />
+<a href="http://www.root.cz/clanky/clojure-a-bezpecne-aplikace-pro-jvm-sekvence-lazy-sekvence-a-paralelni-programy/">http://www.root.cz/clanky/clojure-a-bezpecne-aplikace-pro-jvm-sekvence-lazy-sekvence-a-paralelni-programy/</a>
+</li>
+
+<li>Clojure  6: Podpora pro paralelní programování<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-6-futures-nejsou-jen-financni-derivaty/">http://www.root.cz/clanky/programovaci-jazyk-clojure-6-futures-nejsou-jen-financni-derivaty/</a>
+</li>
+
+<li>Clojure  7: Další funkce pro paralelní programování<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-7-dalsi-podpurne-prostredky-pro-paralelni-programovani/">http://www.root.cz/clanky/programovaci-jazyk-clojure-7-dalsi-podpurne-prostredky-pro-paralelni-programovani/</a>
+</li>
+
+<li>Clojure  8: Identity, stavy, neměnné hodnoty a reference<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-8-identity-stavy-nemenne-hodnoty-a-referencni-typy/">http://www.root.cz/clanky/programovaci-jazyk-clojure-8-identity-stavy-nemenne-hodnoty-a-referencni-typy/</a>
+</li>
+
+<li>Clojure  9: Validátory, pozorovatelé a kooperace s Javou<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-9-validatory-pozorovatele-a-kooperace-mezi-clojure-a-javou/">http://www.root.cz/clanky/programovaci-jazyk-clojure-9-validatory-pozorovatele-a-kooperace-mezi-clojure-a-javou/</a>
+</li>
+
+<li>Clojure 10: Kooperace mezi Clojure a Javou<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-10-kooperace-mezi-clojure-a-javou-pokracovani/">http://www.root.cz/clanky/programovaci-jazyk-clojure-10-kooperace-mezi-clojure-a-javou-pokracovani/</a>
+</li>
+
+<li>Clojure 11: Generátorová notace seznamu/list comprehension<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-11-generatorova-notace-seznamu-list-comprehension/">http://www.root.cz/clanky/programovaci-jazyk-clojure-11-generatorova-notace-seznamu-list-comprehension/</a>
+</li>
+
+<li>Clojure 12: Překlad programů z Clojure do bajtkódu JVM I:<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-12-preklad-programu-z-clojure-do-bajtkodu-jvm/">http://www.root.cz/clanky/programovaci-jazyk-clojure-12-preklad-programu-z-clojure-do-bajtkodu-jvm/</a>
+</li>
+
+<li>Clojure 13: Překlad programů z Clojure do bajtkódu JVM II:<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-13-preklad-programu-z-clojure-do-bajtkodu-jvm-pokracovani/">http://www.root.cz/clanky/programovaci-jazyk-clojure-13-preklad-programu-z-clojure-do-bajtkodu-jvm-pokracovani/</a>
+</li>
+
+<li>Clojure 14: Základy práce se systémem maker<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-14-zaklady-prace-se-systemem-maker/">http://www.root.cz/clanky/programovaci-jazyk-clojure-14-zaklady-prace-se-systemem-maker/</a>
+</li>
+
+<li>Clojure 15: Tvorba uživatelských maker<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-15-tvorba-uzivatelskych-maker/">http://www.root.cz/clanky/programovaci-jazyk-clojure-15-tvorba-uzivatelskych-maker/</a>
+</li>
+
+<li>Clojure 16: Složitější uživatelská makra<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-16-slozitejsi-uzivatelska-makra/">http://www.root.cz/clanky/programovaci-jazyk-clojure-16-slozitejsi-uzivatelska-makra/</a>
+</li>
+
+<li>Clojure 17: Využití standardních maker v praxi<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-17-vyuziti-standardnich-maker-v-praxi/">http://www.root.cz/clanky/programovaci-jazyk-clojure-17-vyuziti-standardnich-maker-v-praxi/</a>
+</li>
+
+<li>Clojure 18: Základní techniky optimalizace aplikací<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-18-zakladni-techniky-optimalizace-aplikaci/">http://www.root.cz/clanky/programovaci-jazyk-clojure-18-zakladni-techniky-optimalizace-aplikaci/</a>
+</li>
+
+<li>Clojure 19: Vývojová prostředí pro Clojure<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-19-vyvojova-prostredi-pro-clojure/">http://www.root.cz/clanky/programovaci-jazyk-clojure-19-vyvojova-prostredi-pro-clojure/</a>
+</li>
+
+<li>Clojure 20: Vývojová prostředí pro Clojure (Vimu s REPL)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-20-vyvojova-prostredi-pro-clojure-integrace-vimu-s-repl/">http://www.root.cz/clanky/programovaci-jazyk-clojure-20-vyvojova-prostredi-pro-clojure-integrace-vimu-s-repl/</a>
+</li>
+
+<li>Clojure 21: ClojureScript aneb překlad Clojure do JS<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-21-clojurescript-aneb-preklad-clojure-do-javascriptu/">http://www.root.cz/clanky/programovaci-jazyk-clojure-21-clojurescript-aneb-preklad-clojure-do-javascriptu/</a>
+</li>
+
+<li>Leiningen: nástroj pro správu projektů napsaných v Clojure<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure/</a>
+</li>
+
+<li>Leiningen: nástroj pro správu projektů napsaných v Clojure (2)<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-2/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-2/</a>
+</li>
+
+<li>Leiningen: nástroj pro správu projektů napsaných v Clojure (3)<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-3/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-3/</a>
+</li>
+
+<li>Leiningen: nástroj pro správu projektů napsaných v Clojure (4)<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-4/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-4/</a>
+</li>
+
+<li>Leiningen: nástroj pro správu projektů napsaných v Clojure (5)<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-5/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-5/</a>
+</li>
+
+<li>Leiningen: nástroj pro správu projektů napsaných v Clojure (6)<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-6/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-6/</a>
+</li>
+
+<li>Programovací jazyk Clojure a databáze (1.část)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-databaze-1-cast/">http://www.root.cz/clanky/programovaci-jazyk-clojure-a-databaze-1-cast/</a>
+</li>
+
+<li>Pluginy pro Leiningen<br />
+<a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-pluginy-pro-leiningen/">http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-pluginy-pro-leiningen/</a>
+</li>
+
+<li>Programovací jazyk Clojure a knihovny pro práci s vektory a maticemi<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-knihovny-pro-praci-s-vektory-a-maticemi/">http://www.root.cz/clanky/programovaci-jazyk-clojure-a-knihovny-pro-praci-s-vektory-a-maticemi/</a>
+</li>
+
+<li>Programovací jazyk Clojure a knihovny pro práci s vektory a maticemi (2)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-knihovny-pro-praci-s-vektory-a-maticemi-2/">http://www.root.cz/clanky/programovaci-jazyk-clojure-a-knihovny-pro-praci-s-vektory-a-maticemi-2/</a>
+</li>
+
+<li>Programovací jazyk Clojure: syntéza procedurálních textur s využitím knihovny Clisk<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk/">http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk/</a>
+</li>
+
+<li>Programovací jazyk Clojure: syntéza procedurálních textur s využitím knihovny Clisk (2)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk-2/">http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk-2/</a>
+</li>
+
+<li>Seesaw: knihovna pro snadnou tvorbu GUI v jazyce Clojure<br />
+<a href="http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure/">http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure/</a>
+</li>
+
+<li>Seesaw: knihovna pro snadnou tvorbu GUI v jazyce Clojure (2)<br />
+<a href="http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure-2/">http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure-2/</a>
+</li>
+
+<li>Seesaw: knihovna pro snadnou tvorbu GUI v jazyce Clojure (3)<br />
+<a href="http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure-3/">http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure-3/</a>
+</li>
+
+<li>Programovací jazyk Clojure a práce s Gitem<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-prace-s-gitem/">http://www.root.cz/clanky/programovaci-jazyk-clojure-a-prace-s-gitem/</a>
+</li>
+
+<li>Programovací jazyk Clojure: syntéza procedurálních textur s využitím knihovny Clisk (dokončení)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk-dokonceni/">http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk-dokonceni/</a>
+</li>
+
+<li>Programovací jazyk Clojure a práce s Gitem (2)<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-prace-s-gitem-2/">http://www.root.cz/clanky/programovaci-jazyk-clojure-a-prace-s-gitem-2/</a>
+</li>
+
+<li>Programovací jazyk Clojure – triky při práci s řetězci<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-triky-pri-praci-s-retezci/">http://www.root.cz/clanky/programovaci-jazyk-clojure-triky-pri-praci-s-retezci/</a>
+</li>
+
+<li>Programovací jazyk Clojure – triky při práci s kolekcemi<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-triky-pri-praci-s-kolekcemi/">http://www.root.cz/clanky/programovaci-jazyk-clojure-triky-pri-praci-s-kolekcemi/</a>
+</li>
+
+<li>Programovací jazyk Clojure – práce s mapami a množinami<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-prace-s-mapami-a-mnozinami/">http://www.root.cz/clanky/programovaci-jazyk-clojure-prace-s-mapami-a-mnozinami/</a>
+</li>
+
+<li>Programovací jazyk Clojure – základy zpracování XML<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-zaklady-zpracovani-xml/">http://www.root.cz/clanky/programovaci-jazyk-clojure-zaklady-zpracovani-xml/</a>
+</li>
+
+<li>Programovací jazyk Clojure – testování s využitím knihovny Expectations<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-testovani-s-vyuzitim-knihovny-expectations/">http://www.root.cz/clanky/programovaci-jazyk-clojure-testovani-s-vyuzitim-knihovny-expectations/</a>
+</li>
+
+<li>Programovací jazyk Clojure – některé užitečné triky použitelné (nejenom) v&nbsp;testech<br />
+<a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-nektere-uzitecne-triky-pouzitelne-nejenom-v-testech/">http://www.root.cz/clanky/programovaci-jazyk-clojure-nektere-uzitecne-triky-pouzitelne-nejenom-v-testech/</a>
+</li>
+
+<li>Enlive – výkonný šablonovací systém pro jazyk Clojure<br/>
+<a href="http://www.root.cz/clanky/enlive-vykonny-sablonovaci-system-pro-jazyk-clojure/">http://www.root.cz/clanky/enlive-vykonny-sablonovaci-system-pro-jazyk-clojure/</a>
+</li>
+
+<li>Nástroj Leiningen a programovací jazyk Clojure: tvorba vlastních knihoven pro veřejný repositář Clojars<br />
+<a href="http://www.root.cz/clanky/nastroj-leiningen-a-programovaci-jazyk-clojure-tvorba-vlastnich-knihoven-pro-verejny-repositar-clojars/">http://www.root.cz/clanky/nastroj-leiningen-a-programovaci-jazyk-clojure-tvorba-vlastnich-knihoven-pro-verejny-repositar-clojars/</a>
+</li>
+
+<li>Novinky v Clojure verze 1.8.0<br />
+<a href="http://www.root.cz/clanky/novinky-v-clojure-verze-1-8-0/">http://www.root.cz/clanky/novinky-v-clojure-verze-1-8-0/</a>
+</li>
+
+<li>Asynchronní programování v&nbsp;Clojure s&nbsp;využitím knihovny core.async<br />
+<a href="http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async/">http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async/</a>
+</li>
+
+<li>Asynchronní programování v&nbsp;Clojure s&nbsp;využitím knihovny core.async (pokračování)<br />
+<a href="http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async-pokracovani/">http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async-pokracovani/</a>
+</li>
+
+<li>Asynchronní programování v Clojure s využitím knihovny core.async (dokončení)<br />
+<a href="http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async-dokonceni/">http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async-dokonceni/</a>
+</li>
+
+<li>Vytváříme IRC bota v programovacím jazyce Clojure<br />
+<a href="http://www.root.cz/clanky/vytvarime-irc-bota-v-programovacim-jazyce-clojure/">http://www.root.cz/clanky/vytvarime-irc-bota-v-programovacim-jazyce-clojure/</a>
+</li>
+
+<li>Gorilla REPL: interaktivní prostředí pro programovací jazyk Clojure<br />
+<a href="https://www.root.cz/clanky/gorilla-repl-interaktivni-prostredi-pro-programovaci-jazyk-clojure/">https://www.root.cz/clanky/gorilla-repl-interaktivni-prostredi-pro-programovaci-jazyk-clojure/</a>
+</li>
+
+<li>Multimetody v Clojure aneb polymorfismus bez použití OOP<br />
+<a href="https://www.root.cz/clanky/multimetody-v-clojure-aneb-polymorfismus-bez-pouziti-oop/">https://www.root.cz/clanky/multimetody-v-clojure-aneb-polymorfismus-bez-pouziti-oop/</a>
+</li>
+
+<li>Práce s externími Java archivy v programovacím jazyku Clojure<br />
+<a href="https://www.root.cz/clanky/prace-s-externimi-java-archivy-v-programovacim-jazyku-clojure/">https://www.root.cz/clanky/prace-s-externimi-java-archivy-v-programovacim-jazyku-clojure/</a>
+</li>
+
+<li>Pixie: lehký skriptovací jazyk s „kouzelnými“ schopnostmi<br />
+<a href="https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/">https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/</a>
+</li>
+
+<li>Programovací jazyk Pixie: funkce ze základní knihovny a použití FFI<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/">https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/</a>
+</li>
+
+<li>Novinky v Clojure verze 1.9.0<br />
+<a href="https://www.root.cz/clanky/novinky-v-clojure-verze-1-9-0/">https://www.root.cz/clanky/novinky-v-clojure-verze-1-9-0/</a>
+</li>
+
+<li>Validace dat s&nbsp;využitím knihovny spec v&nbsp;Clojure 1.9.0<br />
+<a href="https://www.root.cz/clanky/validace-dat-s-vyuzitim-knihovny-spec-v-clojure-1-9-0/">https://www.root.cz/clanky/validace-dat-s-vyuzitim-knihovny-spec-v-clojure-1-9-0/</a>
+</li>
+
+<li>Použití jazyka Gherkin při tvorbě testovacích scénářů pro aplikace psané v Clojure<br />
+<a href="https://www.root.cz/clanky/pouziti-jazyka-gherkin-pri-tvorbe-testovacich-scenaru-pro-aplikace-psane-v-nbsp-clojure/">https://www.root.cz/clanky/pouziti-jazyka-gherkin-pri-tvorbe-testovacich-scenaru-pro-aplikace-psane-v-nbsp-clojure/</a>
+</li>
+
+<li>Použití jazyka Gherkin při tvorbě testovacích scénářů pro aplikace psané v Clojure (2) <br />
+<a href="https://www.root.cz/clanky/pouziti-jazyka-gherkin-pri-tvorbe-testovacich-scenaru-pro-aplikace-psane-v-nbsp-clojure-2/">https://www.root.cz/clanky/pouziti-jazyka-gherkin-pri-tvorbe-testovacich-scenaru-pro-aplikace-psane-v-nbsp-clojure-2/</a>
+</li>
+
+<li>Jazyky Hy a Clojure-py: moderní dialekty LISPu určené pro Python VM<br />
+<a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/</a>
+</li>
+
+</ol>
+
+
+
+<p><a name="k20"></a></p>
+<h2 id="k20">20. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>Python becomes a platform<br />
+<a href="https://khinsen.wordpress.com/2012/03/15/python-becomes-a-platform/">https://khinsen.wordpress.com/2012/03/15/python-becomes-a-platform/</a>
+</li>
+
+<li>Python becomes a platform. Thoughts on the release of clojure-py<br />
+<a href="https://news.ycombinator.com/item?id=3708974">https://news.ycombinator.com/item?id=3708974</a>
+</li>
+
+<li>SchemePy<br />
+<a href="https://pypi.org/project/SchemePy/">https://pypi.org/project/SchemePy/</a>
+</li>
+
+<li>lispy<br />
+<a href="https://pypi.org/project/lispy/">https://pypi.org/project/lispy/</a>
+</li>
+
+<li>Lython<br />
+<a href="https://pypi.org/project/Lython/">https://pypi.org/project/Lython/</a>
+</li>
+
+<li>Lizpop<br />
+<a href="https://pypi.org/project/lizpop/">https://pypi.org/project/lizpop/</a>
+</li>
+
+<li>Budoucnost programovacích jazyků<br />
+<a href="http://www.knesl.com/budoucnost-programovacich-jazyku">http://www.knesl.com/budoucnost-programovacich-jazyku</a>
+</li>
+
+<li>LISP Prolog and Evolution<br />
+<a href="http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html">http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html</a>
+</li>
+
+<li>List of Lisp-family programming languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages">https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages</a>
+</li>
+
+<li>clojure_py na indexu PyPi<br />
+<a href="https://pypi.python.org/pypi/clojure_py">https://pypi.python.org/pypi/clojure_py</a>
+</li>
+
+<li>PyClojure<br />
+<a href="https://github.com/eigenhombre/PyClojure">https://github.com/eigenhombre/PyClojure</a>
+</li>
+
+<li>Hy na GitHubu<br />
+<a href="https://github.com/hylang/hy">https://github.com/hylang/hy</a>
+</li>
+
+<li>Hy: The survival guide<br />
+<a href="https://notes.pault.ag/hy-survival-guide/">https://notes.pault.ag/hy-survival-guide/</a>
+</li>
+
+<li>Hy běžící na monitoru terminálu společnosti Symbolics<br />
+<a href="http://try-hy.appspot.com/">http://try-hy.appspot.com/</a>
+</li>
+
+<li>Welcome to Hy’s documentation!<br />
+<a href="http://docs.hylang.org/en/stable/">http://docs.hylang.org/en/stable/</a>
+</li>
+
+<li>Hy na PyPi<br />
+<a href="https://pypi.org/project/hy/#description">https://pypi.org/project/hy/#description</a>
+</li>
+
+<li>Getting Hy on Python<br />
+<a href="https://lwn.net/Articles/596626/">https://lwn.net/Articles/596626/</a>
+</li>
+
+<li>Programming Can Be Fun with Hy<br />
+<a href="https://opensourceforu.com/2014/02/programming-can-fun-hy/">https://opensourceforu.com/2014/02/programming-can-fun-hy/</a>
+</li>
+
+<li>Přednáška o projektu Hy (pětiminutový lighttalk)<br />
+<a href="http://blog.pault.ag/day/2013/04/02">http://blog.pault.ag/day/2013/04/02</a>
+</li>
+
+<li>Hy (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Hy">https://en.wikipedia.org/wiki/Hy</a>
+</li>
+
+<li>Clojure home page<br />
+<a href="http://clojure.org/">http://clojure.org/</a>
+</li>
+
+<li>Clojure Sequences<br />
+<a href="http://clojure.org/sequences">http://clojure.org/sequences</a>
+</li>
+
+<li>Clojure Data Structures<br />
+<a href="http://clojure.org/data_structures">http://clojure.org/data_structures</a>
+</li>
+
+<li>Clojure<br />
+<a href="https://en.wikipedia.org/wiki/Clojure">https://en.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>Clojars:<br />
+<a href="https://clojars.org/">https://clojars.org/</a>
+</li>
+
+<li>Seznam knihoven na Clojars:<br />
+<a href="https://clojars.org/projects">https://clojars.org/projects</a>
+</li>
+
+<li>Clojure - Functional Programming for the JVM<br />
+<a href="http://java.ociweb.com/mark/clojure/article.html">http://java.ociweb.com/mark/clojure/article.html</a>
+</li>
+
+<li>Clojure quick reference<br />
+<a href="http://faustus.webatu.com/clj-quick-ref.html">http://faustus.webatu.com/clj-quick-ref.html</a>
+</li>
+
+<li>4Clojure<br />
+<a href="http://www.4clojure.com/">http://www.4clojure.com/</a>
+</li>
+
+<li>ClojureDoc (rozcestník s&nbsp;dokumentací jazyka Clojure)<br />
+<a href="http://clojuredocs.org/">http://clojuredocs.org/</a>
+</li>
+
+<li>SICP (The Structure and Interpretation of Computer Programs)<br />
+<a href="http://mitpress.mit.edu/sicp/">http://mitpress.mit.edu/sicp/</a>
+</li>
+
+<li>Pure function<br />
+<a href="http://en.wikipedia.org/wiki/Pure_function">http://en.wikipedia.org/wiki/Pure_function</a>
+</li>
+
+<li>Funkcionální programování<br />
+<a href="http://cs.wikipedia.org/wiki/Funkcionální_programování">http://cs.wikipedia.org/wiki/Funkcionální_programování</a>
+</li>
+
+<li>Čistě funkcionální (datové struktury, jazyky, programování)<br />
+<a href="http://cs.wikipedia.org/wiki/Čistě_funkcionální">http://cs.wikipedia.org/wiki/Čistě_funkcionální</a>
+</li>
+
+<li>Dynamic Languages Strike Back<br />
+<a href="http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html">http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html</a>
+</li>
+
+<li>Scripting: Higher Level Programming for the 21st Century<br />
+<a href="http://www.tcl.tk/doc/scripting.html">http://www.tcl.tk/doc/scripting.html</a>
+</li>
+
+<li>Threading macro (dokumentace k&nbsp;jazyku Clojure)<br />
+<a href="https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/-&gt;">https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/-&gt;</a>
+</li>
+
+<li>Understanding the Clojure -&gt; macro<br />
+<a href="http://blog.fogus.me/2009/09/04/understanding-the-clojure-macro/">http://blog.fogus.me/2009/09/04/understanding-the-clojure-macro/</a>
+</li>
+
+<li>Emacs LISP<br />
+<a href="https://www.root.cz/clanky/historie-vyvoje-textovych-editoru-eine-zwei-emacs/#k08">https://www.root.cz/clanky/historie-vyvoje-textovych-editoru-eine-zwei-emacs/#k08</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Speciální formy, lambda výrazy a makra v programovacím jazyku LISP <br />
+<a href="https://www.root.cz/clanky/specialni-formy-lambda-vyrazy-a-makra-v-programovacim-jazyku-lisp/">https://www.root.cz/clanky/specialni-formy-lambda-vyrazy-a-makra-v-programovacim-jazyku-lisp/</a>
+</li>
+
+<li>Programovací jazyky používané (nejen) v SSSR (část 3 – LISP)<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyky-pouzivane-nejen-v-nbsp-sssr-cast-3-ndash-lisp/">https://www.root.cz/clanky/programovaci-jazyky-pouzivane-nejen-v-nbsp-sssr-cast-3-ndash-lisp/</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2018</small></p>
+</body>
+</html>
+
