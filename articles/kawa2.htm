@@ -1,0 +1,2127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>Jazyk Kawa v ekosystému virtuálního stroje Javy</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>Jazyk Kawa v ekosystému virtuálního stroje Javy</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Ve druhém článku o nástroji Kawa, který vývojářům nabízí interpret a současně i překladač programovacího jazyka Scheme běžícího v ekosystému JVM (Java Virtual Machine) si ukážeme, jakým způsobem a jak kvalitně či naopak nekvalitně dokáže překladač Kawa generovat výsledný bajtkód JVM.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. Kawa: interpret a současně i překladač programovacího jazyka Scheme do bajtkódu JVM</a></p>
+<p><a href="#k02">2. Přímá interpretace versus okamžitý překlad do bajtkódu</a></p>
+<p><a href="#k03">3. Překlad skriptu typu &bdquo;Hello world&ldquo; do bajtkódu s&nbsp;jeho následným spuštěním</a></p>
+<p><a href="#k04">4. Přidání cesty k&nbsp;runtime knihovně a vygenerování bajtkódu pro funkci <strong>main</strong></a></p>
+
+<p><a href="#k05">5. Skript typu &bdquo;Hello world&ldquo; s&nbsp;uživatelsky definovanou funkcí</a></p>
+<p><a href="#k06">6. Překlad funkcí s&nbsp;parametry a návratovou hodnotou: problematika statického typového systému JVM</a></p>
+<p><a href="#k07">7. Přidání informací o typech parametrů uživatelsky definované funkce</a></p>
+<p><a href="#k08">8. Základní principy, na kterých je postaven bajtkód a interpret JVM</a></p>
+<p><a href="#k09">9. Překlad funkcí s&nbsp;parametry s&nbsp;typem odlišným od typu <strong>int</strong></a></p>
+<p><a href="#k10">10. Bajtkód funkce pro výpočet faktoriálu s&nbsp;přímou rekurzí</a></p>
+<p><a href="#k11">11. Optimalizace výpočtu faktoriálu přidáním typových informací</a></p>
+<p><a href="#k12">12. Výpočet faktoriálu používající numerické hodnoty typu <strong>long</strong></a></p>
+<p><a href="#k13">13. Optimalizace výpočtu faktoriálu s&nbsp;využitím tail rekurze</a></p>
+<p><a href="#k14">14. Plně optimalizovaná varianta výpočtu faktoriálu</a></p>
+<p><a href="#k15">15. Obsah další části seriálu</a></p>
+<p><a href="#k16">16. Soubor Makefile určený pro překlad demonstračních skriptů do bajtkódu a pro jejich disassembling</a></p>
+<p><a href="#k17">17. Příloha: vybrané instrukce bajtkódu JVM</a></p>
+<p><a href="#k18">18. Repositář s&nbsp;demonstračními příklady</a></p>
+<p><a href="#k19">19. Literatura</a></p>
+<p><a href="#k20">20. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. Kawa: interpret a současně i překladač programovacího jazyka Scheme do bajtkódu JVM</h2>
+
+<p><a
+href="https://www.root.cz/clanky/kawa-prekvapive-silny-a-vykonny-dialekt-scheme-pro-jvm/">V&nbsp;předchozí
+části</a> seriálu o lispovských programovacích jazycích jsme se seznámili
+s&nbsp;projektem nazvaným Kawa. Připomeňme si, že se jedná o interpret a
+současně i překladač programovacího jazyka Scheme určený pro ekosystém
+postavený okolo virtuálního stroje Javy (<i>JVM &ndash; Java Virtual
+Machine</i>). V&nbsp;současnosti neslouží JVM zdaleka pouze pro běh aplikací
+naprogramovaných přímo v&nbsp;Javě, protože pro JVM vzniklo i množství dalších
+programovacích jazyků a jejich dialektů. O těch nejdůležitějších a
+nejpoužívanějších jsme se zmínili <a
+href="https://www.root.cz/clanky/kawa-prekvapive-silny-a-vykonny-dialekt-scheme-pro-jvm/#k17">minule
+na konci článku</a>.</p>
+
+<p>Mezi programovací jazyky používané pro běh nad virtuálním strojem Javy patří
+&ndash; což asi není příliš překvapující &ndash; i různé dialekty jazyků LISP a
+Scheme; pochopitelně ovšem nesmíme zapomenout na jeden z&nbsp;nejpopulárnějších
+lispovských jazyků současnosti &ndash; na jazyk <a
+href="https://www.root.cz/vyhledavani/?qs=Clojure">Clojure</a>. A mezi
+lispovské jazyky určené pro běh nad JVM patří i projekt Kawa. Dnes si řekneme,
+jakým způsobem je prováděn překlad skriptů psaných v&nbsp;dialektu Scheme do
+bajtkódu JVM. Přitom si ve stručnosti vysvětlíme princip bajtkódu i použité
+instrukce (samotné instrukce bajtkódu jsou velmi stabilní a kromě několika
+nových instrukcí typu <strong>invokedynamic</strong> zůstaly od dob Javy 1.0
+prakticky nezměněny).</p>
+
+<p><div class="rs-tip-major">Poznámka: v&nbsp;dalším textu budeme často
+používat slovní spojení &bdquo;spuštění bajtkódu&ldquo;. Bajtkód určený pro
+virtuální stroj Javy pochopitelně nelze spustit přímo na mikroprocesoru, takže
+se &bdquo;spuštěním bajtkódu&ldquo; v&nbsp;kontextu tohoto článku myslí
+inicializace běhového prostředí Javy (<i>JRE &ndash; Java Runtime
+Environment</i>), načtení bajtkódu z&nbsp;příslušného binárního souboru
+s&nbsp;koncovkou <strong>.class</strong>, nalezení bajtkódu statické metody
+<strong>main</strong> a začátek interpretace a/nebo JITování bajtkódu této
+metody (kromě toho se interně provádí i další operace, například kontrola
+sémantiky bajtkódu atd.).</div></p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Přímá interpretace versus okamžitý překlad do bajtkódu</h2>
+
+<p><a
+href="https://www.root.cz/clanky/kawa-prekvapive-silny-a-vykonny-dialekt-scheme-pro-jvm/">Předchozí
+článek</a> byl věnován především popisu některých význačných vlastností
+programovacího jazyka Scheme, resp.&nbsp;přesněji řečeno jeho dialektu
+implementovaného nástrojem Kawa. Mj.&nbsp;jsme si řekli, že přímo ve skriptech
+lze vytvářet instance javovských tříd, volat metody tímto způsobem
+zkonstruovaných objektů, vytvářet a používat rozhraní (<i>interface</i>) a
+pochopitelně taktéž pracovat s&nbsp;kolekcemi.</p>
+
+<p>Jak je ovšem implementováno propojení jazyka Scheme s&nbsp;ekosystémem
+programovacího jazyka Java? Projekt Kawa nám sice nabízí klasickou interaktivní
+smyčku <i>REPL</i> (<i>Read-Eval-Print-Loop</i>), ovšem interpretace zapsaných
+výrazů (přesněji řečeno forem) není prováděna přímo. Namísto toho je daný výraz
+přeložen do bajtkódu JVM a teprve poté je tento bajtkód spuštěn ve virtuálním
+stroji Javy. Pokud se jedná o krátký bajtkód spouštěný jen několikrát (nebo
+dokonce jen jedinkrát), bude interpretován, při opakovaném spuštění pak
+&bdquo;JITován&ldquo;, tj.&nbsp;přeložen do optimalizovaného strojového kódu,
+jakoby se jednalo o běžný bajtkód vytvořený přímo překladačem
+<strong>javac</strong>.</p>
+
+<p>Kromě výše zmíněného přímého překladu do bajtkódu, který je v&nbsp;Kawě
+nedílnou součástí interaktivní smyčky REPL (v&nbsp;jednoduchosti lze říci, že
+samotný překlad leží mezi operacemi <i>read</i> a <i>eval</i>), je však možné
+použít nástroj Kawa pro plnohodnotný překlad skriptů do bajtkódu JVM, přičemž
+výsledkem budou standardní soubory s&nbsp;koncovkou <strong>.class</strong>,
+které běžně vznikají překladačem <strong>javac</strong>, popř.&nbsp;jsou
+výsledkem činnosti dalších překladačů jiných programovacích jazyků určených pro
+JVM. S&nbsp;těmito soubory se pak zachází naprosto stejným způsobem,
+tj.&nbsp;lze je například zabalit do Java archivů, použit v&nbsp;projektech
+spravovaných Mavenem apod. My tyto soubory dnes využijeme dvojím způsobem
+&ndash; budeme je spouštět (v&nbsp;rámci JVM) a analyzovat standardním
+nástrojem <strong>javap</strong>.</p>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Překlad skriptu typu &bdquo;Hello world&ldquo; do bajtkódu s&nbsp;jeho následným spuštěním</h2>
+
+<p>Ukažme si nyní, jakým způsobem lze překlad do bajtkódu provést. Nejdříve si
+napíšeme ten nejjednodušší funkční skript, který je variantou na klasický
+céčkovský příklad &bdquo;Hello world!&ldquo;. Ve skriptu pouze voláme funkci
+<strong>display</strong> a předáváme jí řetězec, který se má vytisknout na
+standardní výstup:</p>
+
+<pre>
+(display "Hello world!")
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, že tento skript
+neobsahuje žádnou deklaraci uživatelské funkce, pouze přímé volání standardní
+funkce <strong>display</strong>. Tento příklad vlastně nemá v&nbsp;Javě
+ekvivalentní obdobu, což mj.&nbsp;znamená, že výsledný bajtkód bude muset ve
+skutečnosti obsahovat mnohem větší množství bloků, než pouhé zobrazení řetězce
+na standardním výstupu. Dále stojí za povšimnutí samotný název skriptu, který
+je schválně zvolen takovým způsobem, aby odpovídal jmenným konvencím Javy
+&ndash; jsou použita velká písmena na začátku názvů a taktéž se používá
+pojmenování typu <i>CamelCase</i> namísto
+<i>lispem-inspirovaného-pojmenování-s-pomlčkami</i> a už vůbec ne
+<i>pojmenování_s_podtržítky</i>.</div></p>
+
+<p>Pokud je výše uvedený skript naprogramovaný ve Scheme uložen do souboru
+pojmenovaného &bdquo;Hello.scm&ldquo;, můžeme jeho překlad do bajtkódu JVM
+provést tímto příkazem:</p>
+
+<pre>
+$ <strong>./kawa -C HelloWorld.scm </strong>
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: předchozí příkaz předpokládá, že se
+spustitelný soubor <strong>kawa</strong> nachází v&nbsp;aktivním adresáři.
+Pokud tomu tak není, můžete vynechat úvodní &bdquo;./&ldquo;, ovšem cestu
+k&nbsp;nástroji <strong>kawa</strong> je nutné přidat do <strong>PATH</strong>.
+Taktéž si povšimněte, že překlad do bajtkódu se zapíná přepínačem
+<strong>-C</strong>, i když se na několika místech v&nbsp;dokumentaci píše o
+přepínači <strong>-c</strong>.</div></p>
+
+<p>Následně se můžeme pokusit o spuštění, jakoby se jednalo o běžnou přeloženou
+javovskou třídu:</p>
+
+<pre>
+$ <strong>java HelloWorld</strong>
+</pre>
+
+<p>Ovšem výsledek pravděpodobně nebude odpovídat našemu očekávání, protože
+namísto zobrazení řetězce &bdquo;Hello world&ldquo; se na chybovém výstupu
+zobrazí hlášení o chybě:</p>
+
+<pre>
+Exception in thread "main" java.lang.NoClassDefFoundError: gnu/expr/RunnableModule
+        at java.lang.ClassLoader.defineClass1(Native Method)
+        at java.lang.ClassLoader.defineClass(ClassLoader.java:800)
+        at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+        at java.net.URLClassLoader.defineClass(URLClassLoader.java:449)
+        at java.net.URLClassLoader.access$100(URLClassLoader.java:71)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:361)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:425)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:358)
+        at sun.launcher.LauncherHelper.checkAndLoadMain(LauncherHelper.java:482)
+Caused by: java.lang.ClassNotFoundException: gnu.expr.RunnableModule
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:366)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:425)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:358)
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: konkrétní <i>stack trace</i> může být ve
+skutečnosti nepatrně odlišný, ovšem důvod chyby je stále stejný.</div></p>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Přidání cesty k&nbsp;runtime knihovně a vygenerování bajtkódu pro funkci <strong>main</strong></h2>
+
+<p>Vidíme, že se spuštění nepodařilo. Je tomu tak z&nbsp;toho důvodu, že i ty
+nejjednodušší skripty napsané ve Scheme pro své spuštění vyžadují i runtime
+knihovnu s&nbsp;podpůrnými datovými typy, implementací základních funkcí Scheme
+atd. Tato knihovna je uložena v&nbsp;Java archivu pojmenovaném
+<strong>kawart.jar</strong>. V&nbsp;případě, že se soubor
+<strong>kawart.jar</strong> při překladu a instalaci nástroje <i>Kawa</i>
+uložil do adresáře <strong>~/lib</strong>, bude muset spuštění našeho příkladu
+vypadat následovně:</p>
+
+<pre>
+$ <strong>java -cp /home/tester/lib/kawart.jar:. HelloWorld</strong>
+</pre>
+
+<p>Ve skutečnosti nebude spuštění ani v&nbsp;tomto případě úspěšné, a to
+z&nbsp;toho důvodu, že námi přeložená třída neobsahuje obdobu Javovské metody
+<strong>public void main(String args[])</strong>, která tvoří jeden ze
+vstupních bodů aplikace:</p>
+
+<pre>
+Error: Main method not found in class HelloWorld, please define the main method as:
+   public static void main(String[] args)
+</pre>
+
+<p>Ostatně obsah souboru &bdquo;Hello.class&ldquo; si můžeme vypsat standardním
+nástrojem <strong>javap</strong>, což je disassembler pro standardní soubory
+<strong>.class</strong>, který je dodáván přímo v&nbsp;JDK (<i>Java Development
+Kit</i>):</p>
+
+<pre>
+$ <strong>javap HelloWorld</strong>
+&nbsp;
+Compiled from "HelloWorld.scm"
+public class HelloWorld extends gnu.expr.ModuleBody implements java.lang.Runnable,gnu.expr.RunnableModule {
+  static final gnu.lists.IString Lit0;
+  public static HelloWorld $instance;
+  public final void run(gnu.mapping.CallContext);
+  public static {};
+  public HelloWorld();
+}
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: ve skutečnosti lze další přímo
+spustitelné příkazy uložit do bloku <strong>static</strong>, takže minimálně
+pro starší JRE není existence metody <strong>main</strong> striktně
+vyžadována.</div></p>
+
+<p>V&nbsp;případě, že budeme chtít vytvořit soubor <strong>.class</strong>,
+který bude spustitelný, musíme překlad provést nepatrně odlišným způsobem, a to
+konkrétně takto (přidáním přepínače <strong>--main</strong>, který musí být
+uveden před přepínačem <strong>-C</strong>):</p>
+
+<pre>
+$ <strong>./kawa --main -C HelloWorld.scm</strong>
+</pre>
+
+<p>Spuštění nyní proběhne naprosto bez problémů:</p>
+
+<pre>
+$ <strong>java -cp /home/tester/lib/kawart.jar:. HelloWorld</strong>
+&nbsp;
+Hello world!
+</pre>
+
+<p>Pro úplnost se podívejme, jak vypadá dekódovaný obsah souboru
+&bdquo;Hello.class&ldquo; v&nbsp;případě, že byl překlad proveden
+s&nbsp;přepínačem <strong>--main</strong>:</p>
+
+<pre>
+$ <strong>javap HelloWorld</strong>
+&nbsp;
+Compiled from "HelloWorld.scm"
+public class HelloWorld extends gnu.expr.ModuleBody implements java.lang.Runnable,gnu.expr.RunnableModule {
+  static final gnu.lists.IString Lit0;
+  public static HelloWorld $instance;
+  public final void run(gnu.mapping.CallContext);
+  public static {};
+  public HelloWorld();
+  <strong>public static void main(java.lang.String[])</strong>;
+}
+</pre>
+
+<p>Můžeme vidět, že oproti předchozí variantě došlo k&nbsp;přidání výše zmíněné
+funkce <strong>main</strong> tvořící vstupní bod aplikace.</p>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Skript typu &bdquo;Hello world&ldquo; s&nbsp;uživatelsky definovanou funkcí</h2>
+
+<p>Nyní se pokusme původní skript &bdquo;Hello.scm&ldquo; upravit takovým
+způsobem, aby obsahoval uživatelsky definovanou funkci, kterou ve skriptu
+následně zavoláme. Taková úprava je pochopitelně velmi snadná a může vypadat
+například takto:</p>
+
+<pre>
+(define (hello)
+  (display "Hello world!"))
+&nbsp;
+(hello)
+</pre>
+
+<p>I tento skript je bez problémů přeložitelný do bajtkódu JVM:</p>
+
+<pre>
+$ <strong>./kawa -C HelloWorld2.scm </strong>
+</pre>
+
+<p>Výsledek ovšem v&nbsp;této chvíli bude odlišný, o čemž se opět snadno
+přesvědčíme standardním nástrojem <strong>javap</strong>. Ve výpisu interních
+bloků bajtkódu si povšimněte existence statické metody nazvané
+<strong>hello</strong>. Pochopitelně se jedná o námi implementovanou funkci
+<strong>hello</strong> přeloženou ze Scheme:</p>
+
+<pre>
+$ <strong>javap HelloWorld2</strong>
+&nbsp;
+public class <strong>HelloWorld2</strong> extends gnu.expr.ModuleBody implements java.lang.Runnable,gnu.expr.RunnableModule {
+  public static final gnu.expr.CompiledProc hello;
+  static final gnu.lists.IString Lit0;
+  public static HelloWorld2 $instance;
+  static final gnu.mapping.SimpleSymbol Lit1;
+  public final void run(gnu.mapping.CallContext);
+  <strong>public static void hello()</strong>;
+  public static java.lang.Object hello$check(gnu.mapping.Procedure, gnu.mapping.CallContext);
+  public static {};
+  public HelloWorld2();
+}
+</pre>
+
+<p>Povšimněte si, že uživatelská funkce <strong>hello</strong> byla přeložena
+do statické metody pojmenované taktéž <strong>hello</strong>:</p>
+
+<pre>
+  public static void <strong>hello</strong>();
+    Code:
+       0: getstatic     #12    <i>// Field Lit0:Lgnu/lists/IString;</i>
+       3: invokestatic  #18    <i>// Method kawa/lib/ports.display:(Ljava/lang/Object;)V</i>
+       6: return
+</pre>
+
+<p>Pro otestování funkčnosti příkladu musíme dodat (automaticky generovanou)
+metodu <strong>main</strong>, a to nám již dobře známým způsobem &ndash;
+použitím přepínače <strong>--main</strong>:</p>
+
+<pre>
+$ <strong>./kawa --main -C HelloWorld2.scm </strong>
+&nbsp;
+</pre>
+
+<p>Takto vytvořený soubor nazvaný &bdquo;HelloWorld2.class&ldquo; již bude
+možné spustit v&nbsp;rámci běhového prostředí Javy (JRE), podobně jako běžnou
+přeloženou javovskou třídu:</p>
+
+<pre>
+$ <strong>java -cp /home/tester/lib/kawart.jar:. HelloWorld2</strong>
+&nbsp;
+Hello world!
+</pre>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Překlad funkcí s&nbsp;parametry a návratovou hodnotou: problematika statického typového systému JVM</h2>
+
+<p><a href="#k05">V&nbsp;předchozí kapitole</a> jsme mohli vidět, že se funkce
+vytvořené v&nbsp;programovacím jazyku Scheme překládají do bajtkódu takovým
+způsobem, že se z&nbsp;funkcí stanou běžné statické metody. Tyto metody jsou
+volatelné z&nbsp;běžných metod napsaných v&nbsp;programovacím jazyku Java či
+v&nbsp;libovolném jiném jazyku postaveném nad JVM. Ovšem je zde jeden dosti
+zásadní háček, který spočívá v&nbsp;tom, že se snažíme propojit dynamicky
+typovaný jazyk Scheme s&nbsp;ekosystémem postaveným okolo staticky typovaného
+programovacího jazyka Java. Od vlastností Javy se do značné míry odvíjí i
+vlastnosti bajtkódu JVM, což v&nbsp;tomto případě znamená, že instrukce
+bajtkódu vždy pracují s&nbsp;operandy konkrétních typů. Neexistuje například
+instrukce <strong>add</strong>, která by pracovala jak s&nbsp;celými čísly, tak
+i s&nbsp;čísly typu <i>float</i> či <i>double</i>.</p>
+
+<p>Rozdíly mezi Scheme a Javou si můžeme ilustrovat na velmi jednoduché funkci
+sloužící pro součet dvou hodnot. Taková funkce se ve Scheme naprogramuje
+naprosto triviálním způsobem:</p>
+
+<pre>
+(define (<strong>add</strong> x y)
+  (+ x y))
+</pre>
+
+<p>Samozřejmě si vyzkoušíme překlad této funkce do bajtkódu:</p>
+
+<pre>
+$ <strong>./kawa -C Add1.scm</strong>
+</pre>
+
+<p>Soubor &bdquo;Add1.class&ldquo;, který překladem vznikl, můžeme analyzovat,
+a to pochopitelně opět nástrojem <strong>javap</strong>. Tentokrát ovšem
+použijeme i přepínač <strong>-c</strong>, kterým si vynutíme výpis instrukcí
+bajtkódu, které tvoří těla jednotlivých metod a bloků <strong>static</strong>.
+Z&nbsp;celého bajtkódu zde uvedu pouze výpis přeložené funkce
+<strong>add</strong>, protože nás jeho další součásti prozatím nebudou
+zajímat:</p>
+
+<pre>
+public static java.lang.Object <strong>add</strong>(java.lang.Object, java.lang.Object);
+  Code:
+     0: iconst_1      
+     1: aload_0       
+     2: aload_1       
+     3: invokestatic  #16                 <i>// Method gnu/kawa/functions/AddOp.apply2:(ILjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;</i>
+     6: areturn       
+</pre>
+
+<p>Výsledný bajtkód není ani krátký a dokonce ani příliš efektivní a rychlý,
+protože se v&nbsp;něm volá další metoda <strong>apply</strong> z&nbsp;runtime
+třídy <strong>AddOp</strong>, tedy interní implementace součtu ve Scheme. Toto
+řešení má pochopitelně svůj význam, protože ve Scheme můžeme sčítat všechny
+číselné hodnoty, nezávisle na tom, kam spadají v&nbsp;typovém systému
+&bdquo;numerické věže&ldquo; tohoto jazyka. Jen pro připomenutí &ndash; volání
+funkce + (skutečně se jedná o validní jméno funkce) lze aplikovat na libovolný
+počet hodnot tohoto typu (ty je ve Scheme vázán k&nbsp;hodnotě, nikoli
+km&nbsp;proměnné!):</p>
+
+<table>
+<tr><th>Typ</th><th>Význam</th></tr>
+<tr><td>number</td><td>libovolná obecná čísla</td></tr>
+<tr><td>quantity</td><td>numerická hodnota i s&nbsp;uvedenou jednotkou (viz další text)</td></tr>
+<tr><td>quaternion</td><td>kvaterniony</td></tr>
+<tr><td>complex</td><td>komplexní čísla</td></tr>
+<tr><td>real</td><td>reálná čísla</td></tr>
+<tr><td>rational</td><td>zlomky (racionální čísla)</td></tr>
+<tr><td>integer</td><td>celá čísla</td></tr>
+</table>
+
+<p>To příliš neodpovídá numerické věži jazyka Java, která je odlišná (navíc se
+nejedná o věž, ale o dvě větve &ndash; celá čísla, čísla s&nbsp;plovoucí
+řádovou čárkou).</p>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Přidání informací o typech parametrů uživatelsky definované funkce</h2>
+
+<p>V&nbsp;případě, že budeme chtít v&nbsp;programovacím jazyce Scheme
+naprogramovat efektivněji prováděnou funkci pro součet dvou hodnot, budeme
+muset přistoupit k&nbsp;tomu, že explicitně určíme typ parametrů funkce a
+případně i typ návratové hodnoty. Typ je v&nbsp;systému <i>Kawa</i> nepovinnou
+metainformací připojenou ke jménu parametru a oddělenou od jména dvojtečkou
+(navíc můžeme použít i nepovinné mezery okolo dvojtečky). Definice funkce
+<strong>add</strong> akceptující jako své parametry dvě celá 32bitová čísla
+typu <strong>int</strong> tedy bude vypadat následovně:</p>
+
+<pre>
+(define (<strong>add</strong> x <strong>:: int</strong> y <strong>:: int</strong>)
+  (+ x y))
+</pre>
+
+<p>Oproti tomu původní funkce vypadala pouze takto:</p>
+
+<pre>
+(define (<strong>add</strong> x y)
+  (+ x y))
+</pre>
+
+<p>Po překladu prvního skriptu (s&nbsp;typovými informacemi) do bajtkódu se
+můžeme podívat na to, jak byl součet implementován po přidání typových
+informací:</p>
+
+<pre>
+public static int <strong>add</strong>(int, int);
+  Code:
+     0: iload_0        <i>// načtení prvního parametru metody s jeho uložením na zásobník operandů</i>
+     1: iload_1        <i>// načtení třetího parametru metody s jeho uložením na zásobník operandů</i>
+     2: iadd           <i>// provedení součtu</i>
+     3: ireturn        <i>// návrat z metody, použití hodnoty z vrcholu zásobníku pro přenos výsledku metody</i>
+</pre>
+
+<p>Výsledek je nyní efektivní a přímočarý &ndash; dokonce ho ani lépe napsat
+nelze!</p>
+
+<p>Ostatně nebude na škodu si ověřit, do jakého bajtkódu se přeloží obdobná
+metoda, tentokrát naprogramovaná v&nbsp;Javě:</p>
+
+<pre>
+class Test {
+    <i>// provedení součtu dvou celých čísel</i>
+    static int <strong>add</strong>(int a, int b) {
+        int c=a+b;
+        return c;
+    }
+&nbsp;
+    <i>// zavolá metodu pro provedení součtu dvou čísel</i>
+    <i>// a uloží návratovou hodnotu do své lokální proměnné</i>
+    static void <strong>callAdd</strong>() {
+        int result = add(1234,5678);
+    }
+}
+</pre>
+
+<p>Přeložený bajtkód první z&nbsp;těchto metod (tedy metody
+<strong>add</strong>) je následující. Všechny poznámky jsou samozřejmě dopsány
+ručně:</p>
+
+<pre>
+<i>// v metodě add je zásobník operandů použit pouze pro provedení operace součtu</i>
+static int add(int, int);
+  Code:
+   0:   iload_0        <i>// uložení prvního parametru metody na zásobník operandů</i>
+   1:   iload_1        <i>// uložení druhého parametru metody na zásobník operandů</i>
+   2:   iadd           <i>// provedení operace součtu s odstraněním obou operandů</i>
+   3:   istore_2       <i>// vyzvednutí výsledku součtu a uložení do lokální proměnné</i>
+   4:   iload_2        <i>// opětovné uložení obsahu lokální proměnné na zásobník</i>
+   5:   ireturn        <i>// při operaci ireturn se využije hodnota z vrcholu zásobníku</i>
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, že v&nbsp;tomto případě
+je vlastně bajtkód nepatrně složitější, než v&nbsp;předchozím příkladu. Je tomu
+tak z&nbsp;toho důvodu, že výsledek součtu nejdříve uložíme do lokální proměnné
+<strong>c</strong>, která je uložena na <i>zásobníkovém rámci</i> a teprve poté
+je výsledek přenesen zpět na zásobník, aby mohl být vrácen instrukcí
+<strong>ireturn</strong>. Pokud se ptáte, proč je to řešeno tak komplikovaně
+&ndash; jde o podporu ladění a krokování aplikace, protože potřebujeme, aby
+bylo možné běh programu zastavit na přiřazení do proměnné <strong>c</strong>.
+V&nbsp;reálném provozu instrukce provedené navíc nebudou příliš vadit, protože
+se při JITování optimalizují a odstraní.</div></p>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Základní principy, na kterých je postaven bajtkód a interpret JVM</h2>
+
+<p>V&nbsp;této kapitole se ve stručnosti seznámíme se základními principy, na
+kterých je postaven bajtkód virtuálního stroje Javy i interpret, který je
+v&nbsp;JVM taktéž implementován (JIT je pochopitelně mnohem složitější, ovšem
+vychází z&nbsp;jednoduššího interpretru, jehož činnost vlastně musí napodobit
+generovaným strojovým kódem).</p>
+
+<p>Většina instrukcí virtuálního stroje Javy pracuje s&nbsp;operandy uloženými
+na takzvaném <i>zásobníku operandů (operand stack)</i>. Zásobník operandů
+(v&nbsp;tomto případě se jedná o skutečný zásobník typu <i>LIFO &ndash; Last
+In, First Out</i>) je vytvářen v&nbsp;čase běhu aplikace pro každou zavolanou
+metodu, což mj.&nbsp;znamená, že je při spuštění metody vždy prázdný (zásobník
+operandů je podle specifikace součástí zásobníkového rámce, jeho konkrétní
+umístění však je libovolné). Již v&nbsp;čase překladu zdrojového kódu je pro
+každou metodu zjištěno, jak velká oblast paměti má být pro zásobník operandů
+vyhrazena a samozřejmě je prováděna kontrola, zda se v&nbsp;době běhu aplikace
+tato velikost nepřekročí (to by se nemělo u validního bajtkódu stát).</p>
+
+<p>Virtuální stroj Javy kontroluje typy operandů uložených na zásobník operandů
+a zajišťuje, že se nad těmito operandy budou provádět pouze typově bezpečné
+operace. V&nbsp;praxi to například znamená, že není možné na zásobník uložit
+dvě hodnoty typu <strong>float</strong> a následně provést instrukci
+<strong>iadd</strong>, protože tato instrukce vyžaduje, aby na zásobníku byly
+uloženy dvě hodnoty typu <strong>int</strong> (i když <strong>float</strong> i
+<strong>int</strong> mají shodnou bitovou šířku).</p>
+
+<p><div class="rs-tip-major">Poznámka: tato vlastnost virtuálního stroje Javy
+je zcela odlišná od zdánlivě podobného virtuálního stroje, tentokrát VM
+Pythonu. Tento virtuální stroj má vlastní bajtkód, ovšem instrukce odpovídající
+součtu je plně <i>polymorfní</i>, protože bude vykonávat odlišné operace podle
+toho, jakého datového typu budou její operandy. Pochopitelně se může jednat i o
+uživatelské datové typy.</div></p>
+
+<p>Vraťme se však k&nbsp;virtuálnímu stroji Javy. Ten dokáže pracovat
+s&nbsp;celkem deseti datovými typy, které jsou všechny vypsány
+v&nbsp;následující tabulce. Prvních osm datových typů odpovídá primitivním
+datovým typům známým všem programátorům v&nbsp;Javě, devátý typ odpovídá
+objektovému datovému typu (reference na libovolnou instanci), ovšem desátý typ
+není přímo z&nbsp;Javy přístupný. Operand s&nbsp;tímto typem obsahuje ukazatel
+na instrukční kód, tj.&nbsp;může se například jednat o skutečnou adresu
+v&nbsp;adresovém prostoru procesoru s&nbsp;JVM, offset platný v&nbsp;rámci
+prostoru haldy atd.</p>
+
+<table>
+<tr><th> #</th><th>Typ v&nbsp;Javě</th><th>Použitý typ v JVM</th></tr>
+<tr><td> 1</td><td>boolean</td><td>int</td></tr>
+<tr><td> 2</td><td>byte</td><td>int</td></tr>
+<tr><td> 3</td><td>char</td><td>int</td></tr>
+<tr><td> 4</td><td>short</td><td>int</td></tr>
+<tr><td> 5</td><td>int</td><td>int</td></tr>
+<tr><td> 6</td><td>long</td><td>long</td></tr>
+<tr><td> 7</td><td>float</td><td>float</td></tr>
+<tr><td> 8</td><td>double</td><td>double</td></tr>
+<tr><td> 9</td><td>reference</td><td>reference</td></tr>
+<tr><td>10</td><td>není dostupný</td><td>returnAddress</td></tr>
+</table>
+
+<p>Instrukce pracující s&nbsp;typem <strong>int</strong> začínají písmenem
+&bdquo;i&ldquo;, instrukce pro typ <strong>long</strong> písmenem
+&bdquo;l&ldquo; atd.</p>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Překlad funkcí s&nbsp;parametry s&nbsp;typem odlišným od typu <strong>int</strong></h2>
+
+<p>Nic nám pochopitelně nebrání naprogramovat si další variantu funkce pro
+součet dvou čísel, ovšem tentokrát budou oba operandy typu
+<strong>float</strong> a nikoli typu <strong>int</strong>:</p>
+
+<pre>
+(define (add x <strong>:: float</strong> y <strong>:: float</strong>)
+  (+ x y))
+</pre>
+
+<p>Pravděpodobně váš příliš nepřekvapí, že i instrukce v&nbsp;generovaném
+bajtkódu budou odlišné. Vzhledem k&nbsp;tomu, že <strong>float</strong> je
+v&nbsp;Javě primitivním datovým typem (viz též předchozí kapitolu), navíc plně
+podporovaným a uzavřeným vůči všem základním operacím (což u jiných datových
+typů ne vždy platí!), bude výsledný bajtkód obsahovat instrukce pro operaci
+s&nbsp;hodnotami typu <strong>float</strong>:</p>
+
+<pre>
+public static float <strong>add</strong>(float, float);
+  Code:
+     0: fload_0        <i>// uložení prvního parametru metody na zásobník operandů</i>
+     1: fload_1        <i>// uložení druhého parametru metody na zásobník operandů</i>
+     2: fadd           <i>// provedení operace součtu s odstraněním obou operandů</i>
+     3: freturn        <i>// při operaci freturn se využije hodnota z vrcholu zásobníku</i>
+</pre>
+
+<p>Otestovat můžeme i funkci, která akceptuje první parametr typu
+<strong>int</strong> a druhý parametr typu <strong>float</strong>:</p>
+
+<pre>
+(define (add x <strong>:: int</strong> y <strong>:: float</strong>)
+  (+ x y))
+</pre>
+
+<p>Zajisté již tušíte, že vygenerovaný bajtkód bude v&nbsp;tomto případě
+složitější, protože bude nutné provést konverzi obou operandů na společný typ
+(víme již, že nelze použít <strong>iadd</strong> pro jiné operandy, než typu
+<strong>int</strong>).  V&nbsp;Javě je definována konverze <strong>int</strong>
+&rarr; <strong>float</strong>:</p>
+
+<pre>
+public static float <strong>add</strong>(int, float);
+  Code:
+     0: iload_0        <i>// uložení prvního parametru metody na zásobník operandů</i>
+     1: i2f            <i>// převod celého čísla typu <strong>int</strong> na typ <strong>float</strong></i>
+     2: fload_1        <i>// uložení druhého parametru metody na zásobník operandů</i>
+     3: fadd           <i>// provedení operace součtu s odstraněním obou operandů</i>
+     4: freturn        <i>// při operaci freturn se využije hodnota z vrcholu zásobníku</i>
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: jen na okraj &ndash; při konverzi
+hodnoty typu <strong>int</strong> na hodnotu typu <strong>float</strong> může
+dojít ke ztrátě přesnosti, protože jak typ <strong>int</strong>, tak i typ
+<strong>float</strong> jsou podle specifikace 32bitové, ovšem zatímco u typu
+<strong>int</strong> jsou všechny bity rezervovány pro uložení celočíselné
+hodnoty ve tvaru dvojkového doplňku, u typu <strong>float</strong> je nutné
+několik bitů z&nbsp;32bitového slova rezervovat pro uložení exponentu, viz též
+<a
+href="https://www.root.cz/clanky/norma-ieee-754-a-pribuzni-formaty-plovouci-radove-tecky/">Norma
+IEEE 754 a příbuzní: formáty plovoucí řádové tečky</a>.</div></p>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Bajtkód funkce pro výpočet faktoriálu s&nbsp;přímou rekurzí</h2>
+
+<p>Nyní se podívejme na poněkud složitější demonstrační příklady naprogramované
+ve Scheme a na způsob jejich překladu do bajtkódu virtuálního stroje Javy.
+Začneme běžnou implementací faktoriálu, konkrétně s&nbsp;využitím algoritmu,
+v&nbsp;němž se používá přímá rekurze. Jedná se o jeden z&nbsp;typických
+&bdquo;školních&ldquo; příkladů, na němž se ovšem kromě jeho jednoduchosti dá
+ukázat mnoho vlastností programovacích jazyků a jejich interpretrů i
+překladačů:</p>
+
+<pre>
+(define (<strong>factorial</strong> n)
+  (if (= n 0) <i>; podmínka pro ukončení rekurzivního zanořování</i>
+    1         <i>; faktoriál nuly je definitoricky roven jedné</i>
+    (* n (factorial (- n 1)))))
+&nbsp;
+&nbsp;
+(define n 0)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p>V&nbsp;definici funkce pro výpočet faktoriálu jsme nepoužili žádné typové
+informace, takže překlad bude proveden takovým způsobem, aby byl výpočet
+použitelný pro <i>všechny</i> numerické datové typy jazyka Scheme. Tomu bude
+odpovídat o poměrně komplikovaný bajtkód:</p>
+
+<pre>
+public static java.lang.Object <strong>factorial</strong>(java.lang.Object);
+  Code:
+     0: aload_0       
+     1: getstatic     #14     <i>// Field Lit0:Lgnu/math/IntNum;</i>
+     4: invokestatic  #20     <i>// Method gnu/kawa/functions/NumberCompare.$Eq:(Ljava/lang/Object;Ljava/lang/Object;)Z</i>
+     7: ifeq          16
+    10: getstatic     #23     <i>// Field Lit1:Lgnu/math/IntNum;</i>
+    13: goto          34
+    16: getstatic     #29     <i>// Field gnu/kawa/functions/MultiplyOp.TIMES:Lgnu/kawa/functions/MultiplyOp;</i>
+    19: aload_0       
+    20: iconst_m1     
+    21: aload_0       
+    22: getstatic     #23     <i>// Field Lit1:Lgnu/math/IntNum;</i>
+    25: invokestatic  #35     <i>// Method gnu/kawa/functions/AddOp.apply2:(ILjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;</i>
+    28: invokestatic  #39     <i>// Method factorial:(Ljava/lang/Object;)Ljava/lang/Object;</i>
+    31: invokevirtual #44     <i>// Method gnu/mapping/Procedure.apply2:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;</i>
+    34: areturn       
+</pre>
+
+<p>Výpočet nebude příliš rychlý, ovšem bude pracovat pro libovolné vstupní
+<strong>n</strong> (pokud se pochopitelně bude jednat o celé kladné číslo).</p>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Optimalizace výpočtu faktoriálu přidáním typových informací</h2>
+
+<p>Nic nám ovšem nebrání vylepšit a urychlit výpočet faktoriálu takovým
+způsobem, že do původního skriptu přidáme potřebné typové informace. První
+pokus o optimalizaci může vypadat následovně (informace o typech jsou opět
+zvýrazněny tučným fontem):</p>
+
+<pre>
+(define (factorial n <strong>:: int</strong>)
+  (if (= n 0) <i>; podmínka pro ukončení rekurzivního zanořování</i>
+    1         <i>; faktoriál nuly je definitoricky roven jedné</i>
+    (* n (factorial (- n 1)))))
+&nbsp;
+&nbsp;
+(define n <strong>:: int 0</strong>)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p>Zajímavé je, že dodané typové informace o parametru funkce
+<strong>factorial</strong> ve skutečnosti nejsou dostačující pro vygenerování
+optimálního bajtkódu, což je jasně patrné z&nbsp;disassemblovaného
+bajtkódu:</p>
+
+<pre>
+public static java.lang.Object <strong>factorial</strong>(int);
+  Code:
+     0: iload_0       
+     1: ifne          10
+     4: getstatic     #12     <i>// Field Lit0:Lgnu/math/IntNum;</i>
+     7: goto          26
+    10: getstatic     #18     <i>// Field gnu/kawa/functions/MultiplyOp.TIMES:Lgnu/kawa/functions/MultiplyOp;</i>
+    13: iload_0       
+    14: invokestatic  #24     <i>// Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;</i>
+    17: iload_0       
+    18: iconst_1      
+    19: isub          
+    20: invokestatic  #28     <i>// Method factorial:(I)Ljava/lang/Object;</i>
+    23: invokevirtual #34     <i>// Method gnu/mapping/Procedure.apply2:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;</i>
+    26: areturn       
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si především volání funkcí
+určených pro konverzi numerických hodnot, pro implementaci
+&bdquo;univerzálních&ldquo; aritmetických operací atd. U výpočtu faktoriálu nad
+datovým typem <strong>int</strong> ovšem žádné volání dalších metod nebudeme
+potřebovat &ndash; pochopitelně kromě přímé rekurze.</div></p>
+
+<p>Ovšem na tomto místě si pravděpodobně položíte otázku &bdquo;Proč tomu tak
+je&ldquo;? Ve funkci je implementován výpočet, do kterého sice vstupuje hodnota
+typu <strong>int</strong>, ovšem není specifikován návratový typ funkce. I to
+ovšem lze v&nbsp;Kawě provést, a to uvedením typu ještě před samotné tělo
+funkce. Náš skript se tedy nepatrně změní:</p>
+
+<pre>
+(define (factorial n <strong>:: int</strong>) <strong>:: int</strong>
+  (if (= n 0) <i>; podmínka pro ukončení rekurzivního zanořování</i>
+    1         <i>; faktoriál nuly je definitoricky roven jedné</i>
+    (* n (factorial (- n 1)))))
+&nbsp;
+&nbsp;
+(define n :: int 0)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p>Nyní je již bajtkód optimální &ndash; obsahuje podmínku
+<strong>ifne</strong> se skokem <strong>goto</strong> a přímou rekurzí
+realizovanou instrukcí <strong>invokestatic</strong>:</p>
+
+<pre>
+public static int <strong>factorial</strong>(int);
+  Code:
+     0: iload_0       
+     1: ifne          8      <i>// porovnání parametru s nulou</i>
+     4: iconst_1             <i>// pokud je vstup roven 0, vrátíme jedničku</i>
+     5: goto          16
+     8: iload_0              <i>// n na zásobník operandů</i>
+     9: iload_0
+    10: iconst_1
+    11: isub                 <i>// výpočet n-1</i>
+    12: invokestatic  #12    <i>// Method factorial:(I)I</i>
+    15: imul                 <i>// výpočet nového mezivýsledku</i> 
+    16: ireturn              <i>// předání výsledku výpočtu volající funkci/metodě</i>
+</pre>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Výpočet faktoriálu používající numerické hodnoty typu <strong>long</strong></h2>
+
+<p>Jen pro zajímavost se podívejme na to, jak se změní funkce pro výpočet
+faktoriálu ve chvíli, kdy všechny výpočty budou probíhat nad datovým typem
+<strong>long</strong>. Samotné tělo definované funkce bude stejné, jako
+v&nbsp;předchozím příkladu, ovšem změní se určení typu parametru i typu
+návratové hodnoty:</p>
+
+<pre>
+(define (factorial n <strong>:: long</strong>) <strong>:: long</strong>
+  (if (= n 0) <i>; podmínka pro ukončení rekurzivního zanořování</i>
+    1         <i>; faktoriál nuly je definitoricky roven jedné</i>
+    (* n (factorial (- n 1)))))
+&nbsp;
+&nbsp;
+(define n :: long 0)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p>Výsledný bajtkód se vlastně příliš neliší od bajtkódu předchozího příkladu,
+samozřejmě s&nbsp;tím rozdílem, že se zde použijí instrukce pro práci
+s&nbsp;celočíselnými operandy typu <strong>long</strong> a nikoli
+<strong>int</strong> (tyto instrukce začínají znakem &bdquo;l&ldquo;, u typu
+<strong>int</strong> začínají znakem &bdquo;i&ldquo;):</p>
+
+<pre>
+public static long <strong>factorial</strong>(long);
+  Code:
+     0: lload_0       
+     1: lconst_0      
+     2: lcmp          
+     3: ifne          10      <i>// porovnání parametru s nulou</i>
+     6: lconst_1              <i>// pokud je vstup roven 0, vrátíme jedničku</i>
+     7: goto          18
+    10: lload_0               <i>// n na zásobník operandů</i>
+    11: lload_0       
+    12: lconst_1      
+    13: lsub                  <i>// výpočet n-1</i>
+    14: invokestatic  #12     <i>// Method factorial:(J)J</i>
+    17: lmul                  <i>// výpočet nového mezivýsledku</i> 
+    18: lreturn               <i>// předání výsledku výpočtu volající funkci/metodě</i>
+</pre>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Optimalizace výpočtu faktoriálu s&nbsp;využitím tail rekurze</h2>
+
+<p>Nástroj <i>Kawa</i> při generování bajtkódu plně podporuje tail rekurzi a
+její optimalizaci, tedy náhradu rekurze za programovou smyčku
+popř.&nbsp;v&nbsp;bajtkódu za kombinaci podmínky a skoku (instrukce
+<strong>goto</strong>). Zkusme tedy náš výpočet faktoriálu upravit takovým
+způsobem, aby se tail rekurze a její optimalizace (<i>TCO</i>) mohla provést.
+První varianta upraveného skriptu může vypadat například následovně:</p>
+
+<pre>
+(define (factorial n <strong>:: int</strong>) <strong>:: int</strong>
+  (let fact-iter (        <i>; pomocná vnitřní funkce</i>
+              (n n)       <i>; počitadlo iterací</i>
+              (result 1)) <i>; průběžný výsledek</i>
+    (if (= n 0)           <i>; po dosažení koncového stavu</i>
+      result              <i>; se vrátí průběžný výsledek</i>
+      (fact-iter (- n 1) (* n result)) <i>; koncové volání</i>
+    )))
+&nbsp;
+&nbsp;
+(define n <strong>:: int</strong> 0)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: všimněte si, že volání
+<strong>fact-iter</strong> je provedeno v&nbsp;takzvané tail pozici.</div></p>
+
+<p>Po překladu do bajtkódu virtuálního stroje Javy je (opět) patrné, že námi
+zavedené typové informace nejsou dostačující, protože v&nbsp;bajtkódu můžeme
+vidět volání funkcí s&nbsp;implementací aritmetických operací a konverzí pro
+všechny numerické datové typy jazyka Scheme:</p>
+
+<pre>
+public static int <strong>factorial</strong>(int);
+  Code:
+     0: iload_0       
+     1: invokestatic  #14                 <i>// Method gnu/math/IntNum.make:(I)Lgnu/math/IntNum;</i>
+     4: getstatic     #18                 <i>// Field Lit0:Lgnu/math/IntNum;</i>
+     7: astore_2      
+     8: astore_1      
+     9: aload_1       
+    10: lconst_0      
+    11: invokestatic  #22                 <i>// Method gnu/math/IntNum.compare:(Lgnu/math/IntNum;J)I</i>
+    14: ifne          24
+    17: aload_2       
+    18: invokevirtual #28                 <i>// Method java/lang/Number.intValue:()I</i>
+    21: goto          37
+    24: aload_1       
+    25: iconst_m1     
+    26: invokestatic  #32                 <i>// Method gnu/math/IntNum.add:(Lgnu/math/IntNum;I)Lgnu/math/IntNum;</i>
+    29: aload_1       
+    30: aload_2       
+    31: invokestatic  #36                 <i>// Method gnu/math/IntNum.times:(Lgnu/math/IntNum;Lgnu/math/IntNum;)Lgnu/math/IntNum;</i>
+    34: goto          7
+    37: ireturn       
+</pre>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Plně optimalizovaná varianta výpočtu faktoriálu</h2>
+
+<p>Plně optimalizovanou variantu výpočtu faktoriálu získáme tak, že typové
+informace použijeme i u vnitřní pomocné funkce použité pro tail call rekurzi.
+Skript se sice změní jen nepatrně, ovšem důsledek pro generovaný bajtkód je
+obrovský:</p>
+
+<pre>
+(define (factorial n <strong>:: int</strong>) <strong>:: int</strong>
+  (let fact-iter (                     <i>; pomocná vnitřní funkce</i>
+              (n <strong>:: int</strong> n )            <i>; počitadlo iterací</i>
+              (result <strong>:: int</strong> 1))       <i>; průběžný výsledek</i>
+    (if (= n 0)                        <i>; po dosažení koncového stavu</i>
+      result                           <i>; se vrátí průběžný výsledek</i>
+      (fact-iter (- n 1) (* n result)) <i>; koncové volání</i>
+    )))
+&nbsp;
+&nbsp;
+(define n <strong>:: int</strong> 0)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p>Výsledný bajtkód již obsahuje pouze základní numerické operace
+s&nbsp;operandy typu <strong>int</strong>, podmíněné skoky (implementace
+podmínky) a skok nepodmíněný (implementace smyčky)</p>
+
+<pre>
+public static int <strong>factorial</strong>(int);
+  Code:
+     0: iload_0       
+     1: iconst_1               <i>// příprava výsledku (akumulátoru)</i>
+     2: istore_2      
+     3: istore_1      
+     4: iload_1                <i>// začátek programové smyčky (viz <strong>goto</strong> na offsetu 19)</i>
+     5: ifne          12       <i>// test, zda se má výpočet (smyčka) ukončit či nikoli</i>
+     8: iload_2       
+     9: goto          22
+    12: iload_1       
+    13: iload_2       
+    14: imul                   <i>// provedení jedné iterace výpočtu faktoriálu</i>
+    15: istore_2      
+    16: iinc          1, -1    <i>// snížení hodnoty n</i>
+    19: goto          4        <i>// a provedení další iterace</i>
+    22: ireturn                <i>// ukončení běhu funkce, hodnota z vrcholu zásobníku je návratovou hodnotou</i>
+</pre>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Obsah další části seriálu</h2>
+
+<p>V&nbsp;navazující části seriálu o rozsáhlém světě lispovských programovacích
+jazyků dokončíme popis možností nabízených programovacím jazykem Kawa.
+Především se zaměříme na podporu dalších typů <i>kolekcí</i>, protože Kawa
+umožňuje kromě běžných seznamů (<i>list</i>) velmi efektivně pracovat i
+s&nbsp;vektory a poli. Na tomto poli se přibližuje možnostem specializovaných
+jazyků.</p>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Soubor Makefile určený pro překlad demonstračních skriptů do bajtkódu a pro jejich disassembling</h2>
+
+<p>Pro úplnost si ještě ukažme, jak by mohl vypadat pomocný soubor
+<strong>Makefile</strong> sloužící pro překlad dnešních demonstračních příkladu
+do bajtkódu JVM a pro jejich následný disassembling:</p>
+
+<pre>
+KAWA=./kawa
+JAVA_DISASSEMBLER=javap
+&nbsp;
+.PRECIOUS: %.class
+&nbsp;
+all:    Add1.asm Add2.asm Add3.asm Add4.asm HelloWorld.asm HelloWorld2.scm \
+        Factorial1.asm Factorial2.asm Factorial3.asm \
+        Factorial4.asm Factorial5.asm Factorial6.asm
+&nbsp;
+clean:
+        rm -f *.class
+        rm -f *.asm
+&nbsp;
+%.asm:  %.class
+        $(JAVA_DISASSEMBLER) -c $&lt; &gt; $@
+&nbsp;
+%.class:        %.scm
+        $(KAWA) -C $&lt;
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: tento soubor naleznete na adrese <a
+href="https://github.com/tisnik/lisp-families/blob/master/kawa/Makefile">https://github.com/tisnik/lisp-families/blob/master/kawa/Makefile</a>.</div></p>
+
+
+
+<p><a name="k17"></a></p>
+<h2 id="k17">17. Příloha: vybrané instrukce bajtkódu JVM</h2>
+
+<p>Na závěr si popíšeme aritmetické instrukce bajtkódu JVM, které jsou velmi
+jednoduché. Jedná se většinou o instrukce pracující s&nbsp;dvojicí operandů
+uložených na zásobníku operandů, Tyto instrukce slouží pro implementaci pěti
+základních (binárních) aritmetických operací &ndash; součtu, rozdílu, součinu,
+podílu a výpočtu zbytku po dělení. Vzhledem k&nbsp;tomu, že každá tato operace
+existuje ve čtyřech variantách pro datové typy <strong>int</strong>,
+<strong>long</strong>, <strong>float</strong> a <strong>double</strong>, jsou
+binární aritmetické operace implementovány dvaceti instrukcemi.</p>
+
+<p>Další čtyři instrukce &ndash; změna znaménka &ndash; však pracují pouze
+s&nbsp;jedním operandem. Virtuální stroj Javy v&nbsp;čase běhu aplikace nebo
+v&nbsp;čase verifikace bajtkódu testuje, zda se všechny aritmetické operace
+provádí se správným typem operandů. Povšimněte si, že instrukční soubor JVM
+neobsahuje žádné aritmetické operace pro operandy typu <strong>byte</strong>,
+<strong>short</strong> či <strong>char</strong> &ndash; operandy těchto typů
+jsou vždy převedeny na <strong>int</strong>. Navíc se u celočíselných operací
+netestuje přetečení, což je možná u vysokoúrovňového jazyka poněkud
+překvapující (ono je ostatně při poněkud jednostranném pohledu překvapující i
+to, že Java má primitivní datové typy :-):</p>
+
+<table>
+<tr><th>#</th><th>Instrukce</th><th>Opkód</th><th>Operand 1</th><th>Operand 2</th><th>Operace</th><th>Poznámka</th></tr>
+<tr><td> 1</td><td>iadd</td><td>0x60</td><td>int   </td><td>int   </td><td>součet</td><td>oba původní operandy jsou ze zásobníku operandů odstraněny</td></tr>
+<tr><td> 2</td><td>ladd</td><td>0x61</td><td>long  </td><td>long  </td><td>součet</td><td>-//-</td></tr>
+<tr><td> 3</td><td>fadd</td><td>0x62</td><td>float </td><td>float </td><td>součet</td><td>-//-</td></tr>
+<tr><td> 4</td><td>dadd</td><td>0x63</td><td>double</td><td>double</td><td>součet</td><td>-//-</td></tr>
+<tr><td> 5</td><td>isub</td><td>0x64</td><td>int   </td><td>int   </td><td>rozdíl</td><td>-//-</td></tr>
+<tr><td> 6</td><td>lsub</td><td>0x65</td><td>long  </td><td>long  </td><td>rozdíl</td><td>-//-</td></tr>
+<tr><td> 7</td><td>fsub</td><td>0x66</td><td>float </td><td>float </td><td>rozdíl</td><td>-//-</td></tr>
+<tr><td> 8</td><td>dsub</td><td>0x67</td><td>double</td><td>double</td><td>rozdíl</td><td>-//-</td></tr>
+<tr><td> 9</td><td>imul</td><td>0x68</td><td>int   </td><td>int   </td><td>součin</td><td>-//-</td></tr>
+<tr><td>10</td><td>lmul</td><td>0x69</td><td>long  </td><td>long  </td><td>součin</td><td>-//-</td></tr>
+<tr><td>11</td><td>fmul</td><td>0x6A</td><td>float </td><td>float </td><td>součin</td><td>-//-</td></tr>
+<tr><td>12</td><td>dmul</td><td>0x6B</td><td>double</td><td>double</td><td>součin</td><td>-//-</td></tr>
+<tr><td>13</td><td>idiv</td><td>0x6C</td><td>int   </td><td>int   </td><td>podíl</td><td>-//-</td></tr>
+<tr><td>14</td><td>ldiv</td><td>0x6D</td><td>long  </td><td>long  </td><td>podíl</td><td>-//-</td></tr>
+<tr><td>15</td><td>fdiv</td><td>0x6E</td><td>float </td><td>float </td><td>podíl</td><td>-//-</td></tr>
+<tr><td>16</td><td>ddiv</td><td>0x6F</td><td>double</td><td>double</td><td>podíl</td><td>-//-</td></tr>
+<tr><td>17</td><td>irem</td><td>0x70</td><td>int   </td><td>int   </td><td>zbytek po dělení</td><td>-//-</td></tr>
+<tr><td>18</td><td>lrem</td><td>0x71</td><td>long  </td><td>long  </td><td>zbytek po dělení</td><td>-//-</td></tr>
+<tr><td>19</td><td>frem</td><td>0x72</td><td>float </td><td>float </td><td>zbytek po dělení</td><td>-//-</td></tr>
+<tr><td>20</td><td>drem</td><td>0x73</td><td>double</td><td>double</td><td>zbytek po dělení</td><td>-//-</td></tr>
+<tr><td>21</td><td>ineg</td><td>0x74</td><td>int   </td><td>&nbsp;</td><td>změna znaménka</td><td>původní operand je ze zásobníku operandů odstraněn</td></tr>
+<tr><td>22</td><td>lneg</td><td>0x75</td><td>long  </td><td>&nbsp;</td><td>změna znaménka</td><td>původní operand je ze zásobníku operandů odstraněn</td></tr>
+<tr><td>23</td><td>fneg</td><td>0x76</td><td>float </td><td>&nbsp;</td><td>změna znaménka</td><td>původní operand je ze zásobníku operandů odstraněn</td></tr>
+<tr><td>24</td><td>dneg</td><td>0x77</td><td>double</td><td>&nbsp;</td><td>změna znaménka</td><td>původní operand je ze zásobníku operandů odstraněn</td></tr>
+</table>
+
+<p>Další důležitou skupinou instrukcí virtuálního stroje jazyka Java,
+s&nbsp;níž se dnes ve stručnosti seznámíme, jsou instrukce sloužící pro
+konverzi dat. Programovací jazyk Java sice patří mezi jazyky silně typované,
+ale konverze mezi některými datovými typy jsou prováděny automaticky
+(byte-&rarr;int) a jiné lze explicitně zapsat. Navíc se konverzní instrukce
+objevují v&nbsp;bajtkódu například při vytváření návratové hodnoty metody
+v&nbsp;případě, že tato hodnota nemá typ <strong>int</strong>,
+<strong>long</strong>, <strong>float</strong> či <strong>double</strong>. Ovšem
+ne všechny kombinace konverzí datových typů jsou v&nbsp;instrukční sadě
+přítomny, takže některé konverze je ve skutečnosti nutné provádět pomocí
+dvojice instrukcí (například se může jednat o konverzi
+z&nbsp;<strong>float</strong> na <strong>short</strong> a podobně). Podívejme
+se ostatně na tabulku obsahující všechny konverzní instrukce. V&nbsp;prvním
+sloupci je uveden datový typ, z&nbsp;něhož je konverze prováděna a
+v&nbsp;prvním řádku naopak výsledný datový typ:</p>
+
+<table>
+<tr><th>#</th><th>z/na-&gt;</th><th>char</th><th>byte</th><th>short</th><th>int</th><th>long</th><th>float</th><th>double</th></tr>
+<tr><td>1</td><td>char</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>2</td><td>byte</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>3</td><td>short</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>4</td><td>int</td><td>i2c</td><td>i2b</td><td>i2s</td><td>&nbsp;</td><td>i2l</td><td>i2f</td><td>i2d</td></tr>
+<tr><td>5</td><td>long</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>l2i</td><td>&nbsp;</td><td>l2f</td><td>l2d</td></tr>
+<tr><td>6</td><td>float</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>f2i</td><td>f2l</td><td>&nbsp;</td><td>f2d</td></tr>
+<tr><td>7</td><td>double</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>d2i</td><td>d2l</td><td>d2f</td><td>&nbsp;</td></tr>
+</table>
+
+<p>Naproti tomu však některé další instrukce obsahují přímo ve svém operačním
+kódu (tj.&nbsp;v&nbsp;onom jednom bajtu) krátkou celočíselnou konstantu, která
+se využívá buď jako index do oblasti lokálních proměnných nebo jako skutečná
+číselná konstanta. Tato technika je použita z&nbsp;toho důvodu, aby byl bajtkód
+co možná nejkratší, proto se také nejvíce místa v&nbsp;instrukční sadě
+&bdquo;obětovalo&ldquo; na instrukce sloužící pro uložení konstanty typu
+<strong>int</strong>. V&nbsp;následující tabulce jsou vypsány všechny instrukce
+sloužící pro uložení číselné konstanty na zásobník. Ve sloupci
+&bdquo;Instrukce&ldquo; se nachází symbolické jméno instrukce, sloupec
+&bdquo;Opkód&ldquo; obsahuje bajtovou hodnotu uloženou přímo v&nbsp;bajtkódu
+(tedy operační kód instrukce), ve sloupcích &bdquo;Data 1&ldquo; a &bdquo;Data
+2&ldquo; jsou vypsány bajty, které jsou případně uloženy ihned za operačním
+kódem a ve sloupci &bdquo;Typ&ldquo; je uveden datový typ skutečně uložený na
+<i>zásobník operandů</i>:</p>
+
+<table>
+<tr><th>#</th><th>Instrukce</th><th>Opkód</th><th>Data 1</th><th>Data 2</th><th>Typ na zásobníku</th><th>Popis</th></tr>
+<tr><td>01</td><td>aconst_null</td><td>0x01</td><td>&nbsp;</td><td>&nbsp;</td><td>ref.</td><td>uložení reference "null" na zásobník</td></tr>
+<tr><td>02</td><td>iconst_m1</td><td>0x02</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty -1 na zásobník</td></tr>
+<tr><td>03</td><td>iconst_0</td><td>0x03</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty 0 na zásobník</td></tr>
+<tr><td>04</td><td>iconst_1</td><td>0x04</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty 1 na zásobník</td></tr>
+<tr><td>05</td><td>iconst_2</td><td>0x05</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty 2 na zásobník</td></tr>
+<tr><td>06</td><td>iconst_3</td><td>0x06</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty 3 na zásobník</td></tr>
+<tr><td>07</td><td>iconst_4</td><td>0x07</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty 4 na zásobník</td></tr>
+<tr><td>08</td><td>iconst_5</td><td>0x08</td><td>&nbsp;</td><td>&nbsp;</td><td>int</td><td>uložení konstanty 5 na zásobník</td></tr>
+<tr><td>09</td><td>lconst_0</td><td>0x09</td><td>&nbsp;</td><td>&nbsp;</td><td>long</td><td>uložení konstanty 0L na zásobník</td></tr>
+<tr><td>10</td><td>lconst_1</td><td>0x0a</td><td>&nbsp;</td><td>&nbsp;</td><td>long</td><td>uložení konstanty 1L na zásobník</td></tr>
+<tr><td>11</td><td>fconst_0</td><td>0x0b</td><td>&nbsp;</td><td>&nbsp;</td><td>float</td><td>uložení konstanty 0.0f na zásobník</td></tr>
+<tr><td>12</td><td>fconst_1</td><td>0x0c</td><td>&nbsp;</td><td>&nbsp;</td><td>float</td><td>uložení konstanty 1.0f na zásobník</td></tr>
+<tr><td>13</td><td>fconst_2</td><td>0x0d</td><td>&nbsp;</td><td>&nbsp;</td><td>float</td><td>uložení konstanty 2.0f na zásobník</td></tr>
+<tr><td>14</td><td>dconst_0</td><td>0x0e</td><td>&nbsp;</td><td>&nbsp;</td><td>double</td><td>uložení konstanty 0.0 na zásobník</td></tr>
+<tr><td>15</td><td>dconst_1</td><td>0x0f</td><td>&nbsp;</td><td>&nbsp;</td><td>double</td><td>uložení konstanty 1.0 na zásobník</td></tr>
+<tr><td>16</td><td>bipush</td><td>0x10</td><td>byteconst</td><td>&nbsp;</td><td>int</td><td>uložení "byteconst" na zásobník s konverzí na int</td></tr>
+<tr><td>17</td><td>sipush</td><td>0x11</td><td>hi-byte</td><td>lowbyte</td><td>int</td><td>uložení slova hibyte-lowbyte na zásobník s konverzí na int</td></tr>
+<tr><td>18</td><td>ldc</td><td>0x12</td><td>index  </td><td>&nbsp; </td><td>string/ref/int/float</td><td>načte konstantu z&nbsp;constant poolu (může se jednat i o referenci)</td></tr>
+<tr><td>19</td><td>ldc_w</td><td>0x13</td><td>hi-byte</td><td>lowbyte</td><td>string/ref/int/float</td><td>načte konstantu z&nbsp;constant poolu (index je šestnáctibitový)</td></tr>
+<tr><td>20</td><td>ldc2_w</td><td>0x14</td><td>hi-byte</td><td>lowbyte</td><td>long/double</td><td>totéž co předchozí instrukce, ale pro typy long a double (ty mají v&nbsp;constant poolu vyhrazeny dvě položky)</td></tr>
+</table>
+
+
+
+<p><a name="k18"></a></p>
+<h2 id="k18">18. Repositář s&nbsp;demonstračními příklady</h2>
+
+<p>Zdrojové kódy všech dnes použitých demonstračních příkladů byly uloženy do
+Git repositáře, který je dostupný na adrese <a
+href="https://github.com/tisnik/lisp-families.git">https://github.com/tisnik/lisp-families.git</a>
+(stále na GitHubu :-). V&nbsp;případě, že nebudete chtít klonovat celý
+repositář (ten je ovšem &ndash; alespoň prozatím &ndash; velmi malý, můžete
+namísto toho použít odkazy na jednotlivé příklady, které naleznete
+v&nbsp;následující tabulce:</p>
+
+<table>
+<tr><th> #</th><th>Příklad</th><th>Popis příkladu</th><th>Cesta</th></tr>
+<tr><td> 1</td><td>HelloWorld.scm</td><td>přímé volání funkce <strong>display</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld.scm</a></td></tr>
+<tr><td> 2</td><td>HelloWorld2.scm</td><td>implementace funkce <strong>Hello</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld2.scm</a></td></tr>
+<tr><td> 3</td><td>Add1.scm</td><td>součet dvou numerických hodnot libovolného typu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add1.scm</a></td></tr>
+<tr><td> 4</td><td>Add2.scm</td><td>součet dvou numerických hodnot typu <strong>int</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add2.scm</a></td></tr>
+<tr><td> 5</td><td>Add3.scm</td><td>součet dvou numerických hodnot typu <strong>float</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add3.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add3.scm</a></td></tr>
+<tr><td> 6</td><td>Add4.scm</td><td>součet dvou numerických hodnot typu <strong>int</strong> a <strong>float</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add4.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add4.scm</a></td></tr>
+<tr><td> 7</td><td>Factorial1.scm</td><td>klasický rekurzivní výpočet faktoriálu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial1.scm</a></td></tr>
+<tr><td> 8</td><td>Factorial2.scm</td><td>přidání typových informací o parametru funkce</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial2.scm</a></td></tr>
+<tr><td> 9</td><td>Factorial3.scm</td><td>přidání typové informace o výsledku funkce</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial3.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial3.scm</a></td></tr>
+<tr><td>10</td><td>Factorial4.scm</td><td>výpočet faktoriálu nad typem <strong>long</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial4.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial4.scm</a></td></tr>
+<tr><td>11</td><td>Factorial5.scm</td><td>výpočet faktoriálu s&nbsp;tail call rekurzí</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial5.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial5.scm</a></td></tr>
+<tr><td>12</td><td>Factorial6.scm</td><td>přidání typových informací a plná optimalizace výpočtu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial6.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial6.scm</a></td></tr>
+</table>
+
+<p>Nesmíme zapomenout ani na vygenerované a disassemblované soubory typu
+<strong>.class</strong>:</p>
+
+<table>
+<tr><th> #</th><th>Příklad</th><th>Popis příkladu</th><th>Cesta</th></tr>
+<tr><td> 1</td><td>HelloWorld.asm</td><td>přímé volání funkce <strong>display</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld.asm</a></td></tr>
+<tr><td> 2</td><td>HelloWorld2.asm</td><td>implementace funkce <strong>Hello</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld2.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/HelloWorld2.asm</a></td></tr>
+<tr><td> 3</td><td>Add1.asm</td><td>součet dvou numerických hodnot libovolného typu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add1.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add1.asm</a></td></tr>
+<tr><td> 4</td><td>Add2.asm</td><td>součet dvou numerických hodnot typu <strong>int</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add2.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add2.asm</a></td></tr>
+<tr><td> 5</td><td>Add3.asm</td><td>součet dvou numerických hodnot typu <strong>float</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add3.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add3.asm</a></td></tr>
+<tr><td> 6</td><td>Add4.asm</td><td>součet dvou numerických hodnot typu <strong>int</strong> a <strong>float</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Add4.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Add4.asm</a></td></tr>
+<tr><td> 7</td><td>Factorial1.asm</td><td>klasický rekurzivní výpočet faktoriálu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial1.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial1.asm</a></td></tr>
+<tr><td> 8</td><td>Factorial2.asm</td><td>přidání typových informací o parametru funkce</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial2.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial2.asm</a></td></tr>
+<tr><td> 9</td><td>Factorial3.asm</td><td>přidání typové informace o výsledku funkce</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial3.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial3.asm</a></td></tr>
+<tr><td>10</td><td>Factorial4.asm</td><td>výpočet faktoriálu nad typem <strong>long</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial4.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial4.asm</a></td></tr>
+<tr><td>11</td><td>Factorial5.asm</td><td>výpočet faktoriálu s&nbsp;tail call rekurzí</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial5.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial5.asm</a></td></tr>
+<tr><td>12</td><td>Factorial6.asm</td><td>přidání typových informací a plná optimalizace výpočtu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial6.asm">https://github.com/tisnik/lisp-families/blob/master/kawa/Factorial6.asm</a></td></tr>
+</table>
+
+
+
+<p><a name="k19"></a></p>
+<h2 id="k19">19. Literatura</h2>
+
+<ol>
+
+<li>Peter Seibel<br />
+<i>&bdquo;Practical Common Lisp&ldquo;</i><br />
+2009
+</li>
+
+<li>Paul Graham<br />
+<i>&bdquo;ANSI Common Lisp&ldquo;</i><br />
+1995
+</li>
+
+<li>Gerald Gazdar<br />
+<i>&bdquo;Natural Language Processing in Lisp: An Introduction to Computational Linguistics&ldquo;</i><br />
+1989
+</li>
+
+<li>Peter Norvig<br />
+<i>&bdquo;Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp&ldquo;</i><br />
+1991
+</li>
+
+<li>Alex Mileler et.al.<br />
+<i>&bdquo;Clojure Applied: From Practice to Practitioner&ldquo;</i><br />
+2015
+</li>
+
+<li>
+<i>&bdquo;Living Clojure: An Introduction and Training Plan for Developers&ldquo;</i><br />
+2015
+</li>
+
+<li>Dmitri Sotnikov<br />
+<i>&bdquo;Web Development with Clojure: Build Bulletproof Web Apps with Less Code&ldquo;</i><br />
+2016
+</li>
+
+<li>McCarthy<br />
+<i>&bdquo;Recursive functions of symbolic expressions and their computation by machine, part I&ldquo;</i><br />
+1960
+</li>
+
+<li>R. Kent Dybvig<br />
+<i>&bdquo;The Scheme Programming Language&ldquo;</i><br />
+2009
+</li>
+
+<li>Max Hailperin<br />
+<i>&bdquo;Concrete Abstractions&ldquo;</i><br />
+1998
+</li>
+
+<li>Guy L. Steele<br />
+<i>&bdquo;History of Scheme&ldquo;</i><br />
+2006, Sun Microsystems Laboratories
+</li>
+
+<li>Kolář J., Muller K.:<br />
+<i>&bdquo;Speciální programovací jazyky&ldquo;</i><br />
+Praha 1981
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 9, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., October 1987
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 10, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., September 1988
+</li>
+
+<li>McCarthy, John; Abrahams, Paul W.; Edwards, Daniel J.; Hart, Timothy P.; Levin, Michael I.<br />
+<i>&bdquo;LISP 1.5 Programmer's Manual&ldquo;</i><br />
+MIT Press. ISBN 0 262 130 1 1 4
+</li>
+
+<li>Carl Hewitt; Peter Bishop and Richard Steiger<br />
+<i>&bdquo;A Universal Modular Actor Formalism for Artificial Intelligence&ldquo;</i><br />
+1973
+</li>
+
+<li>Feiman, J.<br />
+<i>&bdquo;The Gartner Programming Language Survey (October 2001)&ldquo;</i><br />
+Gartner Advisory
+</li>
+
+<li>Harold Abelson, Gerald Jay Sussman, Julie Sussman:<br />
+<i>Structure and Interpretation of Computer Programs</i><br />
+MIT Press. 1985, 1996 (a možná vyšel i další přetisk)
+</li>
+
+<li>Paul Graham<br />
+<i>On Lisp</i><br />
+Prentice Hall, 1993<br />
+Dostupné online na stránce <a href="http://www.paulgraham.com/onlisptext.html">http://www.paulgraham.com/onlisptext.html</a>
+</li>
+
+<li>David S. Touretzky<br />
+<i>Common LISP: A Gentle Introduction to Symbolic Computation (Dover Books on Engineering)</i><br />
+</li>
+
+<li>Peter Norvig<br />
+<i>Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp</i>
+</li>
+
+<li>Patrick Winston, Berthold Horn<br />
+<i>Lisp (3rd Edition)</i><br />
+ISBN-13: 978-0201083194, ISBN-10: 0201083191
+</li>
+
+<li>Matthias Felleisen, David Van Horn, Dr. Conrad Barski<br>
+<i>Realm of Racket: Learn to Program, One Game at a Time!</i><br />
+ISBN-13: 978-1593274917, ISBN-10: 1593274912 
+</li>
+
+</ol>
+
+
+
+<p><a name="k20"></a></p>
+<h2 id="k20">20. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>Kawa: Compiling Scheme to Java<br />
+<a href="https://www.mit.edu/afs.new/sipb/project/kawa/doc/kawa-tour.html">https://www.mit.edu/afs.new/sipb/project/kawa/doc/kawa-tour.html</a>
+</li>
+
+<li>Kawa in Languages shootout<br />
+<a href="http://per.bothner.com/blog/2010/Kawa-in-shootout/">http://per.bothner.com/blog/2010/Kawa-in-shootout/</a>
+</li>
+
+<li>Kawa 2.0 Supports Scheme R7RS<br />
+<a href="https://developers.slashdot.org/story/14/12/13/2259225/kawa-20-supports-scheme-r7rs/">https://developers.slashdot.org/story/14/12/13/2259225/kawa-20-supports-scheme-r7rs/</a>
+</li>
+
+<li>Kawa — fast scripting on the Java platform<br />
+<a href="https://lwn.net/Articles/623349/">https://lwn.net/Articles/623349/</a>
+</li>
+
+<li>Tail call (a její optimalizace)<br />
+<a href="https://en.wikipedia.org/wiki/Tail_call">https://en.wikipedia.org/wiki/Tail_call</a>
+</li>
+
+<li>SLIME (Wikipedia)<br />
+<a href="http://en.wikipedia.org/wiki/SLIME">http://en.wikipedia.org/wiki/SLIME</a>
+</li>
+
+<li>slime.vim<br />
+<a href="http://s3.amazonaws.com/mps/slime.vim">http://s3.amazonaws.com/mps/slime.vim</a>
+</li>
+
+<li>What are the best scheme implementations?<br />
+<a href="https://www.slant.co/topics/5282/~scheme-implementations">https://www.slant.co/topics/5282/~scheme-implementations</a>
+</li>
+
+<li>Bigloo homepage<br />
+<a href="http://www-sop.inria.fr/mimosa/fp/Bigloo/">http://www-sop.inria.fr/mimosa/fp/Bigloo/</a>
+</li>
+
+<li>FTP s tarbally Bigloo<br />
+<a href="ftp://ftp-sop.inria.fr/indes/fp/Bigloo">ftp://ftp-sop.inria.fr/indes/fp/Bigloo</a>
+</li>
+
+<li>GOTO 2018 • Functional Programming in 40 Minutes • Russ Olsen<br />
+<a href="https://www.youtube.com/watch?v=0if71HOyVjY">https://www.youtube.com/watch?v=0if71HOyVjY</a>
+</li>
+
+<li>TinyScheme (stránka na Sourceforge)<br />
+<a href="http://tinyscheme.sourceforge.net/home.html">http://tinyscheme.sourceforge.net/home.html</a>
+</li>
+
+<li>Embedding Tiny Scheme in a Game<br />
+<a href="http://www.silicondelight.com/embedding-tiny-scheme-in-a-game/">http://www.silicondelight.com/embedding-tiny-scheme-in-a-game/</a>
+</li>
+
+<li>Embedding Scheme for a game mission scripting DSL<br />
+<a href="http://carloscarrasco.com/embedding-scheme-for-a-game-mission-scripting-dsl.html">http://carloscarrasco.com/embedding-scheme-for-a-game-mission-scripting-dsl.html</a>
+</li>
+
+<li>Všechny verze TinyScheme na SourceForge<br />
+<a href="https://sourceforge.net/projects/tinyscheme/files/tinyscheme/">https://sourceforge.net/projects/tinyscheme/files/tinyscheme/</a>
+</li>
+
+<li>Fork TinyScheme na GitHubu<br />
+<a href="https://github.com/yawnt/tinyscheme">https://github.com/yawnt/tinyscheme</a>
+</li>
+
+<li>Ackermannova funkce<br />
+<a href="https://cs.wikipedia.org/wiki/Ackermannova_funkce">https://cs.wikipedia.org/wiki/Ackermannova_funkce</a>
+</li>
+
+<li>Ackermann function na Rosetta Code<br />
+<a href="https://rosettacode.org/wiki/Ackermann_function#Scheme">https://rosettacode.org/wiki/Ackermann_function#Scheme</a>
+</li>
+
+<li>Success Stories (lisp.org)<br />
+<a href="https://lisp-lang.org/success/">https://lisp-lang.org/success/</a>
+</li>
+
+<li>Allegro Common Lisp Success Stories<br />
+<a href="https://franz.com/success/">https://franz.com/success/</a>
+</li>
+
+<li>Clojure Success Stories<br />
+<a href="https://clojure.org/community/success_stories">https://clojure.org/community/success_stories</a>
+</li>
+
+<li>Scheme Quick Reference<br />
+<a href="https://www.st.cs.uni-saarland.de/edu/config-ss04/scheme-quickref.pdf">https://www.st.cs.uni-saarland.de/edu/config-ss04/scheme-quickref.pdf</a>
+</li>
+
+<li>Slajdy o Scheme (od slajdu číslo 15)<br />
+<a href="https://docs.google.com/presentation/d/1abmDnKjrq1tcjGvvRNAKhOiSTSE2lyagtcEPal07Gbo/edit">https://docs.google.com/presentation/d/1abmDnKjrq1tcjGvvRNAKhOiSTSE2lyagtcEPal07Gbo/edit</a>
+</li>
+
+<li>Scheme Cheat Sheet<br />
+<a href="https://github.com/smythp/scheme-cheat-sheet">https://github.com/smythp/scheme-cheat-sheet</a>
+</li>
+
+<li>Embedding Lua, embedding Guile <br />
+<a href="http://puntoblogspot.blogspot.com/2013/04/embedding-lua-embedding-guile.html">http://puntoblogspot.blogspot.com/2013/04/embedding-lua-embedding-guile.html</a>
+</li>
+
+<li>Lambda Papers<br />
+<a href="https://en.wikisource.org/wiki/Lambda_Papers">https://en.wikisource.org/wiki/Lambda_Papers</a>
+</li>
+
+<li>Revised<sup>7</sup>Report on the Algorithmic Language Scheme<br />
+<a href="https://small.r7rs.org/attachment/r7rs.pdf">https://small.r7rs.org/attachment/r7rs.pdf</a>
+</li>
+
+<li>Video Lectures (MIT, SICP 2005)<br />
+<a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/">https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/</a>
+</li>
+
+<li>Why is Scheme my first language in university?<br />
+<a href="https://softwareengineering.stackexchange.com/questions/115252/why-is-scheme-my-first-language-in-university">https://softwareengineering.stackexchange.com/questions/115252/why-is-scheme-my-first-language-in-university</a>
+</li>
+
+<li>The Perils of JavaSchools<br />
+<a href="https://www.joelonsoftware.com/2005/12/29/the-perils-of-javaschools-2/">https://www.joelonsoftware.com/2005/12/29/the-perils-of-javaschools-2/</a>
+</li>
+
+<li>How to Design Programs, Second Edition<br />
+<a href="https://htdp.org/2019-02-24/index.html">https://htdp.org/2019-02-24/index.html</a>
+</li>
+
+<li>LilyPond<br />
+<a href="http://lilypond.org/">http://lilypond.org/</a>
+</li>
+
+<li>LilyPond — Extending (přes Scheme)<br />
+<a href="http://lilypond.org/doc/v2.18/Documentation/extending/scheme-tutorial">http://lilypond.org/doc/v2.18/Documentation/extending/scheme-tutorial</a>
+</li>
+
+<li>Scheme in LilyPond<br />
+<a href="http://lilypond.org/doc/v2.18/Documentation/extending/scheme-in-lilypond">http://lilypond.org/doc/v2.18/Documentation/extending/scheme-in-lilypond</a>
+</li>
+
+<li>GnuCash<br />
+<a href="http://www.gnucash.org/">http://www.gnucash.org/</a>
+</li>
+
+<li>Custom Reports (in GNU Cash)<br />
+<a href="https://wiki.gnucash.org/wiki/Custom_Reports">https://wiki.gnucash.org/wiki/Custom_Reports</a>
+</li>
+
+<li>Program by Design<br />
+<a href="https://programbydesign.org/">https://programbydesign.org/</a>
+</li>
+
+<li>SchemePy<br />
+<a href="https://pypi.org/project/SchemePy/">https://pypi.org/project/SchemePy/</a>
+</li>
+
+<li>LISP FQA: Section - [1-5] What is the "minimal" set of primitives needed for a Lisp interpreter?<br />
+<a href="http://www.faqs.org/faqs/lisp-faq/part1/section-6.html">http://www.faqs.org/faqs/lisp-faq/part1/section-6.html</a>
+</li>
+
+<li>femtolisp<br />
+<a href="https://github.com/JeffBezanson/femtolisp">https://github.com/JeffBezanson/femtolisp</a>
+</li>
+
+<li>(How to Write a (Lisp) Interpreter (in Python))<br />
+<a href="http://norvig.com/lispy.html">http://norvig.com/lispy.html</a>
+</li>
+
+<li>Repositář s&nbsp;Guile Emacsem<br />
+<a href="http://git.hcoop.net/?p=bpt/guile.git">http://git.hcoop.net/?p=bpt/guile.git</a>
+</li>
+
+<li>Interacting with Guile Compound Data Types in C<br />
+<a href="http://www.lonelycactus.com/guilebook/x1555.html">http://www.lonelycactus.com/guilebook/x1555.html</a>
+</li>
+
+<li>Calling Guile functions from C<br />
+<a href="http://www.lonelycactus.com/guilebook/c1204.html#SECCALLGUILEFUNC">http://www.lonelycactus.com/guilebook/c1204.html#SECCALLGUILEFUNC</a>
+</li>
+
+<li>Arrays, and other compound data types<br />
+<a href="http://www.lonelycactus.com/guilebook/charrays.html">http://www.lonelycactus.com/guilebook/charrays.html</a>
+</li>
+
+<li>Interacting with Guile Compound Data Types in C<br />
+<a href="http://www.lonelycactus.com/guilebook/x1555.html">http://www.lonelycactus.com/guilebook/x1555.html</a>
+</li>
+
+<li>Guile Reference Manual<br />
+<a href="https://www.gnu.org/software/guile/manual/html_node/index.html">https://www.gnu.org/software/guile/manual/html_node/index.html</a>
+</li>
+
+<li>Scheme: Summary of Common Syntax<br />
+<a href="https://www.gnu.org/software/guile/manual/html_node/Syntax-Summary.html#Syntax-Summary">https://www.gnu.org/software/guile/manual/html_node/Syntax-Summary.html#Syntax-Summary</a>
+</li>
+
+<li>Scripting with Guile: Extension language enhances C and Scheme<br />
+<a href="https://www.ibm.com/developerworks/library/l-guile/index.html">https://www.ibm.com/developerworks/library/l-guile/index.html</a>
+</li>
+
+<li>Having fun with Guile: a tutorial<br />
+<a href="http://dustycloud.org/misc/guile-tutorial.html">http://dustycloud.org/misc/guile-tutorial.html</a>
+</li>
+
+<li>Guile: Loading Readline Support<br />
+<a href="https://www.gnu.org/software/guile/manual/html_node/Loading-Readline-Support.html#Loading-Readline-Support">https://www.gnu.org/software/guile/manual/html_node/Loading-Readline-Support.html#Loading-Readline-Support</a>
+</li>
+
+<li>lispy<br />
+<a href="https://pypi.org/project/lispy/">https://pypi.org/project/lispy/</a>
+</li>
+
+<li>Lython<br />
+<a href="https://pypi.org/project/Lython/">https://pypi.org/project/Lython/</a>
+</li>
+
+<li>Lizpop<br />
+<a href="https://pypi.org/project/lizpop/">https://pypi.org/project/lizpop/</a>
+</li>
+
+<li>Budoucnost programovacích jazyků<br />
+<a href="http://www.knesl.com/budoucnost-programovacich-jazyku">http://www.knesl.com/budoucnost-programovacich-jazyku</a>
+</li>
+
+<li>LISP Prolog and Evolution<br />
+<a href="http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html">http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html</a>
+</li>
+
+<li>List of Lisp-family programming languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages">https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages</a>
+</li>
+
+<li>clojure_py na indexu PyPi<br />
+<a href="https://pypi.python.org/pypi/clojure_py">https://pypi.python.org/pypi/clojure_py</a>
+</li>
+
+<li>PyClojure<br />
+<a href="https://github.com/eigenhombre/PyClojure">https://github.com/eigenhombre/PyClojure</a>
+</li>
+
+<li>Hy na GitHubu<br />
+<a href="https://github.com/hylang/hy">https://github.com/hylang/hy</a>
+</li>
+
+<li>Hy: The survival guide<br />
+<a href="https://notes.pault.ag/hy-survival-guide/">https://notes.pault.ag/hy-survival-guide/</a>
+</li>
+
+<li>Hy běžící na monitoru terminálu společnosti Symbolics<br />
+<a href="http://try-hy.appspot.com/">http://try-hy.appspot.com/</a>
+</li>
+
+<li>Welcome to Hy’s documentation!<br />
+<a href="http://docs.hylang.org/en/stable/">http://docs.hylang.org/en/stable/</a>
+</li>
+
+<li>Hy na PyPi<br />
+<a href="https://pypi.org/project/hy/#description">https://pypi.org/project/hy/#description</a>
+</li>
+
+<li>Getting Hy on Python<br />
+<a href="https://lwn.net/Articles/596626/">https://lwn.net/Articles/596626/</a>
+</li>
+
+<li>Programming Can Be Fun with Hy<br />
+<a href="https://opensourceforu.com/2014/02/programming-can-fun-hy/">https://opensourceforu.com/2014/02/programming-can-fun-hy/</a>
+</li>
+
+<li>Přednáška o projektu Hy (pětiminutový lighttalk)<br />
+<a href="http://blog.pault.ag/day/2013/04/02">http://blog.pault.ag/day/2013/04/02</a>
+</li>
+
+<li>Hy (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Hy">https://en.wikipedia.org/wiki/Hy</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Point<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Narrowing<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Narrowing.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Narrowing.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Functions that Create Markers<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Markers.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Markers.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Motion<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Motion.html#Motion">https://www.gnu.org/software/emacs/manual/html_node/elisp/Motion.html#Motion</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Basic Char Syntax<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Basic-Char-Syntax.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Basic-Char-Syntax.html</a>
+</li>
+
+<li>Elisp: Sequence: List, Array<br />
+<a href="http://ergoemacs.org/emacs/elisp_list_vs_vector.html">http://ergoemacs.org/emacs/elisp_list_vs_vector.html</a>
+</li>
+
+<li>Elisp: Property List<br />
+<a href="http://ergoemacs.org/emacs/elisp_property_list.html">http://ergoemacs.org/emacs/elisp_property_list.html</a>
+</li>
+
+<li>Elisp: Hash Table<br />
+<a href="http://ergoemacs.org/emacs/elisp_hash_table.html">http://ergoemacs.org/emacs/elisp_hash_table.html</a>
+</li>
+
+<li>Elisp: Association List<br />
+<a href="http://ergoemacs.org/emacs/elisp_association_list.html">http://ergoemacs.org/emacs/elisp_association_list.html</a>
+</li>
+
+<li>The mapcar Function (An Introduction to Programming in Emacs Lisp)<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html">https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html</a>
+</li>
+
+<li>Anaphoric macro<br />
+<a href="https://en.wikipedia.org/wiki/Anaphoric_macro">https://en.wikipedia.org/wiki/Anaphoric_macro</a>
+</li>
+
+<li>Some Common Lisp Loop Macro Examples<br />
+<a href="https://www.youtube.com/watch?v=3yl8o6r_omw">https://www.youtube.com/watch?v=3yl8o6r_omw</a>
+</li>
+
+<li>A Guided Tour of Emacs<br />
+<a href="https://www.gnu.org/software/emacs/tour/">https://www.gnu.org/software/emacs/tour/</a>
+</li>
+
+<li>The Roots of Lisp<br />
+<a href="http://www.paulgraham.com/rootsoflisp.html">http://www.paulgraham.com/rootsoflisp.html</a>
+</li>
+
+<li>Evil (Emacs Wiki)<br />
+<a href="https://www.emacswiki.org/emacs/Evil">https://www.emacswiki.org/emacs/Evil</a>
+</li>
+
+<li>Evil (na GitHubu)<br />
+<a href="https://github.com/emacs-evil/evil">https://github.com/emacs-evil/evil</a>
+</li>
+
+<li>Evil (na stránkách repositáře MELPA)<br />
+<a href="https://melpa.org/#/evil">https://melpa.org/#/evil</a>
+</li>
+
+<li>Evil Mode: How I Switched From VIM to Emacs<br />
+<a href="https://blog.jakuba.net/2014/06/23/evil-mode-how-to-switch-from-vim-to-emacs.html">https://blog.jakuba.net/2014/06/23/evil-mode-how-to-switch-from-vim-to-emacs.html</a>
+</li>
+
+<li>GNU Emacs (home page)<br />
+<a href="https://www.gnu.org/software/emacs/">https://www.gnu.org/software/emacs/</a>
+</li>
+
+<li>GNU Emacs (texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?GnuEmacs">http://texteditors.org/cgi-bin/wiki.pl?GnuEmacs</a>
+</li>
+
+<li>An Introduction To Using GDB Under Emacs<br />
+<a href="http://tedlab.mit.edu/~dr/gdbintro.html">http://tedlab.mit.edu/~dr/gdbintro.html</a>
+</li>
+
+<li>An Introduction to Programming in Emacs Lisp<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html">https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html</a>
+</li>
+
+<li>27.6 Running Debuggers Under Emacs<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Debuggers.html">https://www.gnu.org/software/emacs/manual/html_node/emacs/Debuggers.html</a>
+</li>
+
+<li>GdbMode<br />
+<a href="http://www.emacswiki.org/emacs/GdbMode">http://www.emacswiki.org/emacs/GdbMode</a>
+</li>
+
+<li>Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Emacs">https://en.wikipedia.org/wiki/Emacs</a>
+</li>
+
+<li>Emacs timeline<br />
+<a href="http://www.jwz.org/doc/emacs-timeline.html">http://www.jwz.org/doc/emacs-timeline.html</a>
+</li>
+
+<li>Emacs Text Editors Family<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EmacsFamily">http://texteditors.org/cgi-bin/wiki.pl?EmacsFamily</a>
+</li>
+
+<li>Vrapper aneb spojení možností Vimu a Eclipse<br />
+<a href="https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse/">https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse/</a>
+</li>
+
+<li>Vrapper aneb spojení možností Vimu a Eclipse (část 2: vyhledávání a nahrazování textu)<br />
+<a href="https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse-cast-2-vyhledavani-a-nahrazovani-textu/">https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse-cast-2-vyhledavani-a-nahrazovani-textu/</a>
+</li>
+
+<li>Emacs/Evil-mode - A basic reference to using evil mode in Emacs<br />
+<a href="http://www.aakarshnair.com/posts/emacs-evil-mode-cheatsheet">http://www.aakarshnair.com/posts/emacs-evil-mode-cheatsheet</a>
+</li>
+
+<li>From Vim to Emacs+Evil chaotic migration guide<br />
+<a href="https://juanjoalvarez.net/es/detail/2014/sep/19/vim-emacsevil-chaotic-migration-guide/">https://juanjoalvarez.net/es/detail/2014/sep/19/vim-emacsevil-chaotic-migration-guide/</a>
+</li>
+
+<li>Introduction to evil-mode {video)<br />
+<a href="https://www.youtube.com/watch?v=PeVQwYUxYEg">https://www.youtube.com/watch?v=PeVQwYUxYEg</a>
+</li>
+
+<li>EINE (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/EINE">http://www.emacswiki.org/emacs/EINE</a>
+</li>
+
+<li>EINE (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EINE">http://texteditors.org/cgi-bin/wiki.pl?EINE</a>
+</li>
+
+<li>ZWEI (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/ZWEI">http://www.emacswiki.org/emacs/ZWEI</a>
+</li>
+
+<li>ZWEI (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?ZWEI">http://texteditors.org/cgi-bin/wiki.pl?ZWEI</a>
+</li>
+
+<li>Zmacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Zmacs">https://en.wikipedia.org/wiki/Zmacs</a>
+</li>
+
+<li>Zmacs (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?Zmacs">http://texteditors.org/cgi-bin/wiki.pl?Zmacs</a>
+</li>
+
+<li>TecoEmacs (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/TecoEmacs">http://www.emacswiki.org/emacs/TecoEmacs</a>
+</li>
+
+<li>Micro Emacs<br />
+<a href="http://www.emacswiki.org/emacs/MicroEmacs">http://www.emacswiki.org/emacs/MicroEmacs</a>
+</li>
+
+<li>Micro Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MicroEMACS">https://en.wikipedia.org/wiki/MicroEMACS</a>
+</li>
+
+<li>EmacsHistory<br />
+<a href="http://www.emacswiki.org/emacs/EmacsHistory">http://www.emacswiki.org/emacs/EmacsHistory</a>
+</li>
+
+<li>Seznam editorů s ovládáním podobným Emacsu či kompatibilních s příkazy Emacsu<br />
+<a href="http://www.finseth.com/emacs.html">http://www.finseth.com/emacs.html</a>
+</li>
+
+<li>evil-numbers<br />
+<a href="https://github.com/cofi/evil-numbers">https://github.com/cofi/evil-numbers</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v&nbsp;Linuxu (1.část)<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v&nbsp;Linuxu (2.část)<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-2-cast/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-2-cast/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (3): Nemiver<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-3-nemiver/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-3-nemiver/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (4): KDbg<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-4-kdbg/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-4-kdbg/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (5): ladění aplikací v editorech Emacs a Vim<br />
+<a href="https://mojefedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-5-ladeni-aplikaci-v-editorech-emacs-a-vim/">https://mojefedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-5-ladeni-aplikaci-v-editorech-emacs-a-vim/</a>
+</li>
+
+<li>Org mode<br />
+<a href="https://orgmode.org/">https://orgmode.org/</a>
+</li>
+
+<li>The Org Manual<br />
+<a href="https://orgmode.org/manual/index.html">https://orgmode.org/manual/index.html</a>
+</li>
+
+<li>Kakoune (modální textový editor)<br />
+<a href="http://kakoune.org/">http://kakoune.org/</a>
+</li>
+
+<li>Vim-style keybinding in Emacs/Evil-mode<br />
+<a href="https://gist.github.com/troyp/6b4c9e1c8670200c04c16036805773d8">https://gist.github.com/troyp/6b4c9e1c8670200c04c16036805773d8</a>
+</li>
+
+<li>Emacs - jak začít<br />
+<a href="http://www.abclinuxu.cz/clanky/navody/emacs-jak-zacit">http://www.abclinuxu.cz/clanky/navody/emacs-jak-zacit</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Evil-surround<br />
+<a href="https://github.com/emacs-evil/evil-surround">https://github.com/emacs-evil/evil-surround</a>
+</li>
+
+<li>Spacemacs<br />
+<a href="http://spacemacs.org/">http://spacemacs.org/</a>
+</li>
+
+<li>Lisp: Common Lisp, Racket, Clojure, Emacs Lisp<br />
+<a href="http://hyperpolyglot.org/lisp">http://hyperpolyglot.org/lisp</a>
+</li>
+
+<li>Common Lisp, Scheme, Clojure, And Elisp Compared<br />
+<a href="http://irreal.org/blog/?p=725">http://irreal.org/blog/?p=725</a>
+</li>
+
+<li>Does Elisp Suck?<br />
+<a href="http://irreal.org/blog/?p=675">http://irreal.org/blog/?p=675</a>
+</li>
+
+<li>Emacs pro mírně pokročilé (9): Elisp<br />
+<a href="https://www.root.cz/clanky/emacs-elisp/">https://www.root.cz/clanky/emacs-elisp/</a>
+</li>
+
+<li>If I want to learn lisp, are emacs and elisp a good choice?<br />
+<a href="https://www.reddit.com/r/emacs/comments/2m141y/if_i_want_to_learn_lisp_are_emacs_and_elisp_a/">https://www.reddit.com/r/emacs/comments/2m141y/if_i_want_to_learn_lisp_are_emacs_and_elisp_a/</a>
+</li>
+
+<li>Clojure(Script) Interactive Development Environment that Rocks!<br />
+<a href="https://github.com/clojure-emacs/cider">https://github.com/clojure-emacs/cider</a>
+</li>
+
+<li>An Introduction to Emacs Lisp<br />
+<a href="https://harryrschwartz.com/2014/04/08/an-introduction-to-emacs-lisp.html">https://harryrschwartz.com/2014/04/08/an-introduction-to-emacs-lisp.html</a>
+</li>
+
+<li>Emergency Elisp<br />
+<a href="http://steve-yegge.blogspot.com/2008/01/emergency-elisp.html">http://steve-yegge.blogspot.com/2008/01/emergency-elisp.html</a>
+</li>
+
+<li>Lambda calculus<br />
+<a href="https://en.wikipedia.org/wiki/Lambda_calculus">https://en.wikipedia.org/wiki/Lambda_calculus</a>
+</li>
+
+<li>John McCarthy's original LISP paper from 1959<br />
+<a href="https://www.reddit.com/r/programming/comments/17lpz4/john_mccarthys_original_lisp_paper_from_1959/">https://www.reddit.com/r/programming/comments/17lpz4/john_mccarthys_original_lisp_paper_from_1959/</a>
+</li>
+
+<li>Micro Manual LISP<br />
+<a href="https://www.scribd.com/document/54050141/Micro-Manual-LISP">https://www.scribd.com/document/54050141/Micro-Manual-LISP</a>
+</li>
+
+<li>How Lisp Became God's Own Programming Language<br />
+<a href="https://twobithistory.org/2018/10/14/lisp.html">https://twobithistory.org/2018/10/14/lisp.html</a>
+</li>
+
+<li>History of Lisp<br />
+<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">http://jmc.stanford.edu/articles/lisp/lisp.pdf</a>
+</li>
+
+<li>The Roots of Lisp<br />
+<a href="http://languagelog.ldc.upenn.edu/myl/llog/jmc.pdf">http://languagelog.ldc.upenn.edu/myl/llog/jmc.pdf</a>
+</li>
+
+<li>Racket<br />
+<a href="https://racket-lang.org/">https://racket-lang.org/</a>
+</li>
+
+<li>The Racket Manifesto<br />
+<a href="http://felleisen.org/matthias/manifesto/">http://felleisen.org/matthias/manifesto/</a>
+</li>
+
+<li>MIT replaces Scheme with Python<br />
+<a href="https://www.johndcook.com/blog/2009/03/26/mit-replaces-scheme-with-python/">https://www.johndcook.com/blog/2009/03/26/mit-replaces-scheme-with-python/</a>
+</li>
+
+<li>Adventures in Advanced Symbolic Programming<br />
+<a href="http://groups.csail.mit.edu/mac/users/gjs/6.945/">http://groups.csail.mit.edu/mac/users/gjs/6.945/</a>
+</li>
+
+<li>Why MIT Switched from Scheme to Python (2009)<br />
+<a href="https://news.ycombinator.com/item?id=14167453">https://news.ycombinator.com/item?id=14167453</a>
+</li>
+
+<li>Starodávná stránka XLispu<br />
+<a href="http://www.xlisp.org/">http://www.xlisp.org/</a>
+</li>
+
+<li>AutoLISP<br />
+<a href="https://en.wikipedia.org/wiki/AutoLISP">https://en.wikipedia.org/wiki/AutoLISP</a>
+</li>
+
+<li>Seriál PicoLisp: minimalistický a výkonný interpret Lispu<br />
+<a href="https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/">https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/</a>
+</li>
+
+<li>Common Lisp<br />
+<a href="https://common-lisp.net/">https://common-lisp.net/</a>
+</li>
+
+<li>Getting Going with Common Lisp<br />
+<a href="https://cliki.net/Getting%20Started">https://cliki.net/Getting%20Started</a>
+</li>
+
+<li>Online Tutorial (Common Lisp)<br />
+<a href="https://cliki.net/online%20tutorial">https://cliki.net/online%20tutorial</a>
+</li>
+
+<li>Guile Emacs<br />
+<a href="https://www.emacswiki.org/emacs/GuileEmacs">https://www.emacswiki.org/emacs/GuileEmacs</a>
+</li>
+
+<li>Guile Emacs History<br />
+<a href="https://www.emacswiki.org/emacs/GuileEmacsHistory">https://www.emacswiki.org/emacs/GuileEmacsHistory</a>
+</li>
+
+<li>Guile is a programming language<br />
+<a href="https://www.gnu.org/software/guile/">https://www.gnu.org/software/guile/</a>
+</li>
+
+<li>MIT Scheme<br />
+<a href="http://groups.csail.mit.edu/mac/projects/scheme/">http://groups.csail.mit.edu/mac/projects/scheme/</a>
+</li>
+
+<li>SIOD: Scheme in One Defun<br />
+<a href="http://people.delphiforums.com/gjc//siod.html">http://people.delphiforums.com/gjc//siod.html</a>
+</li>
+
+<li>CommonLispForEmacs<br />
+<a href="https://www.emacswiki.org/emacs/CommonLispForEmacs">https://www.emacswiki.org/emacs/CommonLispForEmacs</a>
+</li>
+
+<li>Elisp: print, princ, prin1, format, message<br />
+<a href="http://ergoemacs.org/emacs/elisp_printing.html">http://ergoemacs.org/emacs/elisp_printing.html</a>
+</li>
+
+<li>Special Forms in Lisp<br />
+<a href="http://www.nhplace.com/kent/Papers/Special-Forms.html">http://www.nhplace.com/kent/Papers/Special-Forms.html</a>
+</li>
+
+<li>Basic Building Blocks in LISP<br />
+<a href="https://www.tutorialspoint.com/lisp/lisp_basic_syntax.htm">https://www.tutorialspoint.com/lisp/lisp_basic_syntax.htm</a>
+</li>
+
+<li>Introduction to LISP - University of Pittsburgh<br />
+<a href="https://people.cs.pitt.edu/~milos/courses/cs2740/Lectures/LispTutorial.pdf">https://people.cs.pitt.edu/~milos/courses/cs2740/Lectures/LispTutorial.pdf</a>
+</li>
+
+<li>Why don't people use LISP<br />
+<a href="https://forums.freebsd.org/threads/why-dont-people-use-lisp.24572/">https://forums.freebsd.org/threads/why-dont-people-use-lisp.24572/</a>
+</li>
+
+<li>Structured program theorem<br />
+<a href="https://en.wikipedia.org/wiki/Structured_program_theorem">https://en.wikipedia.org/wiki/Structured_program_theorem</a>
+</li>
+
+<li>Clojure: API Documentation<br />
+<a href="https://clojure.org/api/api">https://clojure.org/api/api</a>
+</li>
+
+<li>Tutorial for the Common Lisp Loop Macro<br />
+<a href="http://www.ai.sri.com/pkarp/loop.html">http://www.ai.sri.com/pkarp/loop.html</a>
+</li>
+
+<li>Common Lisp's Loop Macro Examples for Beginners<br />
+<a href="http://www.unixuser.org/~euske/doc/cl/loop.html">http://www.unixuser.org/~euske/doc/cl/loop.html</a>
+</li>
+
+<li>A modern list api for Emacs. No 'cl required.<br />
+<a href="https://github.com/magnars/dash.el">https://github.com/magnars/dash.el</a>
+</li>
+
+<li>The LOOP Facility<br />
+<a href="http://www.lispworks.com/documentation/HyperSpec/Body/06_a.htm">http://www.lispworks.com/documentation/HyperSpec/Body/06_a.htm</a>
+</li>
+
+<li>Clojure.org: Vars and the Global Environment<br />
+<a href="http://clojure.org/Vars">http://clojure.org/Vars</a>
+</li>
+
+<li>Clojure.org: Refs and Transactions<br />
+<a href="http://clojure.org/Refs">http://clojure.org/Refs</a>
+</li>
+
+<li>Clojure.org: Atoms<br />
+<a href="http://clojure.org/Atoms">http://clojure.org/Atoms</a>
+</li>
+
+<li>Clojure.org: Agents as Asynchronous Actions<br />
+<a href="http://clojure.org/agents">http://clojure.org/agents</a>
+</li>
+
+<li>Transient Data Structures
+<a href="http://clojure.org/transients">http://clojure.org/transients</a>
+</li>
+
+<li>Dynamic Languages Strike Back<br />
+<a href="http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html">http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html</a>
+</li>
+
+<li>Scripting: Higher Level Programming for the 21st Century<br />
+<a href="http://www.tcl.tk/doc/scripting.html">http://www.tcl.tk/doc/scripting.html</a>
+</li>
+
+<li>Clojure (na Wikipedia EN)<br />
+<a href="http://en.wikipedia.org/wiki/Clojure">http://en.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>Clojure (na Wikipedia CS)<br />
+<a href="http://cs.wikipedia.org/wiki/Clojure">http://cs.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>SICP (The Structure and Interpretation of Computer Programs)<br />
+<a href="http://mitpress.mit.edu/sicp/">http://mitpress.mit.edu/sicp/</a>
+</li>
+
+<li>Pure function<br />
+<a href="http://en.wikipedia.org/wiki/Pure_function">http://en.wikipedia.org/wiki/Pure_function</a>
+</li>
+
+<li>Funkcionální programování<br />
+<a href="http://cs.wikipedia.org/wiki/Funkcionální_programování">http://cs.wikipedia.org/wiki/Funkcionální_programování</a>
+</li>
+
+<li>Jazyky Hy a Clojure-py: moderní dialekty LISPu určené pro Python VM<br />
+<a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/</a>
+</li>
+
+<li>Pixie: lehký skriptovací jazyk s „kouzelnými“ schopnostmi<br />
+<a href="https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/">https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/</a>
+</li>
+
+<li>Programovací jazyk Pixie: funkce ze základní knihovny a použití FFI<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/">https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/</a>
+</li>
+
+<li>Stránka projektu Jython<br />
+<a href="http://www.jython.org/">http://www.jython.org/</a>
+</li>
+
+<li>Jython (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Jython">https://en.wikipedia.org/wiki/Jython</a>
+</li>
+
+<li>Scripting for the Java Platform (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform">https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform</a>
+</li>
+
+<li>JSR 223: Scripting for the Java<sup>TM</sup> Platform<br />
+<a href="https://jcp.org/en/jsr/detail?id=223">https://jcp.org/en/jsr/detail?id=223</a>
+</li>
+
+<li>List of JVM languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_JVM_languages">https://en.wikipedia.org/wiki/List_of_JVM_languages</a>
+</li>
+
+<li>The Java<sup>TM</sup> Virtual Machine Specification, Second Edition<br />
+<a href="http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html">http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html</a>
+</li>
+
+<li>The class File Format<br />
+<a href="http://java.sun.com/docs/books/jvms/second_edition/html/ClassFile.doc.html">http://java.sun.com/docs/books/jvms/second_edition/html/ClassFile.doc.html</a>
+</li>
+
+<li>javap - The Java Class File Disassembler<br />
+<a href="http://docs.oracle.com/javase/1.4.2/docs/tooldocs/windows/javap.html">http://docs.oracle.com/javase/1.4.2/docs/tooldocs/windows/javap.html</a>
+</li>
+
+<li>javap-java-1.6.0-openjdk(1) - Linux man page<br />
+<a href="http://linux.die.net/man/1/javap-java-1.6.0-openjdk">http://linux.die.net/man/1/javap-java-1.6.0-openjdk</a>
+</li>
+
+<li>Using javap<br />
+<a href="http://www.idevelopment.info/data/Programming/java/miscellaneous_java/Using_javap.html">http://www.idevelopment.info/data/Programming/java/miscellaneous_java/Using_javap.html</a>
+</li>
+
+<li>Examine class files with the javap command<br />
+<a href="http://www.techrepublic.com/article/examine-class-files-with-the-javap-command/5815354">http://www.techrepublic.com/article/examine-class-files-with-the-javap-command/5815354</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2019</small></p>
+</body>
+</html>
+
