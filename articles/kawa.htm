@@ -1,0 +1,2495 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>Kawa: překvapivě silný a výkonný dialekt Scheme pro JVM</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>Kawa: překvapivě silný a výkonný dialekt Scheme pro JVM</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>Ve čtvrté části seriálu o rozmanitém světě LISPovských jazyků se seznámíme s projektem nazvaným Kawa. Jedná se o implementaci jazyka Scheme běžící nad JVM, která poskytuje jak překlad do bajtkódu Javy, tak i například velmi dobrou kooperaci mezi Kawa/Scheme a Javovskými třídami a objekty.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. Kawa: překvapivě silný a výkonný dialekt Scheme pro JVM</a></p>
+<p><a href="#k02">2. LISPovské jazyky pro JVM: Kawa či Clojure?</a></p>
+<p><a href="#k03">3. Instalace interpretru a překladače Kawa</a></p>
+<p><a href="#k04">4. Nastavení pluginů Slime for Vim a Rainbow parenthesis</a></p>
+<p><a href="#k05">5. Základní vlastnosti dialektu Scheme implementovaného v&nbsp;systému Kawa</a></p>
+<p><a href="#k06">6. &bdquo;Numerická věž&ldquo; programovacího jazyka Scheme a její rozšíření v&nbsp;Kawě</a></p>
+<p><a href="#k07">7. Zlomky</a></p>
+<p><a href="#k08">8. Výpočet konstanty Pi Wallisovým součinem: použití reálných čísel a zlomků</a></p>
+<p><a href="#k09">9. Kvaterniony a kvaternionová algebra</a></p>
+<p><a href="#k10">10. Kvaterniony v&nbsp;programovacím jazyku Kawa</a></p>
+<p><a href="#k11">11. Jednotky u numerických hodnot</a></p>
+<p><a href="#k12">12. Použití jednotek v&nbsp;praxi při aritmetických operacích</a></p>
+<p><a href="#k13">13. Líné vyhodnocování výrazů</a></p>
+<p><a href="#k14">14. Rozhraní mezi jazyky Java a Kawa</a></p>
+<p><a href="#k15">15. Obsah následující části seriálu</a></p>
+<p><a href="#k16">16. Krátké shrnutí: seznam implementací jazyka Scheme, LISP a Clojure</a></p>
+<p><a href="#k17">17. Programovací jazyky pro JVM aneb zdaleka nejde jen o Javu</a></p>
+<p><a href="#k18">18. Repositář s&nbsp;demonstračními příklady</a></p>
+<p><a href="#k19">19. Literatura</a></p>
+<p><a href="#k20">20. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. Kawa: překvapivě silný a výkonný dialekt Scheme pro JVM</h2>
+
+<p>V&nbsp;předchozích dvou částech miniseriálu o LISPovských jazycích jsme se
+seznámili se dvěma implementacemi programovacího jazyka Scheme. Připomeňme si,
+že se jednalo o projekt nazvaný <a
+href="https://www.root.cz/clanky/gnu-guile-interpret-scheme-vestavitelny-do-nativnich-aplikaci/">GNU
+Guile</a> a taktéž o nástroj <a
+href="https://www.root.cz/clanky/tinyscheme-aneb-dalsi-interpret-jazyka-scheme-vestavitelny-do-dalsich-aplikaci/">TinyScheme</a>.
+Oba zmíněné projekty nabízí programátorům jak klasickou interaktivní smyčku
+REPL, tak i možnost vložit (<i>embed</i>) interpret či překladač jazyka Scheme
+do dalších nativních aplikací a tím do značné míry rozšířit jejich možnosti
+(skriptovatelné aplikace, aplikace s&nbsp;podporou pluginů získaných od třetích
+stran atd.). Zatímco projekt GNU Guile obsahuje jak interpret, tak i překladač
+(a to relativně dobrý), je TinyScheme v&nbsp;tomto ohledu mnohem jednodušší,
+protože se jedná o &bdquo;pouhý&ldquo; interpret, ovšem pochopitelně doplněný o
+automatickou správu paměti a další pro Scheme naprosto nezbytné vlastnosti.</p>
+
+<p>Dnes se budeme zabývat další implementací jazyka Scheme. Tentokrát se jedná
+o projekt nazvaný <i>Kawa</i>, který je zajímavý a potenciálně užitečný hned
+z&nbsp;několika důvodů. Jedná se o implementaci Scheme naprogramovanou
+v&nbsp;Javě a běžící nad virtuálním strojem Javy (JVM). Ovšem současně se
+v&nbsp;žádném případě nejedná o pouhý primitivní interpret, ale o překladač
+jazyka Scheme do bajtkódu JVM. <a
+href="http://per.bothner.com/blog/2010/Kawa-in-shootout/">Z&nbsp;benchmarků</a>
+je patrné, že výsledný kód vůbec není pomalý ale naopak dokáže více než zdárně
+konkurovat dalším programovacím jazykům, které v&nbsp;současnosti nad JVM
+existují. Jenže to není vše, protože <i>Kawa</i> dokáže velmi dobře kooperovat
+i se samotným ekosystémem Javy &ndash; lze v&nbsp;ní vytvářet instance
+Javovských tříd, volat jejich metody, přistupovat k&nbsp;atributům atd. atd.
+Díky tomu může být <i>Kawa</i> použitelná i v&nbsp;rozsáhlých systémech
+naprogramovaných v&nbsp;Javě (ostatně LISPovské jazyky již dlouho slouží i ve
+funkci &bdquo;lepidel&ldquo; mezi jednotlivými částmi aplikace).</p>
+
+<p>Možnosti <i>Kawy</i> jsou ale ještě větší &ndash; podpora pro práci
+s&nbsp;jednotkami (<i>units</i>) namísto &bdquo;holých&ldquo; čísel, práce
+s&nbsp;kvaterniony atd. atd.</p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. LISPovské jazyky pro JVM: Kawa či Clojure?</h2>
+
+<p>Na tomto místě si čtenáři pravděpodobně položí otázku, zda má smysl používat
+systém <i>Kawa</i> i v&nbsp;současnosti, kdy máme k&nbsp;dispozici <a
+href="https://www.root.cz/vyhledavani/?qs=clojure%C2%A7">programovací jazyk
+Clojure</a>, což je dnes dokonce jeden z&nbsp;nejpopulárnějších LISPovských
+programovacích jazyků vůbec. <i>Clojure</i> je skutečně velmi dobrý jazyk
+s&nbsp;mnoha zajímavými myšlenkami &ndash; umožňuje a podporuje plně
+funkcionální přístup včetně <i>STM</i> (<i>Software Transactional Memory</i>),
+má knihovnu pro asynchronní volání, knihovnu pro kontrolu datových schémat,
+jednodušší zápis programů s&nbsp;méně závorkami, koncept obecných sekvencí a
+kolekcí, threading makra atd. Ovšem <i>Clojure</i> je určeno spíše pro tvorbu
+rozsáhlejších aplikací, u nichž využijeme celý ekosystém okolo <i>Clojure</i>
+postavený (<a
+href="https://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure/">Leiningen</a>
+atd.). Navíc se musíme smířit s&nbsp;tím, že inicializace celého Clojure je
+dosti pomalá, což je patrné například už při spouštění interaktivní smyčky REPL
+a pochopitelně i při spouštění aplikací v&nbsp;případě, že je použit JIT
+překladač (<i>Just in Time</i>) a nikoli AOT překladač (<i>Ahead of Time</i>)
+do bajtkódu.</p>
+
+<p><div class="rs-tip-major">Poznámka: pokud navíc spustíme REPL příkazem
+<strong>lein repl</strong>, inicializují se dokonce dva virtuální stroje
+Javy.</div></p>
+
+<p>Systém <i>Kawa</i> leží na druhé straně spektra, než <i>Clojure</i>. Jedná
+se o programovací jazyk doplněný jen o naprosto základní nástroje, spouštění
+jeho smyčky REPL je rychlé a i překlad do bajtkódu je proveden prakticky
+okamžitě (což si vyzkoušíme v&nbsp;navazujících kapitolách). O ostatní
+funkcionalitu se musí postarat nástroje určené přímo pro práci s&nbsp;Javou
+(Java Archiver atd.). Tento přístup má ovšem i nevýhody, protože ekosystém
+postavený okolo <i>Kawy</i> je relativně malý, i když samotný interpret a
+překladač je velmi dobře podporován a i dokumentace je na vysoké úrovni
+(zejména v&nbsp;porovnání s&nbsp;menšími projekty typu <i>TinyScheme</i>).</p>
+
+<p>Jen pro zajímavost se podívejme na výsledky benchmarků zveřejněných <a
+href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/">zde</a>.
+Porovnáme zde výkonnost několika jazyků určených pro běh nad virtuálním strojem
+Javy:</p>
+
+<table>
+<tr><th>#</th><th>Benchmark</th><th>Java</th><th>Scala</th><th>Clojure</th><th>JRuby</th><th>Kawa</th><th>Kawa/FTC</th></tr>
+<tr><td>1</td><td>binarytrees</td><td>1.00</td><td>1.05 1.46 1.04</td><td>&nbsp;</td><td>27.36</td><td>1.10</td><td>3.72</td></tr>
+<tr><td>2</td><td>chameneosredux</td><td>1.00 3.92 1.85</td><td>0.99 4.08</td><td>&nbsp;</td><td>46.43</td><td>0.95</td><td>1.96</td></tr>
+<tr><td>3</td><td>fannkuchredux</td><td>1.00 1.43</td><td>1.23 0.94</td><td>3.54</td><td>61.66</td><td>1.38</td><td>1.34</td></tr>
+<tr><td>4</td><td>fasta</td><td>1.00</td><td>1.33 0.67</td><td>5.32 4.32</td><td>71.36 58.50</td><td>1.72</td><td>5.46</td></tr>
+<tr><td>5</td><td>knucleotide</td><td>1.06 1.00</td><td>2.16 1.46</td><td>7.93 7.22</td><td>10.54 8.93</td><td>11.11 1.62</td><td>11.18 1.71</td></tr>
+<tr><td>6</td><td>mandelbrot</td><td>1.00 1.01 1.06 1.09</td><td>1.19 1.16 1.10</td><td>2.28</td><td>186.49</td><td>1.05</td><td>1.05</td></tr>
+<tr><td>7</td><td>meteor</td><td>2.16 1.00</td><td>13.25</td><td>&nbsp;</td><td>41.80 26.30</td><td>1.25</td><td>2.11</td></tr>
+<tr><td>8</td><td>nbody</td><td>1.00</td><td>1.23</td><td>2.25</td><td>128.50</td><td>1.03</td><td>1.05</td></tr>
+<tr><td>9</td><td>pidigits</td><td>1.00</td><td>0.30 0.83</td><td>&nbsp;</td><td>1.28</td><td>0.63</td><td>0.63</td></tr>
+<tr><td>10</td><td>regexdna</td><td>1.29 1.00 1.00</td><td>1.51 1.27 1.00</td><td>1.63</td><td>4.20 2.80 1.82</td><td>1.05</td><td>1.04</td></tr>
+<tr><td>11</td><td>revcomp</td><td>1.00</td><td>0.81 23.72</td><td>9.52 5.55</td><td>7.15</td><td>1.43 1.17</td><td>1.44 1.17</td></tr>
+<tr><td>12</td><td>spectralnorm</td><td>1.00 1.05</td><td>1.02 1.03</td><td>&nbsp;</td><td>137.54 174.76</td><td>1.05</td><td>8.98</td></tr>
+<tr><td>13</td><td>threadring</td><td>8.07 1.00</td><td>5.84</td><td>&nbsp;</td><td>16.02 21.03</td><td>0.96</td><td>0.96</td></tr>
+</table>
+
+<p><div class="rs-tip-major">Poznámka: rozdíl mezi Kawou a Clojure lze porovnat
+s&nbsp;rozdíly mezi jazykem Lua a Python (velikost ekosystému, základna
+vývojářů, univerzálnost versus specifičnost, rychlost programů
+apod.).</div></p>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. Instalace interpretru a překladače Kawa</h2>
+
+<p>Instalaci interpretu a překladače nástroje <i>Kawa</i> lze provést několika
+různými způsoby. K&nbsp;dispozici je již <a
+href="https://www.gnu.org/software/kawa/Getting-Kawa.html">přeložená varianta
+projektu Kawa</a>, která obsahuje všechny potřebné třídy a rozhraní.</p>
+
+<p>Alternativně je samozřejmě možné provést překlad ručně a tím pádem například
+ovlivnit, jaká JVM bude podporována. Ukažme si tuto možnost. Potřebovat budeme
+JDK a některé další nástroje, zejména překladač jazyka C, nástroj
+<strong>make</strong> atd.</p>
+
+<p>V&nbsp;prvním kroku získáme tarball se všemi potřebnými zdrojovými
+soubory:</p>
+
+<pre>
+$ <strong>wget ftp://ftp.gnu.org/pub/gnu/kawa/kawa-3.0.tar.gz</strong>
+&nbsp;
+--2019-07-25 20:10:16--  ftp://ftp.gnu.org/pub/gnu/kawa/kawa-3.0.tar.gz
+           =&gt; ‘kawa-3.0.tar.gz’
+Resolving ftp.gnu.org (ftp.gnu.org)... 209.51.188.20, 2001:470:142:3::b
+Connecting to ftp.gnu.org (ftp.gnu.org)|209.51.188.20|:21... connected.
+Logging in as anonymous ... Logged in!
+==&gt; SYST ... done.    ==&gt; PWD ... done.
+==&gt; TYPE I ... done.  ==&gt; CWD (1) /pub/gnu/kawa ... done.
+==&gt; SIZE kawa-3.0.tar.gz ... 3393879
+==&gt; PASV ... done.    ==&gt; RETR kawa-3.0.tar.gz ... done.
+Length: 3393879 (3,2M) (unauthoritative)
+&nbsp;
+100%[================================================================&gt;] 3 393 879   1,66MB/s   in 2,0s   
+&nbsp;
+2019-07-25 20:10:19 (1,66 MB/s) - ‘kawa-3.0.tar.gz’ saved [3393879]
+</pre>
+
+<p>Získaný tarball běžným způsobem rozbalíme:</p>
+
+<pre>
+$ <strong>tar xvfz kawa-3.0.tar.gz</strong>
+</pre>
+
+<p>Vytvořit by se měl adresář <strong>kawa-3.0</strong>, do kterého stačí
+přejít:</p>
+
+<pre>
+$ <strong>cd kawa-3.0/</strong>
+</pre>
+
+<p>A spustit vlastní překlad:</p>
+
+<pre>
+$ <strong>configure</strong>
+$ <strong>make</strong>
+</pre>
+
+<p>V&nbsp;případě potřeby je možné příkazu <strong>configure</strong> předat
+další nepovinné parametry, které ovlivní způsob překladu a taktéž vlastnosti
+výsledného interpretru a překladače sytému <i>Kawa</i>. Poměrně často, zejména
+ve chvíli, kdy je nutné udržovat velké a &bdquo;starodávné&ldquo; systémy, se
+setkáme s&nbsp;požadavkem, že systém má běžet na starší verzi JVM; typicky se
+jedná o JRE 6 nebo 7. I Kawu lze přeložit s&nbsp;podporou starší JVM:</p>
+
+<pre>
+$ <strong>./configure --with-java-source=6</strong>
+$ <strong>make</strong>
+</pre>
+
+<p>Vhodné je mít v&nbsp;REPLu k&nbsp;dispozici plnohodnotnou příkazovou řádku
+s&nbsp;historií příkazů a možností editace. Pokud máte v&nbsp;systému
+nainstalovány knihovny <strong>libreadline-dev</strong> a
+<strong>libncurses-dev</strong>, lze to velmi snadno zařídit:</p>
+
+<pre>
+$ <strong>./configure --with-java-source=6 --enable-kawa-frontend</strong>
+</pre>
+
+<p>Výsledkem překladu je kromě spustitelného souboru <strong>kawa</strong> i
+dvojice Java archivů, které nejsou nikterak velké (na druhou stranu možnosti
+výsledného jazyka jsou až překvapivě rozsáhlé):</p>
+
+<pre>
+$ <strong>ls -l lib</strong>
+&nbsp;
+total 5720
+-rw-r--r-- 1 tester tester 3235834 čec 25 20:27 kawa.jar
+-rw-r--r-- 1 tester tester 2621426 čec 25 20:27 kawart.jar
+</pre>
+
+<p>Zkusme si nyní spustit interaktivní smyčku REPL:</p>
+
+<pre>
+$ <strong>cd bin</strong>
+$ <strong>./kawa</strong>
+&nbsp;
+#|kawa:1|#
+</pre>
+
+<p>Dále si otestujme základní interoperabilitu s&nbsp;ekosystémem Javy:</p>
+
+<pre>
+#|kawa:5|# <strong>(java.util.Random 42)</strong>
+java.util.Random@7cb45826
+</pre>
+
+<p>Zavolání metody <strong>System.exit</strong> je snadné:</p>
+
+<pre>
+#|kawa:6|# <strong>(java.lang.System:exit 0)</strong>
+</pre>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Nastavení pluginů Slime for Vim a Rainbow parenthesis</h2>
+
+<p>Pro snazší použití (nejenom) programovacího jazyka <i>Kawa</i> je vhodné si
+nastavit programátorský editor takovým způsobem, aby se co nejvíce využilo
+synergie mezi editorem a interaktivní smyčkou REPL. Pro Emacs pro tento účel
+existuje režim <a href="https://common-lisp.net/project/slime/">SLIME: The
+Superior Lisp Interaction Mode for Emacs</a>, který si popíšeme
+v&nbsp;samostatném článku. Dnes se ovšem v&nbsp;krátkosti zaměříme na věčného
+konkurenta Emacsu: textový editor Vim. Popíšeme si moduly <i>Slime for Vim</i>
+a <i>Rainbow parenthesis</i>.</p>
+
+<p>Začneme modulem <i>Slime for Vim</i>. Ten může pracovat různými způsoby,
+ovšem nejjednodušší je takové nastavení, kdy je interaktivní smyčka <i>REPL</i>
+interpretru jazyka <i>Kawa</i> stále spouštěna v&nbsp;samostatném procesu,
+ovšem namísto toho, aby se interpreter spouštěl v&nbsp;&bdquo;normálním&ldquo;
+terminálu (resp.&nbsp;ve virtuálním terminálu), je spuštěn v&nbsp;pojmenované
+session nástroje <strong>screen</strong> popř.&nbsp;<strong>tmux</strong>.
+Vzhledem k&nbsp;tomu, že je tato session pojmenovaná, je možné do příslušného
+okna poslat sekvenci znaků, které budou zpracovány stejným způsobem, jako by je
+uživatel napsal na klávesnici.</p>
+
+<p>Pokud je již smyčka <i>REPL</i> programovacího jazyka <i>Kawa</i> spuštěna
+v&nbsp;session pojmenovaném &bdquo;kawa&ldquo;, lze v&nbsp;jiném okně či
+v&nbsp;jiném terminálu spustit samotný editor <i>Vim</i> a s&nbsp;využitím
+příkazu <strong>:source</strong> načíst a spustit skript
+<strong>slime.vim</strong>. Ideální je tento příkaz zavolat automaticky při
+načítání souborů s&nbsp;koncovkou <strong>.clj</strong>. Pokud je tento skript
+načten, je možné v&nbsp;jakémkoli okamžiku stisknout klávesovou zkratku
+<strong>Ctrl+C Ctrl+C</strong>. Skript se při prvním stisku této zkratky zeptá
+na jméno session a na okno &ndash; většinou jsou nabízené hodnoty správné,
+takže se jen potvrdí Enterem. Poté se již zcela automaticky celý odstavec vloží
+do vizuálního bloku (sekvence příkazů <strong>vip</strong>), vizuální blok se
+vloží do pojmenovaného registru <strong>y</strong> (sekvence příkazů
+<strong>"ry</strong> a nakonec se obsah tohoto registru přenese do okna,
+v&nbsp;němž běží <i>REPL</i> jazyka <i>Kawa</i> (tam se hned vyhodnotí,
+protože součástí přenášeného bloku je i koncový Enter).</p>
+
+<p>Celý postup možná vypadá poněkud složitě, ve skutečnosti si však na tento
+nástroj velmi rychle zvyknete. Je ho samozřejmě možné upravovat a rozšiřovat,
+například využít klávesovou zkratku <strong>K</strong> (hledání slova pod
+kurzorem v&nbsp;manuálových stránkách) k&nbsp;tomu, aby se do <i>REPL</i>
+poslal příkaz <strong>(doc "hledané-slovo")</strong> atd.</p>
+
+<p>Podívejme se ještě na screenshoty, kde je ukázána kooperace mezi textovým
+editorem a interpretrem (v&nbsp;tomto případě intepretrem jazyka Clojure, ten
+se však v&nbsp;tomto ohledu chová stejně, jako jazyk Kawa). Pro jednoduchost
+používám dva terminály, stejně tak je ale možné obě okna využívat
+z&nbsp;jediného terminálu &ndash; opět s&nbsp;využitím nástroje
+<strong>screen</strong>.</p>
+
+<img src="http://i.iinfo.cz/images/575/vimclojure-10-orig.png" alt="obr">
+<p><i>Obrázek 1: Textový editor Vim spuštěný v&nbsp;jiném terminálu (či
+v&nbsp;jiném okně nástroje <strong>screen</strong>). Přímo z&nbsp;Vimu je
+načten a proveden (spuštěn) skript slime.vim.</i></p>
+
+<img src="http://i.iinfo.cz/images/575/vimclojure-11-orig.png" alt="obr">
+<p><i>Obrázek 2: Po prvním stisku Ctrl+C Ctrl+C se skript zeptá na jméno
+session (lze pouze potvrdit Enterem).</i></p>
+
+<img src="http://i.iinfo.cz/images/575/vimclojure-12-orig.png" alt="obr">
+<p><i>Obrázek 3: Dále se zeptá na jméno okna (lze taktéž pouze potvrdit
+Enterem).</i></p>
+
+<img src="http://i.iinfo.cz/images/575/vimclojure-13-orig.png" alt="obr">
+<p><i>Obrázek 4: Vybraná část programu je &bdquo;magicky&ldquo; přenesena do
+REPL a tam vykonána.</i></p>
+
+<img src="http://i.iinfo.cz/images/575/vimclojure-14-orig.png" alt="obr">
+<p><i>Obrázek 5: Další příklad &ndash; stlačení Ctrl+C Ctrl+C nad
+formou/výrazem (range 0 10) &ndash; nyní se vše provede bez dalších
+dotazů.</i></p>
+
+<p>Dalším jednoduchým, ovšem v&nbsp;praxi velmi užitečným pluginem, je přídavný
+modul nazvaný <i>Rainbow Parenthesis</i>. Tento plugin lze využít pro barevné
+odlišení párových závorek popř.&nbsp;taktéž &ndash; což může být pro mnoho
+uživatelů ještě zajímavější a užitečnější &ndash; k&nbsp;barevnému odlišení
+párových tagů, například vnořených značek <strong>&lt;div&gt;</strong>
+v&nbsp;HTML či XHTML. Tento plugin je zcela univerzální, čímž se odlišuje od
+podobně zaměřených pluginů, které jsou však specializované například pro
+programovací jazyk Lisp, Scheme či Clojure (tj.&nbsp;pro jazyky, v&nbsp;nichž
+se párové závorky vyskytují s&nbsp;relativně vysokou frekvencí). Nejlépe si
+možnosti použití přídavného modulu <i>Rainbow Parenthesis</i> ukážeme na
+několika screenshotech, které jsou umístěny pod tímto odstavcem.</p>
+
+<a href="http://www.root.cz/obrazek/202055/"><img src="http://i.iinfo.cz/images/173/vim3-5-prev.png" class="image-202055" width="370" height="243" alt="&#160;" /></a>
+<p><i>Obrázek 6: Zvýraznění párových závorek ve zdrojovém kódu programovacího
+jazyka Clojure.</i></p>
+
+<a href="http://www.root.cz/obrazek/202056/"><img src="http://i.iinfo.cz/images/173/vim3-6-prev.png" class="image-202057" width="370" height="243" alt="&#160;" /></a>
+<p><i>Obrázek 7: Zvýraznění párových závorek ve zdrojovém kódu programovacího
+jazyka C.</i></p>
+
+<p>Pro instalaci tohoto modulu lze jednoduše použít Git, protože zdrojové kódy
+jsou uloženy na GitHubu:</p>
+
+<pre>
+cd ~/.vim/bundle
+git clone https://github.com/luochen1990/rainbow
+Cloning into 'rainbow'...
+remote: Counting objects: 308, done.
+remote: Total 308 (delta 0), reused 0 (delta 0), pack-reused 308
+Receiving objects: 100% (308/308), 604.24 KiB | 628.00 KiB/s, done.
+Resolving deltas: 100% (113/113), done.
+</pre>
+
+<p>Výsledná struktura adresáře <strong>~/.vim/</strong> by nyní měla vypadat
+následovně:</p>
+
+<pre>
+.
+├── autoload
+├── bundle
+│   ├── calendar
+│   │   ├── autoload
+│   │   ├── doc
+│   │   └── plugin
+│   ├── rainbow
+│   │   └── plugin
+│   └── vim-fugitive
+│       ├── doc
+│       └── plugin
+└── spell
+</pre>
+
+<p>Dále je nutné do konfiguračního souboru <strong>.vimrc</strong> přidat tento
+řádek:</p>
+
+<pre>
+let g:rainbow_active = 1
+</pre>
+
+<p>Funkce pluginu <i>Rainbow Parentheses</i> se projeví po novém startu
+editoru.</p>
+
+<p>Plugin <i>Rainbow Parentheses</i> pracuje zcela automaticky po otevření
+každého souboru, pro nějž je v&nbsp;modulu zadefinováno, které znaky či skupiny
+znaků se mají považovat za párové závorky. K&nbsp;dispozici je jeden příkaz pro
+zapnutí či vypnutí funkce tohoto pluginu:</p>
+
+<table>
+<tr><th>Příkaz</th><th>Význam</th></tr>
+<tr><td>:RainbowToggle</td><td>zapnutí či vypnutí barevného zvýraznění párových závorek</td></tr>
+</table>
+
+<p>Nastavení pluginu (lze změnit editací zdrojového skriptu):</p>
+
+<table>
+<tr><th>Soubor</th><th>Párové závorky</th></tr>
+<tr><td>* (platné pro LISP i Scheme)</td><td>() [] {}</td></tr>
+<tr><td>*.tex</td><td>() []</td></tr>
+<tr><td>*.vim</td><td>() [] {}</td></tr>
+<tr><td>*.xml</td><td>&lt;jméno-tagu  &lt;/</td></tr>
+<tr><td>*.xhtml</td><td>&lt;jméno-tagu  &lt;/</td></tr>
+<tr><td>*.html</td><td>dtto kromě několika vybraných nepárových tagů typu &lt;br&gt; atd.</td></tr>
+</table>
+
+<a href="http://www.root.cz/obrazek/202057/"><img src="http://i.iinfo.cz/images/173/vim3-7-prev.png" class="image-202057" width="370" height="243" alt="&#160;" /></a>
+<p><i>Obrázek 3: Zvýraznění párových tagů v&nbsp;HTML dokumentu.</i></p>
+
+<a href="http://www.root.cz/obrazek/202058/"><img src="http://i.iinfo.cz/images/173/vim3-8-prev.png" class="image-202058" width="370" height="243" alt="&#160;" /></a>
+<p><i>Obrázek 4: Zákaz zvýraznění párových tagů v&nbsp;HTML dokumentu příkazem
+<strong>:RainbowToggle</strong>.</i></p>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. Základní vlastnosti dialektu Scheme implementovaného v&nbsp;systému Kawa</h2>
+
+<p>Systém Kawa se v&nbsp;prakticky všech ohledech podobá klasickému Scheme
+popsanému v&nbsp;RnRS. Základní vlastnosti tohoto programovacího jazyka již
+známe, takže si jen krátce zopakujme některé užitečné tipy a triky.</p>
+
+<p>Definice nové pojmenované funkce pro tisk libovolné hodnoty na standardní
+výstup:</p>
+
+<pre>
+(define (<strong>print</strong> item)
+     (display item)
+     (newline))
+</pre>
+
+<p>Práce s&nbsp;takzvanými tečka-dvojicemi a vztah mezi sekvencí tečka-dvojic a
+seznamy:</p>
+
+<pre>
+(print '(1 . 2))
+&nbsp;
+(print '(1 . ((2 . 3) . 4)))
+&nbsp;
+(print '((1 . 2) . (3 . 4)))
+&nbsp;
+(print '(1 . (2 . (3 . nil))))
+&nbsp;
+<i>; this is proper list</i>
+(print '(1 . (2 . (3 . ()))))
+</pre>
+
+<p>Výsledek činnosti předchozího skriptu:</p>
+
+<pre>
+(1 . 2)
+(1 (2 . 3) . 4)
+((1 . 2) 3 . 4)
+(1 2 3 . nil)
+(1 2 3)
+</pre>
+
+<p>Použití funkce <strong>cons</strong> při konstrukci tečka dvojic a/nebo
+seznamů:</p>
+
+<pre>
+(print (cons 1 2))
+&nbsp;
+(print (cons 1 (cons 2 3)))
+&nbsp;
+(print '((1 . 2) . (3 . 4)))
+&nbsp;
+<i>; this is proper list</i>
+(print (cons 1 (cons 2 (cons 3 '()))))
+&nbsp;
+(define nil '())
+&nbsp;
+<i>; this is proper list</i>
+(print (cons 1 (cons 2 (cons 3 nil))))
+</pre>
+
+<p>Výsledek činnosti předchozího skriptu:</p>
+
+<pre>
+(1 . 2)
+(1 2 . 3)
+((1 . 2) 3 . 4)
+(1 2 3)
+(1 2 3)
+</pre>
+
+<p>Vytvoření filtru (funkce vyššího řádu, která akceptuje jinou funkci jako
+svůj vstup):</p>
+
+<pre>
+(define (<strong>filter</strong> pred lst)
+  (cond ((null? lst) '())
+        ((pred (car lst))
+         (cons (car lst) (filter pred (cdr lst))))
+        (else (filter pred (cdr lst)))))
+</pre>
+
+<p>Použití lambda-výrazu (anonymní funkce) a vytvoření uzávěru
+(<i>closure</i>):</p>
+
+<pre>
+(define (<strong>larger-than</strong> limit)
+    (lambda (value) (&gt; value limit)))
+</pre>
+
+<p>Praktické použití obou výše definovaných funkcí <strong>filter</strong> a
+<strong>larger-than</strong>:</p>
+
+<pre>
+(print (filter (larger-than 5) '(1 2 3 4 5 6 7 8 9 10)))
+&nbsp;
+(define (<strong>larger-than-five</strong>)
+     (larger-than 5))
+&nbsp;
+(print (filter (larger-than-five) '(1 2 3 4 5 6 7 8 9 10)))
+&nbsp;
+(print ((larger-than 5) 0))
+(print ((larger-than 5) 10))
+&nbsp;
+(print ((larger-than-five) 0))
+(print ((larger-than-five) 10))
+</pre>
+
+<p>Výsledek první i druhé aplikace funkce <strong>filter</strong>:</p>
+
+<pre>
+(6 7 8 9 10)
+</pre>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. &bdquo;Numerická věž&ldquo; programovacího jazyka Scheme a její rozšíření v&nbsp;Kawě</h2>
+
+<p>V&nbsp;jazyku Scheme je definována takzvaná &bdquo;numerická věž&ldquo;,
+v&nbsp;níž je vždy jeden numerický datový typ podmnožinou typu jiného a na
+nejvyšším stupni hierarchie stojí obecné číslo <strong>number</strong>. Dialekt
+<i>Kawa</i> tento koncept rozšiřuje o numerický typ <i>kvaternion</i>, který
+bude popsán v&nbsp;navazujících kapitolách. Podívejme se nyní, jak
+&bdquo;numerická věž&ldquo; vypadá v&nbsp;případě jazyka Kawa:</p>
+
+<table>
+<tr><th>Typ</th><th>Význam</th></tr>
+<tr><td>number</td><td>libovolná obecná čísla</td></tr>
+<tr><td>quantity</td><td>numerická hodnota i s&nbsp;uvedenou jednotkou (viz další text)</td></tr>
+<tr><td>quaternion</td><td>kvaterniony</td></tr>
+<tr><td>complex</td><td>komplexní čísla</td></tr>
+<tr><td>real</td><td>reálná čísla</td></tr>
+<tr><td>rational</td><td>zlomky (racionální čísla)</td></tr>
+<tr><td>integer</td><td>celá čísla</td></tr>
+</table>
+
+<p><div class="rs-tip-major">Poznámka: dále jsou podporovány všechny numerické
+typy jazyka Java.</div></p>
+
+<p>Podívejme se nejprve na použití typu <strong>integer</strong>. Ten má obecně
+libovolný rozsah (tedy alespoň v&nbsp;jazyku Kawa):</p>
+
+<pre>
+(define (<strong>factorial</strong> n)
+  (if (= n 0) <i>; podmínka pro ukončení rekurzivního zanořování</i>
+    1       <i>; faktoriál nuly je definitoricky roven jedné</i>
+    (* n (factorial (- n 1)))))
+&nbsp;
+&nbsp;
+(define n 0)
+&nbsp;
+(do ()
+  ((&gt;= n 30))
+  (display (factorial n))
+  (newline)
+  (set! n (+ n 1)))
+</pre>
+
+<p>Výpočet faktoriálu lze provést pro prakticky libovolné <strong>n</strong>,
+pokud budeme mít k&nbsp;dispozici dostatek paměti a dostatek výpočetního
+výkonu:</p>
+
+<pre>
+1
+1
+2
+6
+24
+120
+720
+5040
+40320
+362880
+3628800
+39916800
+479001600
+6227020800
+87178291200
+1307674368000
+20922789888000
+355687428096000
+6402373705728000
+121645100408832000
+2432902008176640000
+51090942171709440000
+1124000727777607680000
+25852016738884976640000
+620448401733239439360000
+15511210043330985984000000
+403291461126605635584000000
+10888869450418352160768000000
+304888344611713860501504000000
+8841761993739701954543616000000
+</pre>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. Zlomky</h2>
+
+<p>Jedním ze základních numerických datových typů jazyka Scheme a taktéž i jeho
+implementace jazyka Kawa, jsou zlomky (<i>ratio</i>). Interně jsou zlomky
+reprezentovány dvojicí celočíselných hodnot s&nbsp;libovolným rozsahem, tudíž i
+přesnost zlomků je teoreticky libovolná (omezená kapacitou paměti i výpočetním
+výkonem).</p>
+
+<p>Podívejme se nyní na jednoduchý příklad s&nbsp;dvojicí vnořených smyček,
+v&nbsp;nichž se počítají různé varianty zlomků:</p>
+
+<pre>
+(do ((y 1 (+ y 1)))    <i>; počáteční hodnota počitadla a iterační příkaz</i>
+  ((&gt; y 10))           <i>; podmínka pro ukončení smyčky</i>
+  (do ((x 1 (+ x 1)))  <i>; vnitřní smyčka</i>
+    ((&gt; x 10))         <i>; podmínka pro ukončení vnitřní smyčky</i>
+    (display (/ x y))  <i>; tisk výsledku</i>
+    (display "\t"))    <i>; přechod na další tabelační zarážku </i>
+  (newline))           <i>; přechod na další řádek</i>
+</pre>
+
+<p>Výsledek předchozího demonstračního příkladu by měl vypadat následovně:</p>
+
+<pre>
+1       2       3       4       5       6       7       8       9       10      
+1/2     1       3/2     2       5/2     3       7/2     4       9/2     5       
+1/3     2/3     1       4/3     5/3     2       7/3     8/3     3       10/3    
+1/4     1/2     3/4     1       5/4     3/2     7/4     2       9/4     5/2     
+1/5     2/5     3/5     4/5     1       6/5     7/5     8/5     9/5     2       
+1/6     1/3     1/2     2/3     5/6     1       7/6     4/3     3/2     5/3     
+1/7     2/7     3/7     4/7     5/7     6/7     1       8/7     9/7     10/7    
+1/8     1/4     3/8     1/2     5/8     3/4     7/8     1       9/8     5/4     
+1/9     2/9     1/3     4/9     5/9     2/3     7/9     8/9     1       10/9    
+1/10    1/5     3/10    2/5     1/2     3/5     7/10    4/5     9/10    1       
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: povšimněte si, že funkce / (dělení) má
+v&nbsp;jazyku Kawa odlišný význam, než v&nbsp;některých jiných jazycích,
+protože podílem dvou celých hodnot vznikne <i>zlomek</i> a nikoli výsledek
+celočíselného dělení.</div></p>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Výpočet konstanty Pi Wallisovým součinem: použití reálných čísel a zlomků</h2>
+
+<p>Základní vlastnosti &bdquo;numerické věže&ldquo; programovacího jazyka
+<i>Kawa</i> si ukážeme na jednoduchém algoritmu určeném pro výpočet hodnoty
+čísla Pi s&nbsp;využitím takzvaného <i>Wallisova součinu</i> (<i>Wallis
+product</i>, viz též <a
+href="https://en.wikipedia.org/wiki/Wallis_product">https://en.wikipedia.org/wiki/Wallis_product</a>).
+Výpočet používající hodnoty s&nbsp;plovoucí řádovou čárkou může být
+implementován například takto (používáme zde programovou smyčku, i když by bylo
+možné algoritmus přepsat za pomoci rekurze):</p>
+
+<pre>
+(define (<strong>compute-pi</strong> n)
+  (let ((pi 4.0))
+    (do ((i 3 (+ i 2)))
+      ((&gt; i (+ n 2)))
+      (set! pi (* pi (/ (- i 1) i) (/ (+ i 1) i))))
+    pi))
+&nbsp;
+(do ((n 1 (* n 2)))
+  ((&gt; n 10000))
+  (display n)
+  (display (compute-pi n))
+  (newline))
+</pre>
+
+<p>Výsledky výpočtu pro různé vstupní hodnoty <i>n</i>:</p>
+
+<table>
+<tr><th>n</th><th>aproximace &pi;</th></tr>
+<tr><td>1</td><td>3.5555555555555554</td></tr>
+<tr><td>2</td><td>3.5555555555555554</td></tr>
+<tr><td>4</td><td>3.4133333333333336</td></tr>
+<tr><td>8</td><td>3.302393550012597</td></tr>
+<tr><td>16</td><td>3.230036466411716</td></tr>
+<tr><td>32</td><td>3.1881271694471383</td></tr>
+<tr><td>64</td><td>3.1654820600347926</td></tr>
+<tr><td>128</td><td>3.1536988490957967</td></tr>
+<tr><td>256</td><td>3.147686899556418</td></tr>
+<tr><td>512</td><td>3.1446501625172</td></tr>
+<tr><td>1024</td><td>3.143124017028185</td></tr>
+<tr><td>2048</td><td>3.142358989121772</td></tr>
+<tr><td>4096</td><td>3.141975985005608</td></tr>
+<tr><td>8192</td><td>3.1417843602347433</td></tr>
+</table>
+
+<p>Další výpočty již budou ovlivněny přesností výpočtů s&nbsp;plovoucí řádovou
+čárkou.</p>
+
+<p>Nepatrnou změnou algoritmu (pouhou změnou konstanty <strong>4.0</strong> za
+<strong>4</strong>) dosáhneme toho, že výpočty budou probíhat se zlomky a tedy
+i s&nbsp;prakticky libovolným rozsahem a přesností:</p>
+
+<pre>
+(define (<strong>compute-pi</strong> n)
+  (let ((pi 4))
+    (do ((i 3 (+ i 2)))
+      ((&gt; i (+ n 2)))
+      (set! pi (* pi (/ (- i 1) i) (/ (+ i 1) i))))
+    pi))
+&nbsp;
+(do ((n 1 (* n 2)))
+  ((&gt; n 10000))
+  (display n)
+  (display (compute-pi n))
+  (newline))
+</pre>
+
+<p>Nyní budou výsledky zobrazeny ve formě zlomků:</p>
+
+<table>
+<tr><th>n</th><th>aproximace &pi;</th></tr>
+<tr><td>1</td><td>32/9</td></tr>
+<tr><td>2</td><td>32/9</td></tr>
+<tr><td>4</td><td>256/75</td></tr>
+<tr><td>8</td><td>65536/19845</td></tr>
+<tr><td>16</td><td>4294967296/1329696225</td></tr>
+<tr><td>32</td><td>18446744073709551616/5786075364399106425</td></tr>
+<tr><td>64</td><td>340282366920938463463374607431768211456/107497803009882761535906756719489104425</td></tr>
+<tr><td>128</td><td>115792089237316195423570985008687907853269984665640564039457584007913129639936/36716279764795881321516783116116224837463373080333115741577873817663528415625</td></tr>
+<tr><td>256</td><td>...</td></tr>
+<tr><td>512</td><td>...</td></tr>
+</table>
+
+<p>Zlomky převedeme zpět na reálné číslo (či lépe řečeno jeho aproximaci)
+s&nbsp;využitím funkce <strong>exact-&gt;inexact</strong>:</p>
+
+<pre>
+(define (<strong>compute-pi</strong> n)
+  (let ((pi 4))
+    (do ((i 3 (+ i 2)))
+      ((&gt; i (+ n 2)))
+      (set! pi (* pi (/ (- i 1) i) (/ (+ i 1) i))))
+    pi))
+
+(do ((n 1 (* n 2)))
+  ((&gt; n 10000))
+  (display n)
+  (display (exact-&gt;inexact (compute-pi n)))
+  (newline))
+</pre>
+
+<table>
+<tr><th>n</th><th>aproximace &pi;</th></tr>
+<tr><td>1</td><td>3.5555555555555554</td></tr>
+<tr><td>2</td><td>3.5555555555555554</td></tr>
+<tr><td>4</td><td>3.4133333333333336</td></tr>
+<tr><td>8</td><td>3.3023935500125976</td></tr>
+<tr><td>16</td><td>3.2300364664117174</td></tr>
+<tr><td>32</td><td>3.18812716944714</td></tr>
+<tr><td>64</td><td>3.1654820600347966</td></tr>
+<tr><td>128</td><td>3.1536988490958002</td></tr>
+<tr><td>256</td><td>3.1476868995564256</td></tr>
+<tr><td>512</td><td>3.144650162517214</td></tr>
+<tr><td>1024</td><td>3.143124017028195</td></tr>
+<tr><td>2048</td><td>3.1423589891217865</td></tr>
+<tr><td>4096</td><td>3.1419759850056326</td></tr>
+<tr><td>8192</td><td>3.141784360234786</td></tr>
+</table>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Kvaterniony a kvaternionová algebra</h2>
+
+<p>Programovací jazyk Kawa podporuje i výpočty s&nbsp;takzvanými
+<i>kvaterniony</i>, které jsou (značně zjednodušeně řečeno) zobecněním
+komplexních čísel. V&nbsp;komplexní rovině je každá číselná hodnota &ndash;
+neboli komplexní číslo &ndash; vyjádřeno pomocí lineární kombinace dvou
+základních (bázových) čísel, které většinou označujeme symboly
+<strong>1</strong> a <strong>i</strong> a nazýváme je jednotkami:
+<strong>1</strong> je <i>reálná jednotka</i>, <strong>i</strong> je <i>jednotka
+imaginární</i>. Tyto dvě číselné hodnoty mají jednotkovou délku a jsou na sebe
+při zobrazení v&nbsp;rovině (nazývané rovina komplexní) kolmé, přičemž je
+stanoveno speciální pravidlo pro umocnění jednotky <strong>i</strong>:
+
+<p><i>i<sup>2</sup>=-1</i></p>
+
+<p>Množinu všech komplexních čísel tedy můžeme zapsat ve tvaru výše zmiňované
+lineární kombinace:</p>
+
+<p><i>C={a+bi: i<sup>2</sup>=-1}</i></p>
+
+<p> (jednotku 1 není zapotřebí zapisovat, protože vždy platí <i>1a=a=a1</i> pro
+jakékoli <i>a</i>). Hodnotu <i>a</i> nazýváme reálná složka komplexního čísla,
+hodnotu <i>b</i> složka imaginární. Aditivní operace (součet, rozdíl) se
+v&nbsp;komplexní rovině provádí stejným způsobem, jako v&nbsp;každém jiném
+vektorovém prostoru, tj.&nbsp;složku po složce: výsledná reálná složka je
+vypočtena součtem obou reálných složek, stejný výpočet se provede i pro složku
+imaginární. Rozdíl nastává při násobení dvou komplexních čísel, protože musíme
+vědět, jaký výsledek vznikne při násobení dvou jednotek. Pomůže nám jednoduchá
+tabulka:</p>
+
+<table>
+<tr><th>Multiplikativní operace</th><th>Výsledek</th></tr>
+<tr><td>1&times;1</td><td>1</td></tr>
+<tr><td>1&times;i</td><td>i</td></tr>
+<tr><td>i&times;1</td><td>i</td></tr>
+<tr><td>i&times;i</td><td>-1</td></tr>
+</table>
+
+<p>Všechny algebraické operace s&nbsp;komplexními čísly zachovávají
+asociativitu i komutativitu. Pro každé komplexní číslo <i>z</i> různé od nuly
+existuje i inverzní prvek <i>z'</i> takový, že platí vztah <i>zz'=1</i>.
+Množina komplexních čísel spolu s&nbsp;operacemi <strong>+</strong> a
+<strong>&times;</strong> tvoří algebraickou strukturu <i>komutativní
+těleso</i>. Současně můžeme vyjádřit i velikost každého komplexního čísla:
+<i>|z|=(a<sup>2</sup>+b<sup>2</sup>)<sup>1/2</sup></i>, množina komplexních
+čísel tedy tvoří metrický prostor. Čtyři základní aditivní a multiplikativní
+operace prováděné nad komplexními čísly je možné zapsat následujícím způsobem
+(u operace dělení se výpočet musel uspořádat tak, aby pod zlomkovou čarou byla
+pouze reálná hodnota):</p>
+
+<pre>
+(u+iv) + (x+iy) = (u+x) + i(v+y)
+(u+iv) - (x+iy) = (u-x) + i(v-y)
+(u+iv) * (x+iy) = (ux - vy) + i(vx + uy)
+(u+iv) / (x+iy) = ((ux + vy) + i(vx - uy)) / (x^2 + y^2)
+</pre>
+
+<p>Pomocí komplexních čísel je možné popsat jakýkoli bod v&nbsp;rovině.
+Podobným způsobem lze vyjádřit číselnou hodnotu ve čtyřrozměrném
+(hyperkomplexním) prostoru. Zajímavé přitom je, že zatímco pro komplexní čísla
+jsou zachovány vlastnosti <i>komutativního tělesa</i> jako je asociativita,
+komutativita, existence inverzního prvku apod., ve čtyřrozměrném prostoru je
+vždy alespoň jedna z&nbsp;těchto vlastností porušena (nesplněna).
+V&nbsp;následujícím textu si popíšeme jednu možnost cestu z&nbsp;komplexní
+roviny do 4D prostoru (druhou cestou je použití <i>hyperkomplexních
+čísel</i>).</p>
+
+<p>Kvaterniony (<i>quaternions</i>) a kvaternionovou algebru vymyslel
+v&nbsp;roce 1843 známý matematik William Rowan Hamilton, který původně hledal
+rozšíření komplexních čísel z&nbsp;2D plochy do 3D prostoru. Takové rozšíření
+však není možné vytvořit, nejbližší ekvivalent komplexních čísel jsou až
+čtyřrozměrné struktury. Hamilton provedl revoluční krok v&nbsp;tom, že jím
+vymyšlené kvaterniony nesplňovaly vlastnost do té doby považovanou za
+samozřejmost &ndash; komutativitu. Později se objevily i další užitečné
+struktury, které komutativitu nesplňují, například matice. Matematici
+s&nbsp;oblibou vypráví historku, že Hamiltona základní vztahy kvaternionové
+algebry napadly, když na procházce se svou manželkou procházel pod mostem Broom
+Bridge; na onom mostě se dnes nachází kamenná deska s&nbsp;připomínkou této
+události. Broom Bridge je v&nbsp;současnosti místem častého setkání
+matematiků.</p>
+
+<a href="https://i.iinfo.cz/urs/fractals62_7-116827140765599.jpg"><img alt="fractals62_7" width="450" height="337" src="https://i.iinfo.cz/urs/fractals62_7-preview-116827140765599.jpg"></a>
+<p><i>Obrázek 5: Most s&nbsp;pamětní deskou objasňující historii vzniku kvaternionů</i></p>
+
+<a href="https://i.iinfo.cz/urs/fractals62_8-116827142154702.jpg"><img alt="fractals62_8" width="450" height="337" src="https://i.iinfo.cz/urs/fractals62_8-preview-116827142154702.jpg"></a>
+<p><i>Obrázek 6: Detail pamětní desky, dnes již dokonce "ozdobené" barevnou čmouhou</i></p>
+
+<p>Kvaterniony jsou obdobou komplexních čísel, ovšem s&nbsp;tím rozdílem, že
+mají čtyři na sebe kolmé jednotky, které označujeme symboly <strong>1</strong>,
+<strong>i</strong>, <strong>j</strong> a <strong>k</strong>. Jednotka
+<strong>1</strong> se někdy nazývá skalární složkou, zbylé tři jednotky
+<strong>i, j, k</strong> pak složkami vektorovými (to souvisí s&nbsp;využitím
+kvaternionů při popisu rotací). Každý kvaternion lze popsat lineární kombinací
+všech čtyř jednotek: <i>q=x+yi+zj+wk</i>. Pro vzájemné násobení těchto jednotek
+platí následující vztahy:</p>
+
+<table>
+<tr><th>Multiplikativní operace</th><th>Výsledek</th></tr>
+<tr><td>1&times;1</td><td>1</td></tr>
+<tr><td>1&times;i</td><td>i</td></tr>
+<tr><td>1&times;j</td><td>j</td></tr>
+<tr><td>1&times;k</td><td>k</td></tr>
+<tr><td>i&times;1</td><td>i</td></tr>
+<tr><td>j&times;1</td><td>j</td></tr>
+<tr><td>k&times;1</td><td>k</td></tr>
+<tr><td>i&times;j</td><td> k</td></tr>
+<tr><td>j&times;i</td><td>-k</td></tr>
+<tr><td>j&times;k</td><td> i</td></tr>
+<tr><td>k&times;j</td><td>-i</td></tr>
+<tr><td>k&times;i</td><td> j</td></tr>
+<tr><td>i&times;k</td><td>-j</td></tr>
+<tr><td>i&times;i=j&times;j=k&times;k</td><td>-1</td></tr>
+<tr><td>i&times;j&times;k</td><td>-1</td></tr>
+</table>
+
+<p>Všimněte si, že při násobení není obecně zachována komutativita operací,
+tj.&nbsp;například výsledek operace <strong>jk</strong> se nerovná výsledku
+operace <strong>kj</strong>. To znamená, že kvaterniony netvoří algebraickou
+strukturu komutativní těleso a při násobení dvou kvaternionů si musíme dát
+pozor na pořadí operací (ostatně podobně jako při násobení matic). Násobení
+jedničkou (skalární složkou, <strong>1</strong>) zachovává hodnotu druhého
+prvku, podobně jako je tomu u reálných i komplexních čísel. Kvaterniony tvoří
+největší algebraické nadtěleso množiny reálných čísel (i komplexní čísla jsou
+nadtělesem reálných čísel).</p>
+
+<p>Pokud máme dva kvaterniony:</p>
+
+<p><i>q<sub>1</sub>=x<sub>1</sub>+y<sub>1</sub>i+z<sub>1</sub>j­+w<sub>1</sub>k</i><br>
+a<br>
+<i>q<sub>2</sub>=x<sub>2</sub>+y<sub>2</sub>i+z<sub>2</sub>j­+w<sub>2</sub>k</i></p>
+
+<p>je možné jejich vzájemné vynásobení provést podle následujícího schématu:</p>
+
+<p><i>q<sub>1</sub>q<sub>2</sub>=<br>
+    1(x<sub>1</sub>x<sub>2</sub> – y<sub>1</sub>y<sub>2</sub> – z<sub>1</sub>z<sub>2</sub> – w<sub>1</sub>w<sub>2</sub>) +<br>
+    i(y<sub>1</sub>x<sub>2</sub> + x<sub>1</sub>y<sub>2</sub> + w<sub>1</sub>z<sub>2</sub> – z<sub>1</sub>w<sub>2</sub>) +<br>
+    j(z<sub>1</sub>x<sub>2</sub> – w<sub>1</sub>y<sub>2</sub> + x<sub>1</sub>z<sub>2</sub> + y<sub>1</sub>w<sub>2</sub>) +<br>
+    k(w<sub>1</sub>x<sub>2</sub> + z<sub>1</sub>y<sub>2</sub> – y<sub>1</sub>z<sub>2</sub> + x<sub>1</sub>w<sub>2</sub>) </i></p>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Kvaterniony v&nbsp;programovacím jazyku Kawa</h2>
+
+<p>Podívejme se nyní na použití kvaternionů v&nbsp;jazyku Kawa. Kvaternion lze
+zapsat přímo svou hodnotou:</p>
+
+<pre>
+#|kawa:6|# <strong>1+2i+3j+4k</strong>
+1+2i+3j+4k
+</pre>
+
+<p>Nebo lze použít konstruktor <strong>make-rectangular</strong>:</p>
+
+<pre>
+#|kawa:7|# <strong>(make-rectangular 1 2 3 4)</strong>
+1+2i+3j+4k
+&nbsp;
+#|kawa:8|# <strong>(make-rectangular 1 0 0 0)</strong>
+1
+</pre>
+
+<p>Základní aritmetické operace s&nbsp;kvaterniony:</p>
+
+<pre>
+#|kawa:9|# <strong>(define one 1+0i+0j+0k)</strong>
+#|kawa:10|# <strong>(* one one)</strong>
+1
+&nbsp;
+#|kawa:15|# <strong>(define imag 0+1i+0j+0k)</strong>
+#|kawa:16|# <strong>(* imag imag)</strong>
+-1
+&nbsp;
+#|kawa:17|# <strong>(define other 0+1i+2j+3k)</strong>
+#|kawa:18|# <strong>(* other other)</strong>
+-14
+&nbsp;
+#|kawa:19|# <strong>(* other imag)</strong>
+-1+3j-2k
+</pre>
+
+<p>Definována je i operace dělení:</p>
+
+<pre>
+#|kawa:23|# <strong>(/ imag other)</strong>
+1/14+3/14j-1/7k
+</pre>
+
+<p>Další operace &ndash; velikost (absolutní hodnota):</p>
+
+<pre>
+#|kawa:24|# <strong>(magnitude imag)</strong>
+1.0
+&nbsp;
+#|kawa:25|# <strong>(magnitude other)</strong>
+3.7416573867739413
+</pre>
+
+<p>Úhel (jen plošný):</p>
+
+<pre>
+#|kawa:29|# <strong>(angle 1)</strong>
+0.0
+&nbsp;
+#|kawa:28|# <strong>(angle imag)</strong>
+1.5707963267948966
+&nbsp;
+#|kawa:27|# <strong>(angle other)</strong>
+1.5707963267948966
+</pre>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Jednotky u numerických hodnot</h2>
+
+<p>Mezi velmi zajímavou a potenciálně i užitečnou vlastnost programovacího
+jazyka <i>Kawa</i> patří možnost přiřadit libovolné číselné hodnotě i její
+jednotku. Jednotka je k&nbsp;číselné hodnotě přiřazena v&nbsp;čase běhu
+aplikace a zúčastní se i operací prováděných s&nbsp;danou hodnotou (součet,
+součin, rozdíl, podíl). Můžeme tak například používat konstanty
+s&nbsp;přiřazenými jednotkami:</p>
+
+<pre>
+1A
+0.5V
+32cm
+120s
+</pre>
+
+<p>Nebo též z&nbsp;běžné hodnoty:</p>
+
+<pre>
+<strong>(make-quantity 10 "cm")</strong>
+10cm
+&nbsp;
+<strong>(make-quantity 10 unit:cm)</strong>
+10cm
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: dané jednotky ovšem musí být nejdříve
+definovány &ndash; viz další text.</div></p>
+
+<p>Pochopitelně lze vytvořit i proměnné a inicializovat je hodnotou i
+s&nbsp;uvedením jednotky:</p>
+
+<pre>
+(<strong>define</strong> MAX_CURRENT 1A)
+(<strong>define</strong> AVERAGE_DISTANCE 32cm)
+(<strong>define</strong> TIMEOUT 120s)
+</pre>
+
+<p>Je však možné použít libovolnou jednotku? Resp.&nbsp;přesněji řečeno,
+kontroluje se, zda je uvedená jednotka známá a nedopustíme se například omylem
+přepisu, jako v&nbsp;následujícím příkladu?</p>
+
+<pre>
+(<strong>define</strong> AVERAGE_DISTANCE 32cn)
+</pre>
+
+<p>Jednotky (jejich identifikátory) se skutečně kontrolují. Přímo
+v&nbsp;základních knihovnách programovacího jazyka <i>Kawa</i> jsou některé
+jednotky definovány, další je možné definovat podle toho, jaký konkrétní
+problém vyvíjená aplikace řeší. Definice nové jednotky může vypadat
+následovně:</p>
+
+<pre>
+<strong>(define-base-unit meter "distance")</strong>
+<strong>(define-unit stadion 176meter)</strong>
+</pre>
+
+<p>Vytvořili jsme jednotku &bdquo;metr&ldquo; a &bdquo;stadion&ldquo;, který
+měří přibližně 176 metrů.</p>
+
+<p>S&nbsp;novou jednotkou můžeme provést například součin
+s&nbsp;konstantou:</p>
+
+<pre>
+<strong>(* 2stadion 3)</strong>
+6.0stadion
+</pre>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Použití jednotek v&nbsp;praxi při aritmetických operacích</h2>
+
+<p>To však není vše &ndash; jazyk <i>Kawa</i> do určité míry dokáže odvodit i
+jednotku výsledku nějaké operace. U součtu a rozdílu je to jednoduché, ovšem
+podobně se odvozuje i jednotka při násobení a dělení:</p>
+
+<pre>
+<strong>(* 10cm 2)</strong>
+20.0cm
+&nbsp;
+<strong>(* 10cm 10)</strong>
+100.0cm
+&nbsp;
+<strong>(* 10cm 10cm)</strong>
+100.0cm^2
+&nbsp;
+</pre>
+
+<p>Dělení hodnot s&nbsp;různými jednotkami:</p>
+
+<pre>
+<strong>(/ 10s 5cm)</strong>
+2.0s*cm^-1
+&nbsp;
+<strong>(/ 5cm 10s)</strong>
+0.5cm*s^-1
+</pre>
+
+<p><div class="rs-tip-major">Poznámka: toto je skutečně <strong>velmi</strong>
+užitečná vlastnost, která nám pomůže odhalit mnohé chyby v&nbsp;algoritmu. Na
+konci výpočtu se totiž můžeme přesvědčit i o jednotce výsledku a zjistit tak,
+že se neprovádí &bdquo;podivné&ldquo; operace, které například ani nemají
+obdobu v&nbsp;reálném světě. Ostatně můžeme si uvést příklad:</div></p>
+
+<pre>
+<strong>(define-base-unit A "electric current")</strong>
+<strong>3A</strong>
+3.0A
+&nbsp;
+<strong>(define-base-unit V "voltage")</strong>
+<strong>5V</strong>
+5.0V
+&nbsp;
+<strong>(* 3A 5V)</strong>
+15.0A*V
+&nbsp;
+<strong>(define power (* 3A 5V))</strong>
+<strong>(define resistance (/ 5V 3A))</strong>
+<strong>power</strong>
+15.0A*V
+&nbsp;
+<strong>resistance</strong>
+1.6666666666666667V*A^-1
+&nbsp;
+<strong>(define wrong-power (* 3A 5cm))</strong>
+<strong>wrong-power</strong>
+15.0A*cm
+&nbsp;
+</pre>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Líné vyhodnocování výrazů</h2>
+
+<p>Zmínit se musíme i o takzvaném líném vyhodnocování výrazů, což je vlastnost,
+se kterou jsme se seznámili <a
+href="https://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-4-cast-kolekce-sekvence-a-lazy-sekvence/#k07">při
+popisu programovacího jazyka Clojure</a>. V&nbsp;Kawě je možné nechat nějaký
+výraz &bdquo;líně&ldquo; vyhodnotit pomocí speciální formy
+<strong>delay</strong>. Výsledkem je objekt, který reprezentuje budoucí
+hodnotu. Pokud hodnotu budeme skutečně potřebovat použít, stačí ji buď
+vyhodnotit nebo si výpočet vynutit funkcí <strong>force</strong>.</p>
+
+<p>Podívejme se nyní na příklad (získaný přímo z&nbsp;dokumentace), v&nbsp;němž
+je implementován generátor <strong>všech</strong> celých kladných čísel:</p>
+
+<pre>
+(define <strong>integers</strong>
+  (letrec ((next
+            (lambda (n)
+              (cons n (delay (next (+ n 1)))))))
+    (next 0)))
+</pre>
+
+<p>Generování je pochopitelně &bdquo;líné&ldquo;, tj.&nbsp;hodnota (následující
+hodnota v&nbsp;řadě celých čísel) se vyhodnotí až ve chvíli, kdy je to
+zapotřebí:</p>
+
+<pre>
+#|kawa:10|# <strong>(car integers)</strong>
+0
+&nbsp;
+#|kawa:11|# <strong>(cadr integers)</strong>
+1
+</pre>
+
+<p>Některé další příklady líného vyhodnocení, včetně spuštění výpočtu
+v&nbsp;samostatném vlákně, si ukážeme příště.</p>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Rozhraní mezi jazyky Java a Kawa</h2>
+
+<p>Poslední vlastností programovacího jazyka <i>Kawa</i>, kterou se dnes budeme
+zabývat, je takzvaná <i>interoperabilita</i> (zkráceně
+<strong>interop</strong>) mezi programovacími jazyky Java a Kawa. Dnes si
+ukážeme základní příklady ukazující interoperabilitu ve směru Kawa&rarr;Java,
+tedy použití tříd z&nbsp;Javy ve skriptech, které jsou vytvořeny
+v&nbsp;programovacím jazyku Kawa. Nejprve se podívejme, jak se může zavolat
+statická metoda z&nbsp;nějaké třídy. Je to snadné:</p>
+
+<pre>
+#|kawa:35|# <strong>(java.lang.Math:abs -10)</strong>
+10.0
+</pre>
+
+<p>Konstrukce objektu:</p>
+
+<pre>
+#|kawa:37|# <strong>(java.awt.Rectangle 10 20 30 40)</strong>
+java.awt.Rectangle[x=10,y=20,width=30,height=40]
+</pre>
+
+<p>Vytvoření kolekce:</p>
+
+<pre>
+#|kawa:1|# <strong>(java.util.ArrayList 11 22 33)</strong>
+#(11 22 33)
+</pre>
+
+<p>Další využití konstruktoru, tentokrát při konstrukci množiny:</p>
+
+<pre>
+#|kawa:2|# <strong>(java.util.TreeSet 2 4 6 8 1 3 5 7)</strong>
+[1, 2, 3, 4, 5, 6, 7, 8]
+</pre>
+
+<p>Pokud je nějaký Javovský objekt vytvořen, můžeme volat jeho metody, a to
+s&nbsp;použitím &bdquo;dvojtečkové notace&ldquo;, nikoli běžnější
+&bdquo;tečkove notace&ldquo;, která ve Scheme slouží k&nbsp;dalším účelům:</p>
+
+<pre>
+#|kawa:5|# <strong>(define frame (javax.swing.JFrame "foobar"))</strong>
+#|kawa:6|# <strong>(frame:setVisible #t)</strong>
+</pre>
+
+<p>Přístup k&nbsp;atributům třídy:</p>
+
+<pre>
+<strong>java.lang.Integer:MAX_VALUE</strong>
+2147483647
+</pre>
+
+<p>Konstrukce polí (v&nbsp;Javě typovaných):</p>
+
+<pre>
+<strong>(int[] 4 5 6)</strong>
+[4 5 6]
+</pre>
+
+<p>Automatická konverze hodnot při konstrukci pole:</p>
+
+<pre>
+<strong>(float[] 1/2 1/3 1/4)</strong>
+[0.5 0.33333334 0.25]
+</pre>
+
+<p>Konstrukce objektu a volání jeho metod:</p>
+
+<pre>
+<strong>(define r (java.util.Random))</strong>
+<strong>(r:nextInt)</strong>
+666226103
+</pre>
+
+<p>Vytvoření zlomku s&nbsp;náhodnou hodnotou:</p>
+
+<pre>
+<strong>(inexact->exact (r:nextFloat))</strong>
+5864237/16777216
+</pre>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Obsah následující části seriálu</h2>
+
+<p>V&nbsp;následující části tohoto seriálu dokončíme popis ostatních vlastností
+interpretru a překladače <i>Kawa</i>. Kromě podrobnějšího popisu rozhraní
+vytvořeného mezi programovacími jazyky Java a Scheme si taktéž ukážeme, jakým
+způsobem se provádí překlad programu vytvořeného v&nbsp;Clojure do bajtkódu
+JVM. Nezapomeneme ani na popis toho, jak se projeví (nepovinné) typové
+informace u parametrů funkcí na kvalitě a rychlosti provádění (dnes
+pochopitelně především JITování) výsledného bajtkódu.</p>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Krátké shrnutí: seznam implementací jazyka Scheme, LISP a Clojure</h2>
+
+<p>V&nbsp;tabulkách zobrazených pod tímto odstavcem naleznete seznam
+implementací jazyka Scheme, LISP a Clojure, kterými jsme se již zabývali nebo
+kterými se budeme zabývat:</p>
+
+<table>
+<tr><th> #</th><th>Implementace jazyka Scheme</th></tr>
+<tr><td> 1</td><td><a href="https://www.root.cz/clanky/gnu-guile-interpret-scheme-vestavitelny-do-nativnich-aplikaci/">GNU Guile</a></td></tr>
+<tr><td> 2</td><td><a href="https://www.root.cz/clanky/tinyscheme-aneb-dalsi-interpret-jazyka-scheme-vestavitelny-do-dalsich-aplikaci/">TinyScheme</a></td></tr>
+<tr><td> 3</td><td>Kawa</td></tr>
+<tr><td> 4</td><td>Chicken</td></tr>
+<tr><td> 5</td><td>Racket</td></tr>
+<tr><td> 6</td><td>Gambit</td></tr>
+<tr><td> 7</td><td>Chez</td></tr>
+<tr><td> 8</td><td>MIT/GNU</td></tr>
+<tr><td> 9</td><td>Scheme48</td></tr>
+<tr><td>10</td><td>Bigloo</td></tr>
+</table>
+
+<table>
+<tr><th> #</th><th>Implementace dialektu jazyka LISP</th></tr>
+<tr><td>1</td><td>Common LISP</td></tr>
+<tr><td>2</td><td><a href="https://www.root.cz/clanky/upravy-emacsu-s-emacs-lisp-zakladni-konstrukce-jazyka/">Emacs LISP</a></td></tr>
+<tr><td>3</td><td><a href="https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/">PicoLisp</a></td></tr>
+<tr><td>4</td><td><a href="https://www.root.cz/clanky/pouziti-lispu-v-nbsp-praxi-ndash-autocad-a-autolisp/">AutoLISP</a></td></tr>
+</table>
+
+<table>
+<tr><th>#</th><th>Implementace LISPovského jazyka</th></tr>
+<tr><td>1</td><td><a href="https://www.root.cz/vyhledavani/?qs=clojure">Clojure</a></td></tr>
+<tr><td>2</td><td><a href="https://www.root.cz/clanky/programovaci-jazyk-clojure-21-clojurescript-aneb-preklad-clojure-do-javascriptu/">ClojureScript</a></td></tr>
+<tr><td>3</td><td>Pixie [<a href="https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/">1</a>] [<a href="https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/">2</a>]</td></tr>
+<tr><td>4</td><td>Wisp [<a href="https://www.root.cz/clanky/propojeni-sveta-lispu-se-svetem-javascriptu-s-vyuzitim-transprekladace-wisp/">1</a>] [<a href="https://www.root.cz/clanky/propojeni-sveta-lispu-se-svetem-javascriptu-s-vyuzitim-transprekladace-wisp-2-cast/">2</a>]</td></tr>
+<tr><td>5</td><td>Hy [<a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">1</a>] [<a href="https://www.root.cz/clanky/moznosti-nabizene-jazykem-hy-modernim-dialektem-lispu-urcenym-pro-python-vm/">2</a>]</td></tr>
+<tr><td>6</td><td><a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">Clojure-py</a></td></tr>
+<tr><td>7</td><td>Script-fu [<a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp/">1</a>] [<a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp-2-cast/">2</a>] [<a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp-3-cast-vykresleni-hvezdne-oblohy/">3</a>] [<a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp-4-pouziti-vyberu-selection-pri-kresleni-a-editaci-obrazku/">4</a>]</td></tr>
+</table>
+
+
+
+<p><a name="k17"></a></p>
+<h2 id="k17">17. Programovací jazyky pro JVM aneb zdaleka nejde jen o Javu</h2>
+
+<p>Virtuální stroj Javy (JVM), specifikace JVM a dokonce ani jeho instrukční
+soubor vlastně nikde striktně nepředpokládají, že JVM bude spouštět pouze
+bajtkód získaný překladem javovských programů. Ve specifikaci JVM je dokonce na
+několika místech explicitně zmíněn předpoklad, že nad virtuálním strojem Javy
+budou provozovány i další programovací jazyky umožňující přímý či nepřímý
+překlad do bajtkódu. Kromě toho je samozřejmě možné přímo v&nbsp;Javě vytvořit
+interpret prakticky libovolného (interpretovaného) programovacího jazyka, takže
+vlastně nebude velkým překvapením, když zjistíme, že dnes těchto &bdquo;JVM
+jazyků&ldquo; již existuje relativně velké množství. V&nbsp;následující tabulce
+jsou vypsány ty nejznámější a pravděpodobně nejpoužívanější jazyky, a to pro
+úplnost včetně samotné Javy:</p>
+
+<table>
+<tr><th>Jazyk pro JVM</th><th>Stručný popis</th><th>Odkaz</th></tr>
+<tr><td>Java</td><td>primární jazyk pro JVM, bajtkód odpovídá právě Javě</td><td><a href="https://www.oracle.com/java/index.html">https://www.oracle.com/java/index.html</a></td></tr>
+<tr><td>Clojure</td><td>moderní dialekt programovacího jazyka Lisp</td><td><a href="https://clojure.org/">https://clojure.org/</a></td></tr>
+<tr><td>Groovy</td><td>dynamicky typovaný jazyk pro JVM</td><td><a href="http://groovy-lang.org/">http://groovy-lang.org/</a></td></tr>
+<tr><td>Rhino</td><td>jedna z&nbsp;implementací JavaScriptu</td><td><a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Rhino">https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Rhino</a></td></tr>
+<tr><td>Nashorn</td><td>alternativní implementace JavaScriptu</td><td><a href="https://blogs.oracle.com/nashorn/">https://blogs.oracle.com/nashorn/</a></td></tr>
+<tr><td>JRuby</td><td>portace jazyka Ruby na JVM</td><td><a href="http://jruby.org/">http://jruby.org/</a></td></tr>
+<tr><td>Jython</td><td>portace jazyka Python na JVM</td><td><a href="http://www.jython.org/">http://www.jython.org/</a></td></tr>
+<tr><td>Kotlin</td><td>moderní staticky typovaný jazyk</td><td><a href="http://kotlinlang.org/">http://kotlinlang.org/</a></td></tr>
+<tr><td>Scala</td><td>další moderní jazyk pro JVM</td><td><a href="https://www.scala-lang.org/">https://www.scala-lang.org/</a></td></tr>
+</table>
+
+<img src="https://i.iinfo.cz/images/214/kawa1-1.png" class="image-366707" alt="&#160;" width="399" height="257" />
+<p><i>Obrázek 7: Logo programovacího jazyka Jython.</i></p>
+
+
+
+<h3>Scala</h3>
+
+<p>Pravděpodobně nejznámějším příkladem programovacího jazyka provozovaného nad
+JVM je <i>Scala</i>, která nabízí prakticky bezproblémovou spolupráci mezi
+částmi kódu psanými ve Scale a zbytkem aplikace psaným v&nbsp;Javě
+(popř.&nbsp;jsou některé projekty psané pouze ve Scale, ovšem provozovány jsou
+například na ryze javovských serverech &ndash; Tomcat, Jetty atd.). Díky tomu,
+že zdrojové kódy psané ve Scale jsou přímo překládány do bajtkódu, získali
+tvůrci tohoto programovacího jazyka prakticky zadarmo veškeré vymoženosti,
+které virtuální stroj Javy (či přesněji řečeno celé JRE) poskytuje &ndash; od
+poměrně pečlivé kontroly bajtkódu při jeho načítání do virtuálního stroje přes
+použití správců paměti a JIT překladačů (<i>Just in Time Compiler</i>) až po
+možnost využití rozsáhlých standardních knihoven J2SE a samozřejmě taktéž mnoha
+dalších knihoven a frameworků, které jsou pro JVM dostupné. Ovšem Scala
+samozřejmě není jediným programovacím jazykem, který díky překladu do bajtkódu
+umožňuje využít prakticky veškerého potenciálu JVM/JRE.</p>
+
+<img src="https://i.iinfo.cz/images/214/kawa1-2.png" class="image-366708" alt="&#160;" width="192" height="72" />
+<p><i>Obrázek 8: Logo programovacího jazyka Scala.</i></p>
+
+
+
+<h3>Clojure</h3>
+
+<p>Z&nbsp;dalších překladačů programovacích jazyků, které pro virtuální stroj
+Javy vznikly, je podle mého názoru nejzajímavějším jazykem a současně i jazykem
+s&nbsp;velkým potenciálem pro budoucnost programovací jazyk s&nbsp;názvem
+<i>Clojure</i>, jehož autorem a dodnes nejaktivnějším vývojářem a propagátorem
+je Rich Hickey.  Samotný název tohoto jazyka vznikl vložením písmene
+&bdquo;j&ldquo; (<i>Java/JVM</i>) do slova <i>closure</i> (toto slovo se
+používá ve smyslu &bdquo;lexikální uzávěr&ldquo; &ndash; důležitá abstrakce
+používaná nejenom ve funkcionálních programovacích jazycích). Velká část
+předností a pro mnohé vývojáře taktéž záporů programovacího jazyka Clojure
+vychází z&nbsp;toho, že se jedná o programovací jazyk, jehož syntaxe a
+sémantika do značné míry vychází z&nbsp;LISPu a Scheme, tedy jazyků známých
+především tím, že se v&nbsp;programech v&nbsp;nich psaných používá nadměrné
+množství kulatých závorek. Podrobnější informace o Clojure byly uvedeny <a
+href="https://www.root.cz/vyhledavani/?qs=Clojure">v&nbsp;samostatném
+seriálu</a>, který již vyšel na serveru <a
+href="http://www.root.cz">www.root.cz</a>.</p>
+
+<img src="https://i.iinfo.cz/images/214/kawa1-3.png" class="image-366709" alt="&#160;" width="256" height="256" />
+<p><i>Obrázek 9: Logo programovacího jazyka Clojure.</i></p>
+
+
+
+<h3>Groovy</h3>
+
+<p>Dalším programovacím jazykem, a nutno říci že jazykem poměrně populárním, je
+Groovy. Jedná se o jazyk inspirovaný některými dalšími (většinou dynamicky
+typovanými) programovacími jazyky, jako je Python, Ruby, ale například i Perl.
+Groovy podporuje objektově orientované programování a oproti Javě umožňuje psát
+kratší kód, z&nbsp;něhož jsou odstraněny méně podstatné části, které Java
+jakožto silně staticky typovaný jazyk vyžaduje. Z&nbsp;tohoto důvodu se Groovy
+velmi často používá všude tam, kde je vyžadovaný skriptovací jazyk běžící nad
+JVM. Dobrým příkladem je například konzole Jenkinsu, která <a
+href="https://wiki.jenkins.io/display/JENKINS/Jenkins+Script+Console">ve
+výchozím nastavení používá právě Groovy</a>. Podpora pro tento jazyk <a
+href="http://groovy-lang.org/ides.html">je součástí mnoha populárních
+integrovaných vývojových prostředí</a>, a to včetně IntelliJ IDEA, Netbeans i
+Eclipse (přes pluginy &ndash; doplňkové moduly).</p>
+
+<a href="https://www.root.cz/obrazek/366710/"><img src="https://i.iinfo.cz/images/214/kawa1-4-prev.png" class="image-366710" alt="&#160;" width="370" height="183" /></a>
+<p><i>Obrázek 10: Logo programovacího jazyka Groovy.</i></p>
+
+
+
+<h3>JRuby, Jython, Rhino a Nashhorn</h3>
+
+<p>Zatímco <i>Scala</i>, <i>Clojure</i> i <i>Groovy</i> jsou novými jazyky,
+které původně vznikly přímo a pouze pro potřeby programátorů používajících
+virtuální stroj Javy (JVM), zmíníme se v&nbsp;této podkapitole alespoň ve
+stručnosti o jazycích &bdquo;klasických&ldquo;, které byly na JVM pouze
+naportovány. V&nbsp;první řadě se jedná o projekty pojmenované <a
+href="http://jruby.org/">JRuby</a> a <a
+href="http://www.jython.org/">Jython</a>, což jsou varianty jazyků Ruby a
+Python. Původní interpretry Ruby a Pythonu jsou naprogramovány v&nbsp;jazyku C
+(proto se ostatně tato varianta Pythonu nazývá CPython), JRuby a Jython jsou
+reimplementace pro JVM (navíc byl Python portován i na platformu .NET ve formě
+projektu IronPython a existuje i varianta Pythonu nazvaná PyPy naprogramovaná
+v&nbsp;samotném Pythonu, resp.&nbsp;přesněji řečeno v&nbsp;jeho zjednodušené
+variantě <a
+href="https://www.root.cz/clanky/rpython-prekvapive-vykonny-dialekt-pythonu-na-nemz-je-zalozen-pypy/">RPython</a>).
+Na platformu JVM byl portován i programovací jazyk JavaScript, a to dokonce
+několikrát. Implementaci JavaScriptu zajišťují projekty <a
+href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Rhino">Rhino</a>
+a Nashhorn.</p>
+
+<a href="https://www.root.cz/obrazek/366711/"><img src="https://i.iinfo.cz/images/214/kawa1-5-prev.png" class="image-366711" alt="&#160;" width="370" height="110" /></a>
+<p><i>Obrázek 11: Logo programovacího jazyka JRuby.</i></p>
+
+
+
+<h3>Kotlin</h3>
+
+<p>Posledním programovacím jazykem určeným pro běh nad virtuálním strojem Javy,
+o němž se dnes alespoň ve stručnosti zmíníme, je jazyk pojmenovaný
+<i>Kotlin</i>. Jedná se o moderní <a href="https://kotlinlang.org/">staticky
+typovaný programovací jazyk</a> vyvinutý ve společnosti JetBrains a jeho cíl je
+vlastně velmi podobný cíli, který si dal již zmíněný a poněkud starší jazyk
+Scala &ndash; efektivní a rychlá tvorba typově bezpečných aplikací určených pro
+běh nad JVM. Typovost jde ještě o krok dále, než je tomu v&nbsp;Javě, protože
+například rozlišuje mezi nulovatelnými a nenulovatelnými datovými typy. Na
+rozdíl od Scaly je však rychlost překladu zdrojových kódů naprogramovaných
+v&nbsp;Kotlinu rychlejší a blíží se rychlosti překladu kódů napsaných
+v&nbsp;samotné Javě. Kotlin podporuje různá paradigmata: objektově orientované,
+procedurální i funkcionální. Tomuto velmi zajímavému programovacímu jazyku se
+budeme věnovat v&nbsp;samostatném seriálu.</p>
+
+<img src="https://i.iinfo.cz/images/214/kawa1-6.png" class="image-366712" alt="&#160;" width="152" height="151" />
+<p><i>Obrázek 12: Logo programovacího jazyka Kotlin.</i></p>
+
+
+
+<h3>Další programovací jazyky portované na JVM</h3>
+
+<p>Na virtuální stroj Javy bylo portováno i mnoho dalších programovacích
+jazyků, ať již se jednalo o překladače či o interpretry. V&nbsp;následující
+tabulce jsou některé z&nbsp;těchto jazyků vypsány. V&nbsp;prvním sloupci je
+zobrazen název původního jazyka popř.&nbsp;rodiny jazyků, ve sloupci druhém pak
+jméno jeho konkrétní implementace pro JVM. Povšimněte si, že některé jazyky
+byly portovány několikrát (to se ostatně týkalo již výše zmíněného
+JavaScriptu):</p>
+
+<table>
+<tr><th>Jazyk</th><th>Implementace pro JVM</th></tr>
+<tr><td>Ada</td><td>JGNAT</td></tr>
+<tr><td>Arden Syntax</td><td>Arden2ByteCode</td></tr>
+<tr><td>COBOL</td><td>Micro Focus Visual COBOL</td></tr>
+<tr><td>ColdFusion Markup Language (CFML)</td><td>Adobe ColdFusion</td></tr>
+<tr><td>ColdFusion Markup Language (CFML)</td><td>Railo</td></tr>
+<tr><td>ColdFusion Markup Language (CFML)</td><td>Lucee</td></tr>
+<tr><td>ColdFusion Markup Language (CFML)</td><td>Open BlueDragon</td></tr>
+<tr><td>Common Lisp</td><td>Armed Bear Common Lisp</td></tr>
+<tr><td>Cypher</td><td>Neo4j</td></tr>
+<tr><td>Mercury</td><td>Mercury (Java grade)</td></tr>
+<tr><td>Pascal</td><td>MIDletPascal</td></tr>
+<tr><td>Pascal</td><td>Oxygene</td></tr>
+<tr><td>Perl 6</td><td>Rakudo Perl 6</td></tr>
+<tr><td>PHP</td><td>Quercus</td></tr>
+<tr><td>Prolog</td><td>JIProlog</td></tr>
+<tr><td>Prolog</td><td>TuProlog</td></tr>
+<tr><td>R</td><td>Renjin</td></tr>
+<tr><td>Rexx</td><td>NetRexx</td></tr>
+<tr><td>Ruby</td><td>JRuby</td></tr>
+<tr><td>Ruby</td><td>Mirah</td></tr>
+<tr><td>Scheme</td><td>Bigloo</td></tr>
+<tr><td>Scheme</td><td>Kawa</td></tr>
+<tr><td>Scheme</td><td>SISC</td></tr>
+<tr><td>Scheme</td><td>JScheme</td></tr>
+<tr><td>Tcl</td><td>Jacl</td></tr>
+<tr><td>Visual Basic</td><td>Jabaco</td></tr>
+</table>
+
+
+
+<p><a name="k18"></a></p>
+<h2 id="k18">18. Repositář s&nbsp;demonstračními příklady</h2>
+
+<p>Zdrojové kódy všech dnes použitých demonstračních příkladů byly uloženy do
+Git repositáře, který je dostupný na adrese <a
+href="https://github.com/tisnik/lisp-families.git">https://github.com/tisnik/lisp-families.git</a>
+(stále na GitHubu :-). V&nbsp;případě, že nebudete chtít klonovat celý
+repositář (ten je ovšem &ndash; alespoň prozatím &ndash; velmi malý, můžete
+namísto toho použít odkazy na jednotlivé příklady, které naleznete
+v&nbsp;následující tabulce:</p>
+
+<table>
+<tr><th> #</th><th>Příklad</th><th>Popis příkladu</th><th>Cesta</th></tr>
+<tr><td> 1</td><td>closure_1.scm</td><td>uzávěry, příklad 1</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/closure_1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/closure_1.scm</a></td></tr>
+<tr><td> 2</td><td>closure_2.scm</td><td>uzávěry, příklad 2</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/closure_2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/closure_2.scm</a></td></tr>
+<tr><td> 3</td><td>closure_3.scm</td><td>uzávěry, příklad 3</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/closure_3.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/closure_3.scm</a></td></tr>
+<tr><td> 4</td><td>closure_4.scm</td><td>uzávěry, příklad 4</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/closure_4.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/closure_4.scm</a></td></tr>
+<tr><td> 5</td><td>cons.scm</td><td>funkce <strong>cons</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/cons.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/cons.scm</a></td></tr>
+<tr><td> 6</td><td>dot_pairs.scm</td><td>konstrukce tečka dvojic</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/dot_pairs.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/dot_pairs.scm</a></td></tr>
+<tr><td> 7</td><td>factorial_1.scm</td><td>rekurzivní výpočet faktoriálu, první varianta</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/factorial_1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/factorial_1.scm</a></td></tr>
+<tr><td> 8</td><td>factorial_2.scm</td><td>rekurzivní výpočet faktoriálu, druhá varianta</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/factorial_2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/factorial_2.scm</a></td></tr>
+<tr><td> 9</td><td>factorial_3.scm</td><td>tail rekurze při výpočtu faktoriálu</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/factorial_3.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/factorial_3.scm</a></td></tr>
+<tr><td>10</td><td>functions.scm</td><td>deklarace a volání funkcí</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/functions.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/functions.scm</a></td></tr>
+<tr><td>11</td><td>integer_generator.scm</td><td>generátor sekvence celých kladných čísel</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/integer_generator.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/integer_generator.scm</a></td></tr>
+<tr><td>12</td><td>lexical_scope_1.scm</td><td>lexikální oblast platnosti proměnných, příklad 1</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_1.scm</a></td></tr>
+<tr><td>13</td><td>lexical_scope_2.scm</td><td>exikální oblast platnosti proměnných, příklad 2</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_2.scm</a></td></tr>
+<tr><td>14</td><td>lexical_scope_3.scm</td><td>lexikální oblast platnosti proměnných, příklad 3</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_3.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_3.scm</a></td></tr>
+<tr><td>15</td><td>lexical_scope_4.scm</td><td>lexikální oblast platnosti proměnných, příklad 4</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_4.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/lexical_scope_4.scm</a></td></tr>
+<tr><td>16</td><td>lists.scm</td><td>práce se seznamy</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/lists.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/lists.scm</a></td></tr>
+<tr><td>17</td><td>nested_loops_1.scm</td><td>vnořené smyčky <strong>do</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/nested_loops_1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/nested_loops_1.scm</a></td></tr>
+<tr><td>18</td><td>nested_loops_2.scm</td><td>vnořené smyčky <strong>do</strong></td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/nested_loops_2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/nested_loops_2.scm</a></td></tr>
+<tr><td>19</td><td>pi_1.scm</td><td>výpočet Pi Wallisovým součinem</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/pi_1.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/pi_1.scm</a></td></tr>
+<tr><td>20</td><td>pi_2.scm</td><td>výpočet Pi Wallisovým součinem řadou, použití zlomků</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/pi_2.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/pi_2.scm</a></td></tr>
+<tr><td>21</td><td>pi_3.scm</td><td>výpočet Pi Wallisovým součinem řadou, převod na reálná čísla</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/pi_3.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/pi_3.scm</a></td></tr>
+<tr><td>22</td><td>quantities.scm</td><td>použití jednotek při výpočtech</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/quantities.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/quantities.scm</a></td></tr>
+<tr><td>23</td><td>quaternions.scm</td><td>použití kvaternionů</td><td><a href="https://github.com/tisnik/lisp-families/blob/master/kawa/quaternions.scm">https://github.com/tisnik/lisp-families/blob/master/kawa/quaternions.scm</a></td></tr>
+</table>
+
+
+
+<p><a name="k19"></a></p>
+<h2 id="k19">19. Literatura</h2>
+
+<ol>
+
+<li>Peter Seibel<br />
+<i>&bdquo;Practical Common Lisp&ldquo;</i><br />
+2009
+</li>
+
+<li>Paul Graham<br />
+<i>&bdquo;ANSI Common Lisp&ldquo;</i><br />
+1995
+</li>
+
+<li>Gerald Gazdar<br />
+<i>&bdquo;Natural Language Processing in Lisp: An Introduction to Computational Linguistics&ldquo;</i><br />
+1989
+</li>
+
+<li>Peter Norvig<br />
+<i>&bdquo;Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp&ldquo;</i><br />
+1991
+</li>
+
+<li>Alex Mileler et.al.<br />
+<i>&bdquo;Clojure Applied: From Practice to Practitioner&ldquo;</i><br />
+2015
+</li>
+
+<li>
+<i>&bdquo;Living Clojure: An Introduction and Training Plan for Developers&ldquo;</i><br />
+2015
+</li>
+
+<li>Dmitri Sotnikov<br />
+<i>&bdquo;Web Development with Clojure: Build Bulletproof Web Apps with Less Code&ldquo;</i><br />
+2016
+</li>
+
+<li>McCarthy<br />
+<i>&bdquo;Recursive functions of symbolic expressions and their computation by machine, part I&ldquo;</i><br />
+1960
+</li>
+
+<li>R. Kent Dybvig<br />
+<i>&bdquo;The Scheme Programming Language&ldquo;</i><br />
+2009
+</li>
+
+<li>Max Hailperin<br />
+<i>&bdquo;Concrete Abstractions&ldquo;</i><br />
+1998
+</li>
+
+<li>Guy L. Steele<br />
+<i>&bdquo;History of Scheme&ldquo;</i><br />
+2006, Sun Microsystems Laboratories
+</li>
+
+<li>Kolář J., Muller K.:<br />
+<i>&bdquo;Speciální programovací jazyky&ldquo;</i><br />
+Praha 1981
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 9, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., October 1987
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 10, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., September 1988
+</li>
+
+<li>McCarthy, John; Abrahams, Paul W.; Edwards, Daniel J.; Hart, Timothy P.; Levin, Michael I.<br />
+<i>&bdquo;LISP 1.5 Programmer's Manual&ldquo;</i><br />
+MIT Press. ISBN 0 262 130 1 1 4
+</li>
+
+<li>Carl Hewitt; Peter Bishop and Richard Steiger<br />
+<i>&bdquo;A Universal Modular Actor Formalism for Artificial Intelligence&ldquo;</i><br />
+1973
+</li>
+
+<li>Feiman, J.<br />
+<i>&bdquo;The Gartner Programming Language Survey (October 2001)&ldquo;</i><br />
+Gartner Advisory
+</li>
+
+<li>Harold Abelson, Gerald Jay Sussman, Julie Sussman:<br />
+<i>Structure and Interpretation of Computer Programs</i><br />
+MIT Press. 1985, 1996 (a možná vyšel i další přetisk)
+</li>
+
+<li>Paul Graham<br />
+<i>On Lisp</i><br />
+Prentice Hall, 1993<br />
+Dostupné online na stránce <a href="http://www.paulgraham.com/onlisptext.html">http://www.paulgraham.com/onlisptext.html</a>
+</li>
+
+<li>David S. Touretzky<br />
+<i>Common LISP: A Gentle Introduction to Symbolic Computation (Dover Books on Engineering)</i><br />
+</li>
+
+<li>Peter Norvig<br />
+<i>Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp</i>
+</li>
+
+<li>Patrick Winston, Berthold Horn<br />
+<i>Lisp (3rd Edition)</i><br />
+ISBN-13: 978-0201083194, ISBN-10: 0201083191
+</li>
+
+<li>Matthias Felleisen, David Van Horn, Dr. Conrad Barski<br>
+<i>Realm of Racket: Learn to Program, One Game at a Time!</i><br />
+ISBN-13: 978-1593274917, ISBN-10: 1593274912 
+</li>
+
+</ol>
+
+
+
+<p><a name="k20"></a></p>
+<h2 id="k20">20. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>Kawa: Compiling Scheme to Java<br />
+<a href="https://www.mit.edu/afs.new/sipb/project/kawa/doc/kawa-tour.html">https://www.mit.edu/afs.new/sipb/project/kawa/doc/kawa-tour.html</a>
+</li>
+
+<li>Kawa in Languages shootout<br />
+<a href="http://per.bothner.com/blog/2010/Kawa-in-shootout/">http://per.bothner.com/blog/2010/Kawa-in-shootout/</a>
+</li>
+
+<li>Kawa 2.0 Supports Scheme R7RS<br />
+<a href="https://developers.slashdot.org/story/14/12/13/2259225/kawa-20-supports-scheme-r7rs/">https://developers.slashdot.org/story/14/12/13/2259225/kawa-20-supports-scheme-r7rs/</a>
+</li>
+
+<li>Kawa — fast scripting on the Java platform<br />
+<a href="https://lwn.net/Articles/623349/">https://lwn.net/Articles/623349/</a>
+</li>
+
+<li>SLIME (Wikipedia)<br />
+<a href="http://en.wikipedia.org/wiki/SLIME">http://en.wikipedia.org/wiki/SLIME</a>
+</li>
+
+<li>slime.vim<br />
+<a href="http://s3.amazonaws.com/mps/slime.vim">http://s3.amazonaws.com/mps/slime.vim</a>
+</li>
+
+<li>What are the best scheme implementations?<br />
+<a href="https://www.slant.co/topics/5282/~scheme-implementations">https://www.slant.co/topics/5282/~scheme-implementations</a>
+</li>
+
+<li>Bigloo homepage<br />
+<a href="http://www-sop.inria.fr/mimosa/fp/Bigloo/">http://www-sop.inria.fr/mimosa/fp/Bigloo/</a>
+</li>
+
+<li>FTP s tarbally Bigloo<br />
+<a href="ftp://ftp-sop.inria.fr/indes/fp/Bigloo">ftp://ftp-sop.inria.fr/indes/fp/Bigloo</a>
+</li>
+
+<li>GOTO 2018 • Functional Programming in 40 Minutes • Russ Olsen<br />
+<a href="https://www.youtube.com/watch?v=0if71HOyVjY">https://www.youtube.com/watch?v=0if71HOyVjY</a>
+</li>
+
+<li>TinyScheme (stránka na Sourceforge)<br />
+<a href="http://tinyscheme.sourceforge.net/home.html">http://tinyscheme.sourceforge.net/home.html</a>
+</li>
+
+<li>Embedding Tiny Scheme in a Game<br />
+<a href="http://www.silicondelight.com/embedding-tiny-scheme-in-a-game/">http://www.silicondelight.com/embedding-tiny-scheme-in-a-game/</a>
+</li>
+
+<li>Embedding Scheme for a game mission scripting DSL<br />
+<a href="http://carloscarrasco.com/embedding-scheme-for-a-game-mission-scripting-dsl.html">http://carloscarrasco.com/embedding-scheme-for-a-game-mission-scripting-dsl.html</a>
+</li>
+
+<li>Všechny verze TinyScheme na SourceForge<br />
+<a href="https://sourceforge.net/projects/tinyscheme/files/tinyscheme/">https://sourceforge.net/projects/tinyscheme/files/tinyscheme/</a>
+</li>
+
+<li>Fork TinyScheme na GitHubu<br />
+<a href="https://github.com/yawnt/tinyscheme">https://github.com/yawnt/tinyscheme</a>
+</li>
+
+<li>Ackermannova funkce<br />
+<a href="https://cs.wikipedia.org/wiki/Ackermannova_funkce">https://cs.wikipedia.org/wiki/Ackermannova_funkce</a>
+</li>
+
+<li>Ackermann function na Rosetta Code<br />
+<a href="https://rosettacode.org/wiki/Ackermann_function#Scheme">https://rosettacode.org/wiki/Ackermann_function#Scheme</a>
+</li>
+
+<li>Success Stories (lisp.org)<br />
+<a href="https://lisp-lang.org/success/">https://lisp-lang.org/success/</a>
+</li>
+
+<li>Allegro Common Lisp Success Stories<br />
+<a href="https://franz.com/success/">https://franz.com/success/</a>
+</li>
+
+<li>Clojure Success Stories<br />
+<a href="https://clojure.org/community/success_stories">https://clojure.org/community/success_stories</a>
+</li>
+
+<li>Scheme Quick Reference<br />
+<a href="https://www.st.cs.uni-saarland.de/edu/config-ss04/scheme-quickref.pdf">https://www.st.cs.uni-saarland.de/edu/config-ss04/scheme-quickref.pdf</a>
+</li>
+
+<li>Slajdy o Scheme (od slajdu číslo 15)<br />
+<a href="https://docs.google.com/presentation/d/1abmDnKjrq1tcjGvvRNAKhOiSTSE2lyagtcEPal07Gbo/edit">https://docs.google.com/presentation/d/1abmDnKjrq1tcjGvvRNAKhOiSTSE2lyagtcEPal07Gbo/edit</a>
+</li>
+
+<li>Scheme Cheat Sheet<br />
+<a href="https://github.com/smythp/scheme-cheat-sheet">https://github.com/smythp/scheme-cheat-sheet</a>
+</li>
+
+<li>Embedding Lua, embedding Guile <br />
+<a href="http://puntoblogspot.blogspot.com/2013/04/embedding-lua-embedding-guile.html">http://puntoblogspot.blogspot.com/2013/04/embedding-lua-embedding-guile.html</a>
+</li>
+
+<li>Lambda Papers<br />
+<a href="https://en.wikisource.org/wiki/Lambda_Papers">https://en.wikisource.org/wiki/Lambda_Papers</a>
+</li>
+
+<li>Revised<sup>7</sup>Report on the Algorithmic Language Scheme<br />
+<a href="https://small.r7rs.org/attachment/r7rs.pdf">https://small.r7rs.org/attachment/r7rs.pdf</a>
+</li>
+
+<li>Video Lectures (MIT, SICP 2005)<br />
+<a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/">https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/</a>
+</li>
+
+<li>Why is Scheme my first language in university?<br />
+<a href="https://softwareengineering.stackexchange.com/questions/115252/why-is-scheme-my-first-language-in-university">https://softwareengineering.stackexchange.com/questions/115252/why-is-scheme-my-first-language-in-university</a>
+</li>
+
+<li>The Perils of JavaSchools<br />
+<a href="https://www.joelonsoftware.com/2005/12/29/the-perils-of-javaschools-2/">https://www.joelonsoftware.com/2005/12/29/the-perils-of-javaschools-2/</a>
+</li>
+
+<li>How to Design Programs, Second Edition<br />
+<a href="https://htdp.org/2019-02-24/index.html">https://htdp.org/2019-02-24/index.html</a>
+</li>
+
+<li>LilyPond<br />
+<a href="http://lilypond.org/">http://lilypond.org/</a>
+</li>
+
+<li>LilyPond — Extending (přes Scheme)<br />
+<a href="http://lilypond.org/doc/v2.18/Documentation/extending/scheme-tutorial">http://lilypond.org/doc/v2.18/Documentation/extending/scheme-tutorial</a>
+</li>
+
+<li>Scheme in LilyPond<br />
+<a href="http://lilypond.org/doc/v2.18/Documentation/extending/scheme-in-lilypond">http://lilypond.org/doc/v2.18/Documentation/extending/scheme-in-lilypond</a>
+</li>
+
+<li>GnuCash<br />
+<a href="http://www.gnucash.org/">http://www.gnucash.org/</a>
+</li>
+
+<li>Custom Reports (in GNU Cash)<br />
+<a href="https://wiki.gnucash.org/wiki/Custom_Reports">https://wiki.gnucash.org/wiki/Custom_Reports</a>
+</li>
+
+<li>Program by Design<br />
+<a href="https://programbydesign.org/">https://programbydesign.org/</a>
+</li>
+
+<li>SchemePy<br />
+<a href="https://pypi.org/project/SchemePy/">https://pypi.org/project/SchemePy/</a>
+</li>
+
+<li>LISP FQA: Section - [1-5] What is the "minimal" set of primitives needed for a Lisp interpreter?<br />
+<a href="http://www.faqs.org/faqs/lisp-faq/part1/section-6.html">http://www.faqs.org/faqs/lisp-faq/part1/section-6.html</a>
+</li>
+
+<li>femtolisp<br />
+<a href="https://github.com/JeffBezanson/femtolisp">https://github.com/JeffBezanson/femtolisp</a>
+</li>
+
+<li>(How to Write a (Lisp) Interpreter (in Python))<br />
+<a href="http://norvig.com/lispy.html">http://norvig.com/lispy.html</a>
+</li>
+
+<li>Repositář s&nbsp;Guile Emacsem<br />
+<a href="http://git.hcoop.net/?p=bpt/guile.git">http://git.hcoop.net/?p=bpt/guile.git</a>
+</li>
+
+<li>Interacting with Guile Compound Data Types in C<br />
+<a href="http://www.lonelycactus.com/guilebook/x1555.html">http://www.lonelycactus.com/guilebook/x1555.html</a>
+</li>
+
+<li>Calling Guile functions from C<br />
+<a href="http://www.lonelycactus.com/guilebook/c1204.html#SECCALLGUILEFUNC">http://www.lonelycactus.com/guilebook/c1204.html#SECCALLGUILEFUNC</a>
+</li>
+
+<li>Arrays, and other compound data types<br />
+<a href="http://www.lonelycactus.com/guilebook/charrays.html">http://www.lonelycactus.com/guilebook/charrays.html</a>
+</li>
+
+<li>Interacting with Guile Compound Data Types in C<br />
+<a href="http://www.lonelycactus.com/guilebook/x1555.html">http://www.lonelycactus.com/guilebook/x1555.html</a>
+</li>
+
+<li>Guile Reference Manual<br />
+<a href="https://www.gnu.org/software/guile/manual/html_node/index.html">https://www.gnu.org/software/guile/manual/html_node/index.html</a>
+</li>
+
+<li>Scheme: Summary of Common Syntax<br />
+<a href="https://www.gnu.org/software/guile/manual/html_node/Syntax-Summary.html#Syntax-Summary">https://www.gnu.org/software/guile/manual/html_node/Syntax-Summary.html#Syntax-Summary</a>
+</li>
+
+<li>Scripting with Guile: Extension language enhances C and Scheme<br />
+<a href="https://www.ibm.com/developerworks/library/l-guile/index.html">https://www.ibm.com/developerworks/library/l-guile/index.html</a>
+</li>
+
+<li>Having fun with Guile: a tutorial<br />
+<a href="http://dustycloud.org/misc/guile-tutorial.html">http://dustycloud.org/misc/guile-tutorial.html</a>
+</li>
+
+<li>Guile: Loading Readline Support<br />
+<a href="https://www.gnu.org/software/guile/manual/html_node/Loading-Readline-Support.html#Loading-Readline-Support">https://www.gnu.org/software/guile/manual/html_node/Loading-Readline-Support.html#Loading-Readline-Support</a>
+</li>
+
+<li>lispy<br />
+<a href="https://pypi.org/project/lispy/">https://pypi.org/project/lispy/</a>
+</li>
+
+<li>Lython<br />
+<a href="https://pypi.org/project/Lython/">https://pypi.org/project/Lython/</a>
+</li>
+
+<li>Lizpop<br />
+<a href="https://pypi.org/project/lizpop/">https://pypi.org/project/lizpop/</a>
+</li>
+
+<li>Budoucnost programovacích jazyků<br />
+<a href="http://www.knesl.com/budoucnost-programovacich-jazyku">http://www.knesl.com/budoucnost-programovacich-jazyku</a>
+</li>
+
+<li>LISP Prolog and Evolution<br />
+<a href="http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html">http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html</a>
+</li>
+
+<li>List of Lisp-family programming languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages">https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages</a>
+</li>
+
+<li>clojure_py na indexu PyPi<br />
+<a href="https://pypi.python.org/pypi/clojure_py">https://pypi.python.org/pypi/clojure_py</a>
+</li>
+
+<li>PyClojure<br />
+<a href="https://github.com/eigenhombre/PyClojure">https://github.com/eigenhombre/PyClojure</a>
+</li>
+
+<li>Hy na GitHubu<br />
+<a href="https://github.com/hylang/hy">https://github.com/hylang/hy</a>
+</li>
+
+<li>Hy: The survival guide<br />
+<a href="https://notes.pault.ag/hy-survival-guide/">https://notes.pault.ag/hy-survival-guide/</a>
+</li>
+
+<li>Hy běžící na monitoru terminálu společnosti Symbolics<br />
+<a href="http://try-hy.appspot.com/">http://try-hy.appspot.com/</a>
+</li>
+
+<li>Welcome to Hy’s documentation!<br />
+<a href="http://docs.hylang.org/en/stable/">http://docs.hylang.org/en/stable/</a>
+</li>
+
+<li>Hy na PyPi<br />
+<a href="https://pypi.org/project/hy/#description">https://pypi.org/project/hy/#description</a>
+</li>
+
+<li>Getting Hy on Python<br />
+<a href="https://lwn.net/Articles/596626/">https://lwn.net/Articles/596626/</a>
+</li>
+
+<li>Programming Can Be Fun with Hy<br />
+<a href="https://opensourceforu.com/2014/02/programming-can-fun-hy/">https://opensourceforu.com/2014/02/programming-can-fun-hy/</a>
+</li>
+
+<li>Přednáška o projektu Hy (pětiminutový lighttalk)<br />
+<a href="http://blog.pault.ag/day/2013/04/02">http://blog.pault.ag/day/2013/04/02</a>
+</li>
+
+<li>Hy (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Hy">https://en.wikipedia.org/wiki/Hy</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Point<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Narrowing<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Narrowing.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Narrowing.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Functions that Create Markers<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Markers.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Markers.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Motion<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Motion.html#Motion">https://www.gnu.org/software/emacs/manual/html_node/elisp/Motion.html#Motion</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Basic Char Syntax<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Basic-Char-Syntax.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Basic-Char-Syntax.html</a>
+</li>
+
+<li>Elisp: Sequence: List, Array<br />
+<a href="http://ergoemacs.org/emacs/elisp_list_vs_vector.html">http://ergoemacs.org/emacs/elisp_list_vs_vector.html</a>
+</li>
+
+<li>Elisp: Property List<br />
+<a href="http://ergoemacs.org/emacs/elisp_property_list.html">http://ergoemacs.org/emacs/elisp_property_list.html</a>
+</li>
+
+<li>Elisp: Hash Table<br />
+<a href="http://ergoemacs.org/emacs/elisp_hash_table.html">http://ergoemacs.org/emacs/elisp_hash_table.html</a>
+</li>
+
+<li>Elisp: Association List<br />
+<a href="http://ergoemacs.org/emacs/elisp_association_list.html">http://ergoemacs.org/emacs/elisp_association_list.html</a>
+</li>
+
+<li>The mapcar Function (An Introduction to Programming in Emacs Lisp)<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html">https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html</a>
+</li>
+
+<li>Anaphoric macro<br />
+<a href="https://en.wikipedia.org/wiki/Anaphoric_macro">https://en.wikipedia.org/wiki/Anaphoric_macro</a>
+</li>
+
+<li>Some Common Lisp Loop Macro Examples<br />
+<a href="https://www.youtube.com/watch?v=3yl8o6r_omw">https://www.youtube.com/watch?v=3yl8o6r_omw</a>
+</li>
+
+<li>A Guided Tour of Emacs<br />
+<a href="https://www.gnu.org/software/emacs/tour/">https://www.gnu.org/software/emacs/tour/</a>
+</li>
+
+<li>The Roots of Lisp<br />
+<a href="http://www.paulgraham.com/rootsoflisp.html">http://www.paulgraham.com/rootsoflisp.html</a>
+</li>
+
+<li>Evil (Emacs Wiki)<br />
+<a href="https://www.emacswiki.org/emacs/Evil">https://www.emacswiki.org/emacs/Evil</a>
+</li>
+
+<li>Evil (na GitHubu)<br />
+<a href="https://github.com/emacs-evil/evil">https://github.com/emacs-evil/evil</a>
+</li>
+
+<li>Evil (na stránkách repositáře MELPA)<br />
+<a href="https://melpa.org/#/evil">https://melpa.org/#/evil</a>
+</li>
+
+<li>Evil Mode: How I Switched From VIM to Emacs<br />
+<a href="https://blog.jakuba.net/2014/06/23/evil-mode-how-to-switch-from-vim-to-emacs.html">https://blog.jakuba.net/2014/06/23/evil-mode-how-to-switch-from-vim-to-emacs.html</a>
+</li>
+
+<li>GNU Emacs (home page)<br />
+<a href="https://www.gnu.org/software/emacs/">https://www.gnu.org/software/emacs/</a>
+</li>
+
+<li>GNU Emacs (texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?GnuEmacs">http://texteditors.org/cgi-bin/wiki.pl?GnuEmacs</a>
+</li>
+
+<li>An Introduction To Using GDB Under Emacs<br />
+<a href="http://tedlab.mit.edu/~dr/gdbintro.html">http://tedlab.mit.edu/~dr/gdbintro.html</a>
+</li>
+
+<li>An Introduction to Programming in Emacs Lisp<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html">https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html</a>
+</li>
+
+<li>27.6 Running Debuggers Under Emacs<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Debuggers.html">https://www.gnu.org/software/emacs/manual/html_node/emacs/Debuggers.html</a>
+</li>
+
+<li>GdbMode<br />
+<a href="http://www.emacswiki.org/emacs/GdbMode">http://www.emacswiki.org/emacs/GdbMode</a>
+</li>
+
+<li>Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Emacs">https://en.wikipedia.org/wiki/Emacs</a>
+</li>
+
+<li>Emacs timeline<br />
+<a href="http://www.jwz.org/doc/emacs-timeline.html">http://www.jwz.org/doc/emacs-timeline.html</a>
+</li>
+
+<li>Emacs Text Editors Family<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EmacsFamily">http://texteditors.org/cgi-bin/wiki.pl?EmacsFamily</a>
+</li>
+
+<li>Vrapper aneb spojení možností Vimu a Eclipse<br />
+<a href="https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse/">https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse/</a>
+</li>
+
+<li>Vrapper aneb spojení možností Vimu a Eclipse (část 2: vyhledávání a nahrazování textu)<br />
+<a href="https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse-cast-2-vyhledavani-a-nahrazovani-textu/">https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse-cast-2-vyhledavani-a-nahrazovani-textu/</a>
+</li>
+
+<li>Emacs/Evil-mode - A basic reference to using evil mode in Emacs<br />
+<a href="http://www.aakarshnair.com/posts/emacs-evil-mode-cheatsheet">http://www.aakarshnair.com/posts/emacs-evil-mode-cheatsheet</a>
+</li>
+
+<li>From Vim to Emacs+Evil chaotic migration guide<br />
+<a href="https://juanjoalvarez.net/es/detail/2014/sep/19/vim-emacsevil-chaotic-migration-guide/">https://juanjoalvarez.net/es/detail/2014/sep/19/vim-emacsevil-chaotic-migration-guide/</a>
+</li>
+
+<li>Introduction to evil-mode {video)<br />
+<a href="https://www.youtube.com/watch?v=PeVQwYUxYEg">https://www.youtube.com/watch?v=PeVQwYUxYEg</a>
+</li>
+
+<li>EINE (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/EINE">http://www.emacswiki.org/emacs/EINE</a>
+</li>
+
+<li>EINE (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EINE">http://texteditors.org/cgi-bin/wiki.pl?EINE</a>
+</li>
+
+<li>ZWEI (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/ZWEI">http://www.emacswiki.org/emacs/ZWEI</a>
+</li>
+
+<li>ZWEI (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?ZWEI">http://texteditors.org/cgi-bin/wiki.pl?ZWEI</a>
+</li>
+
+<li>Zmacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Zmacs">https://en.wikipedia.org/wiki/Zmacs</a>
+</li>
+
+<li>Zmacs (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?Zmacs">http://texteditors.org/cgi-bin/wiki.pl?Zmacs</a>
+</li>
+
+<li>TecoEmacs (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/TecoEmacs">http://www.emacswiki.org/emacs/TecoEmacs</a>
+</li>
+
+<li>Micro Emacs<br />
+<a href="http://www.emacswiki.org/emacs/MicroEmacs">http://www.emacswiki.org/emacs/MicroEmacs</a>
+</li>
+
+<li>Micro Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MicroEMACS">https://en.wikipedia.org/wiki/MicroEMACS</a>
+</li>
+
+<li>EmacsHistory<br />
+<a href="http://www.emacswiki.org/emacs/EmacsHistory">http://www.emacswiki.org/emacs/EmacsHistory</a>
+</li>
+
+<li>Seznam editorů s ovládáním podobným Emacsu či kompatibilních s příkazy Emacsu<br />
+<a href="http://www.finseth.com/emacs.html">http://www.finseth.com/emacs.html</a>
+</li>
+
+<li>evil-numbers<br />
+<a href="https://github.com/cofi/evil-numbers">https://github.com/cofi/evil-numbers</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v&nbsp;Linuxu (1.část)<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v&nbsp;Linuxu (2.část)<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-2-cast/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-2-cast/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (3): Nemiver<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-3-nemiver/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-3-nemiver/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (4): KDbg<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-4-kdbg/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-4-kdbg/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (5): ladění aplikací v editorech Emacs a Vim<br />
+<a href="https://mojefedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-5-ladeni-aplikaci-v-editorech-emacs-a-vim/">https://mojefedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-5-ladeni-aplikaci-v-editorech-emacs-a-vim/</a>
+</li>
+
+<li>Org mode<br />
+<a href="https://orgmode.org/">https://orgmode.org/</a>
+</li>
+
+<li>The Org Manual<br />
+<a href="https://orgmode.org/manual/index.html">https://orgmode.org/manual/index.html</a>
+</li>
+
+<li>Kakoune (modální textový editor)<br />
+<a href="http://kakoune.org/">http://kakoune.org/</a>
+</li>
+
+<li>Vim-style keybinding in Emacs/Evil-mode<br />
+<a href="https://gist.github.com/troyp/6b4c9e1c8670200c04c16036805773d8">https://gist.github.com/troyp/6b4c9e1c8670200c04c16036805773d8</a>
+</li>
+
+<li>Emacs - jak začít<br />
+<a href="http://www.abclinuxu.cz/clanky/navody/emacs-jak-zacit">http://www.abclinuxu.cz/clanky/navody/emacs-jak-zacit</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Evil-surround<br />
+<a href="https://github.com/emacs-evil/evil-surround">https://github.com/emacs-evil/evil-surround</a>
+</li>
+
+<li>Spacemacs<br />
+<a href="http://spacemacs.org/">http://spacemacs.org/</a>
+</li>
+
+<li>Lisp: Common Lisp, Racket, Clojure, Emacs Lisp<br />
+<a href="http://hyperpolyglot.org/lisp">http://hyperpolyglot.org/lisp</a>
+</li>
+
+<li>Common Lisp, Scheme, Clojure, And Elisp Compared<br />
+<a href="http://irreal.org/blog/?p=725">http://irreal.org/blog/?p=725</a>
+</li>
+
+<li>Does Elisp Suck?<br />
+<a href="http://irreal.org/blog/?p=675">http://irreal.org/blog/?p=675</a>
+</li>
+
+<li>Emacs pro mírně pokročilé (9): Elisp<br />
+<a href="https://www.root.cz/clanky/emacs-elisp/">https://www.root.cz/clanky/emacs-elisp/</a>
+</li>
+
+<li>If I want to learn lisp, are emacs and elisp a good choice?<br />
+<a href="https://www.reddit.com/r/emacs/comments/2m141y/if_i_want_to_learn_lisp_are_emacs_and_elisp_a/">https://www.reddit.com/r/emacs/comments/2m141y/if_i_want_to_learn_lisp_are_emacs_and_elisp_a/</a>
+</li>
+
+<li>Clojure(Script) Interactive Development Environment that Rocks!<br />
+<a href="https://github.com/clojure-emacs/cider">https://github.com/clojure-emacs/cider</a>
+</li>
+
+<li>An Introduction to Emacs Lisp<br />
+<a href="https://harryrschwartz.com/2014/04/08/an-introduction-to-emacs-lisp.html">https://harryrschwartz.com/2014/04/08/an-introduction-to-emacs-lisp.html</a>
+</li>
+
+<li>Emergency Elisp<br />
+<a href="http://steve-yegge.blogspot.com/2008/01/emergency-elisp.html">http://steve-yegge.blogspot.com/2008/01/emergency-elisp.html</a>
+</li>
+
+<li>Lambda calculus<br />
+<a href="https://en.wikipedia.org/wiki/Lambda_calculus">https://en.wikipedia.org/wiki/Lambda_calculus</a>
+</li>
+
+<li>John McCarthy's original LISP paper from 1959<br />
+<a href="https://www.reddit.com/r/programming/comments/17lpz4/john_mccarthys_original_lisp_paper_from_1959/">https://www.reddit.com/r/programming/comments/17lpz4/john_mccarthys_original_lisp_paper_from_1959/</a>
+</li>
+
+<li>Micro Manual LISP<br />
+<a href="https://www.scribd.com/document/54050141/Micro-Manual-LISP">https://www.scribd.com/document/54050141/Micro-Manual-LISP</a>
+</li>
+
+<li>How Lisp Became God's Own Programming Language<br />
+<a href="https://twobithistory.org/2018/10/14/lisp.html">https://twobithistory.org/2018/10/14/lisp.html</a>
+</li>
+
+<li>History of Lisp<br />
+<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">http://jmc.stanford.edu/articles/lisp/lisp.pdf</a>
+</li>
+
+<li>The Roots of Lisp<br />
+<a href="http://languagelog.ldc.upenn.edu/myl/llog/jmc.pdf">http://languagelog.ldc.upenn.edu/myl/llog/jmc.pdf</a>
+</li>
+
+<li>Racket<br />
+<a href="https://racket-lang.org/">https://racket-lang.org/</a>
+</li>
+
+<li>The Racket Manifesto<br />
+<a href="http://felleisen.org/matthias/manifesto/">http://felleisen.org/matthias/manifesto/</a>
+</li>
+
+<li>MIT replaces Scheme with Python<br />
+<a href="https://www.johndcook.com/blog/2009/03/26/mit-replaces-scheme-with-python/">https://www.johndcook.com/blog/2009/03/26/mit-replaces-scheme-with-python/</a>
+</li>
+
+<li>Adventures in Advanced Symbolic Programming<br />
+<a href="http://groups.csail.mit.edu/mac/users/gjs/6.945/">http://groups.csail.mit.edu/mac/users/gjs/6.945/</a>
+</li>
+
+<li>Why MIT Switched from Scheme to Python (2009)<br />
+<a href="https://news.ycombinator.com/item?id=14167453">https://news.ycombinator.com/item?id=14167453</a>
+</li>
+
+<li>Starodávná stránka XLispu<br />
+<a href="http://www.xlisp.org/">http://www.xlisp.org/</a>
+</li>
+
+<li>AutoLISP<br />
+<a href="https://en.wikipedia.org/wiki/AutoLISP">https://en.wikipedia.org/wiki/AutoLISP</a>
+</li>
+
+<li>Seriál PicoLisp: minimalistický a výkonný interpret Lispu<br />
+<a href="https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/">https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/</a>
+</li>
+
+<li>Common Lisp<br />
+<a href="https://common-lisp.net/">https://common-lisp.net/</a>
+</li>
+
+<li>Getting Going with Common Lisp<br />
+<a href="https://cliki.net/Getting%20Started">https://cliki.net/Getting%20Started</a>
+</li>
+
+<li>Online Tutorial (Common Lisp)<br />
+<a href="https://cliki.net/online%20tutorial">https://cliki.net/online%20tutorial</a>
+</li>
+
+<li>Guile Emacs<br />
+<a href="https://www.emacswiki.org/emacs/GuileEmacs">https://www.emacswiki.org/emacs/GuileEmacs</a>
+</li>
+
+<li>Guile Emacs History<br />
+<a href="https://www.emacswiki.org/emacs/GuileEmacsHistory">https://www.emacswiki.org/emacs/GuileEmacsHistory</a>
+</li>
+
+<li>Guile is a programming language<br />
+<a href="https://www.gnu.org/software/guile/">https://www.gnu.org/software/guile/</a>
+</li>
+
+<li>MIT Scheme<br />
+<a href="http://groups.csail.mit.edu/mac/projects/scheme/">http://groups.csail.mit.edu/mac/projects/scheme/</a>
+</li>
+
+<li>SIOD: Scheme in One Defun<br />
+<a href="http://people.delphiforums.com/gjc//siod.html">http://people.delphiforums.com/gjc//siod.html</a>
+</li>
+
+<li>CommonLispForEmacs<br />
+<a href="https://www.emacswiki.org/emacs/CommonLispForEmacs">https://www.emacswiki.org/emacs/CommonLispForEmacs</a>
+</li>
+
+<li>Elisp: print, princ, prin1, format, message<br />
+<a href="http://ergoemacs.org/emacs/elisp_printing.html">http://ergoemacs.org/emacs/elisp_printing.html</a>
+</li>
+
+<li>Special Forms in Lisp<br />
+<a href="http://www.nhplace.com/kent/Papers/Special-Forms.html">http://www.nhplace.com/kent/Papers/Special-Forms.html</a>
+</li>
+
+<li>Basic Building Blocks in LISP<br />
+<a href="https://www.tutorialspoint.com/lisp/lisp_basic_syntax.htm">https://www.tutorialspoint.com/lisp/lisp_basic_syntax.htm</a>
+</li>
+
+<li>Introduction to LISP - University of Pittsburgh<br />
+<a href="https://people.cs.pitt.edu/~milos/courses/cs2740/Lectures/LispTutorial.pdf">https://people.cs.pitt.edu/~milos/courses/cs2740/Lectures/LispTutorial.pdf</a>
+</li>
+
+<li>Why don't people use LISP<br />
+<a href="https://forums.freebsd.org/threads/why-dont-people-use-lisp.24572/">https://forums.freebsd.org/threads/why-dont-people-use-lisp.24572/</a>
+</li>
+
+<li>Structured program theorem<br />
+<a href="https://en.wikipedia.org/wiki/Structured_program_theorem">https://en.wikipedia.org/wiki/Structured_program_theorem</a>
+</li>
+
+<li>Clojure: API Documentation<br />
+<a href="https://clojure.org/api/api">https://clojure.org/api/api</a>
+</li>
+
+<li>Tutorial for the Common Lisp Loop Macro<br />
+<a href="http://www.ai.sri.com/pkarp/loop.html">http://www.ai.sri.com/pkarp/loop.html</a>
+</li>
+
+<li>Common Lisp's Loop Macro Examples for Beginners<br />
+<a href="http://www.unixuser.org/~euske/doc/cl/loop.html">http://www.unixuser.org/~euske/doc/cl/loop.html</a>
+</li>
+
+<li>A modern list api for Emacs. No 'cl required.<br />
+<a href="https://github.com/magnars/dash.el">https://github.com/magnars/dash.el</a>
+</li>
+
+<li>The LOOP Facility<br />
+<a href="http://www.lispworks.com/documentation/HyperSpec/Body/06_a.htm">http://www.lispworks.com/documentation/HyperSpec/Body/06_a.htm</a>
+</li>
+
+<li>Clojure.org: Vars and the Global Environment<br />
+<a href="http://clojure.org/Vars">http://clojure.org/Vars</a>
+</li>
+
+<li>Clojure.org: Refs and Transactions<br />
+<a href="http://clojure.org/Refs">http://clojure.org/Refs</a>
+</li>
+
+<li>Clojure.org: Atoms<br />
+<a href="http://clojure.org/Atoms">http://clojure.org/Atoms</a>
+</li>
+
+<li>Clojure.org: Agents as Asynchronous Actions<br />
+<a href="http://clojure.org/agents">http://clojure.org/agents</a>
+</li>
+
+<li>Transient Data Structures
+<a href="http://clojure.org/transients">http://clojure.org/transients</a>
+</li>
+
+<li>Dynamic Languages Strike Back<br />
+<a href="http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html">http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html</a>
+</li>
+
+<li>Scripting: Higher Level Programming for the 21st Century<br />
+<a href="http://www.tcl.tk/doc/scripting.html">http://www.tcl.tk/doc/scripting.html</a>
+</li>
+
+<li>Clojure (na Wikipedia EN)<br />
+<a href="http://en.wikipedia.org/wiki/Clojure">http://en.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>Clojure (na Wikipedia CS)<br />
+<a href="http://cs.wikipedia.org/wiki/Clojure">http://cs.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>SICP (The Structure and Interpretation of Computer Programs)<br />
+<a href="http://mitpress.mit.edu/sicp/">http://mitpress.mit.edu/sicp/</a>
+</li>
+
+<li>Pure function<br />
+<a href="http://en.wikipedia.org/wiki/Pure_function">http://en.wikipedia.org/wiki/Pure_function</a>
+</li>
+
+<li>Funkcionální programování<br />
+<a href="http://cs.wikipedia.org/wiki/Funkcionální_programování">http://cs.wikipedia.org/wiki/Funkcionální_programování</a>
+</li>
+
+<li>Jazyky Hy a Clojure-py: moderní dialekty LISPu určené pro Python VM<br />
+<a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/</a>
+</li>
+
+<li>Pixie: lehký skriptovací jazyk s „kouzelnými“ schopnostmi<br />
+<a href="https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/">https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/</a>
+</li>
+
+<li>Programovací jazyk Pixie: funkce ze základní knihovny a použití FFI<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/">https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/</a>
+</li>
+
+<li>Stránka projektu Jython<br />
+<a href="http://www.jython.org/">http://www.jython.org/</a>
+</li>
+
+<li>Jython (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Jython">https://en.wikipedia.org/wiki/Jython</a>
+</li>
+
+<li>Scripting for the Java Platform (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform">https://en.wikipedia.org/wiki/Scripting_for_the_Java_Platform</a>
+</li>
+
+<li>JSR 223: Scripting for the Java<sup>TM</sup> Platform<br />
+<a href="https://jcp.org/en/jsr/detail?id=223">https://jcp.org/en/jsr/detail?id=223</a>
+</li>
+
+<li>List of JVM languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_JVM_languages">https://en.wikipedia.org/wiki/List_of_JVM_languages</a>
+</li>
+
+<li>Stránka programovacího jazyka Java<br />
+<a href="https://www.oracle.com/java/index.html">https://www.oracle.com/java/index.html</a>
+</li>
+
+<li>Stránka programovacího jazyka Clojure<br />
+<a href="http://clojure.org">http://clojure.org</a>
+</li>
+
+<li>Stránka programovacího jazyka Groovy<br />
+<a href="http://groovy-lang.org/">http://groovy-lang.org/</a>
+</li>
+
+<li>Stránka programovacího jazyka JRuby<br />
+<a href="http://jruby.org/">http://jruby.org/</a>
+</li>
+
+<li>Stránka programovacího jazyka Kotlin<br />
+<a href="http://kotlinlang.org/">http://kotlinlang.org/</a>
+</li>
+
+<li>Stránka programovacího jazyka Scala<br />
+<a href="https://www.scala-lang.org/">https://www.scala-lang.org/</a>
+</li>
+
+<li>Projekt Rhino<br />
+<a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Rhino">https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Rhino</a>
+</li>
+
+<li>Clojure (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Clojure">https://en.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>Groovy (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Groovy_%28programming_language%29">https://en.wikipedia.org/wiki/Groovy_%28programming_language%29</a>
+</li>
+
+<li>JRuby (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/JRuby">https://en.wikipedia.org/wiki/JRuby</a>
+</li>
+
+<li>Kotlin (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Kotlin_%28programming_language%29">https://en.wikipedia.org/wiki/Kotlin_%28programming_language%29</a>
+</li>
+
+<li>Scala (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Scala_%28programming_language%29">https://en.wikipedia.org/wiki/Scala_%28programming_language%29</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2019</small></p>
+</body>
+</html>
+
