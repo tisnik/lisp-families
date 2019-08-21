@@ -1,0 +1,1790 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<title>Jemný úvod do rozsáhlého světa jazyků LISP a Scheme</title>
+<meta name="Author" content="Pavel Tisnovsky" />
+<meta name="Generator" content="vim" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style type="text/css">
+         body {color:#000000; background:#ffffff;}
+         h1  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#c00000; text-align:center; padding-left:1em}
+         h2  {font-family: arial, helvetica, sans-serif; color:#ffffff; background-color:#0000c0; padding-left:1em; text-align:left}
+         h3  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#c0c0c0; padding-left:1em; text-align:left}
+         h4  {font-family: arial, helvetica, sans-serif; color:#000000; background-color:#e0e0e0; padding-left:1em; text-align:left}
+         a   {font-family: arial, helvetica, sans-serif;}
+         li  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ol  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         ul  {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify; width:450px;}
+         p   {font-family: arial, helvetica, sans-serif; color:#000000; text-align:justify;}
+         pre {background:#e0e0e0}
+</style>
+</head>
+
+<body>
+
+<h1>Jemný úvod do rozsáhlého světa jazyků LISP a Scheme</h1>
+
+<h3>Pavel Tišnovský</h3>
+
+<p></p>
+
+<h1>Úvodník</h1>
+
+<p>V&nbsp;právě začínajícím prázdninovém miniseriálu se seznámíme s&nbsp;významnými implementacemi programovacího jazyka LISP, Scheme a i některých odvozených jazyků, mezi něž patří zejména jazyk Clojure a jeho deriváty.</p>
+
+
+
+<h2>Obsah</h2>
+
+<p><a href="#k01">1. Jemný úvod do rozsáhlého světa jazyků LISP a Scheme</a></p>
+<p><a href="#k02">2. Stručná historie vzniku programovacího jazyka LISP</a></p>
+<p><a href="#k03">3. LISP a umělá inteligence</a></p>
+<p><a href="#k04">4. Vznik interaktivní smyčky REPL</a></p>
+<p><a href="#k05">5. M-výrazy a S-výrazy</a></p>
+<p><a href="#k06">6. Rozsáhlý a chaotický svět dialektů programovacího jazyka LISP</a></p>
+<p><a href="#k07">7. LISP jako koncept, nikoli konkrétní dialekt</a></p>
+<p><a href="#k08">8. Již popsané dialekty a implementace LISPu a Scheme</a></p>
+<p><a href="#k09">9. Scheme</a></p>
+<p><a href="#k10">10. Clojure</a></p>
+<p><a href="#k11">11. Pixie</a></p>
+<p><a href="#k12">12. Wisp</a></p>
+<p><a href="#k13">13. Script-fu</a></p>
+<p><a href="#k14">14. Hy</a></p>
+<p><a href="#k15">15. Clojure-py</a></p>
+<p><a href="#k16">16. Další programovací jazyky inspirované LISPem</a></p>
+<p><a href="#k17">17. Jazyk Logo</a></p>
+<p><a href="#k18">18. Jazyk TCL</a></p>
+<p><a href="#k19">19. Literatura</a></p>
+<p><a href="#k20">20. Odkazy na Internetu</a></p>
+
+
+
+<p><a name="k01"></a></p>
+<h2 id="k01">1. Jemný úvod do rozsáhlého světa jazyků LISP a Scheme</h2>
+
+<p><i>&bdquo;A computer without COBOL and FORTRAN is like a piece of chocolate
+cake without ketchup or mustard.&ldquo;</i></p>
+
+<p>Svět LISPovských jazyků je dnes velmi rozsáhlý a poměrně nepřehledný, ovšem
+není se čemu divit, protože první koncept LISPu vznikl již před neuvěřitelnými
+61 lety, konkrétně v&nbsp;roce 1958. Jedná se tedy o jeden z&nbsp;prvních
+vyšších programovacích jazyků vyvinutých pro nasazení na mainframech. Některé
+z&nbsp;těchto jazyků jsou (s&nbsp;modifikacemi a vylepšeními) používány dodnes,
+a to nikoli pouze z&nbsp;důvodu konzervativnosti programátorů či nutnosti
+údržby starého programového kódu stále používaného v&nbsp;produkčním prostředí.
+V&nbsp;LISPu se totiž objevilo hned několik zajímavých a přelomových konceptů,
+které samy o sobě dokázaly udržet tento programovací jazyk v&nbsp;hledáčku
+programátorů. A nejenom to &ndash; mnoho myšlenek z&nbsp;LISPu se postupně
+uplatňuje i v&nbsp;dalších programovacích jazycích, i když je nutné říci, že
+některé koncepty (homoikonicita a s&nbsp;ní související makra a
+metaprogramování) jsou do mnoha dalších jazyků přenositelná jen s&nbsp;obtížemi
+(poměrně úspěšné jsou v&nbsp;tomto ohledu jazyky <a
+href="https://www.root.cz/serialy/programovaci-jazyk-rust/">Rust</a> a <a
+href="https://www.root.cz/serialy/programovaci-jazyk-julia/">Julia</a> se svými
+systémy maker).</p>
+
+<p><div class="rs-tip-major">Poznámka: dalším vyšším jazykem vyvinutým již
+v&nbsp;padesátých letech minulého století, který ve vylepšené podobě
+&bdquo;přežil&ldquo; až do současnosti, je programovací jazyk <i>FORTRAN</i>
+neboli plným názvem <i>The IBM Mathematical <strong>For</strong>mula
+<strong>Tran</strong>slating System</i>. Ten byl vytvořen ve firmě IBM dokonce
+již v&nbsp;roce 1954 týmem vedeným Johnem W. Backusem (jehož příjmení se
+mj.&nbsp;objevuje i ve zkratkách BNF a EBNF). Jak již plný význam zkratky
+<i>FORTRANu</i> napovídá, jedná se o programovací jazyk určený především pro
+tvorbu aplikací zaměřených na numerické výpočty, podobně jako tomu bylo u vůbec
+prvního překladače &ndash; <i>A-0</i> vytvořeného již v&nbsp;roce 1952 Grace
+Hopperovou pro sálový počítač <i>UNIVAC I</i>. Z&nbsp;důvodu zaměření na
+matematické výpočty byl <i>FORTRAN</i> již od svých prvních verzí (určených
+původně pouze pro mainframe <i>IBM 704</i>) vybaven všemi základními
+aritmetickými i relačními operátory, možností práce s&nbsp;komplexními čísly,
+takzvaným <i>aritmetickým IF</i> (variantou podmíněného příkazu
+<strong>IF</strong>, v&nbsp;němž je podmínka vyjádřena aritmetickým výrazem,
+nikoli výrazem pravdivostním), programovou smyčkou typu <strong>DO</strong>,
+možností formátování numerických hodnot při jejich tisku atd.</div></p>
+
+<p><div class="rs-tip-major">Poznámka: s&nbsp;mírnou nadsázkou by se dalo říci,
+že se jednalo o pravý opak LISPu a všechny mainstreamové programovací jazyky
+byly vytvořeny na škále, jejímiž mezními hodnotami jsou FORTRAN na jedné straně
+a právě LISP na straně druhé.</div></p>
+
+<a href="http://i.iinfo.cz/images/38/ibm-5-3.jpg"><img src="http://i.iinfo.cz/images/38/ibm-5-3-prev.jpg" alt="ibm-5" height="270" width="211" /></a>
+<p><i>Obrázek 1: Originální manuál k&nbsp;první verzi FORTRANu určeného pro
+mainframy IBM 704 (FORTRAN je schválně psán velkými písmeny).</i></p>
+
+
+
+<p><a name="k02"></a></p>
+<h2 id="k02">2. Stručná historie vzniku programovacího jazyka LISP</h2>
+
+<p><i>&bdquo;With Lisp, McCarthy did for programming something like what Euclid
+did for geometry.&ldquo;<br />
+Paul Graham</i></p>
+
+<p><a href="http://imgs.xkcd.com/comics/lisp_cycles.png">Syntaxe jazyka LISP je
+již po šedesát let zdrojem inspirace pro autory vtipů</a></p>
+
+<p>Historie programovacího jazyka <i>LISP</i> je velmi dlouhá, neboť se jedná
+(jak již víme) o jeden z&nbsp;nejstarších vyšších programovacích jazyků vůbec.
+Autorem teoretického návrhu tohoto jazyka je <i>John McCarthy</i>, který se již
+v&nbsp;roce 1956 připojil k&nbsp;týmu, jehož úkolem bylo navrhnout algebraický
+programovací jazyk umožňující mj.&nbsp;zpracování seznamů, jenž by byl vhodný
+pro vývoj systémů umělé inteligence &ndash; <i>AI</i> (zatímco dnes jsou
+&bdquo;v kurzu&ldquo; enterprise systémy popř.&nbsp;kontejnerizace a
+mikroslužby, v&nbsp;padesátých a šedesátých letech minulého století se jednalo
+o umělou inteligenci a expertní systémy). McCarthy navrhl, aby fakta o okolním
+světě (která může AI při své činnosti použít) byla reprezentována formou vět ve
+vhodně strukturovaném formálním jazyce. Posléze se ukázalo, že je výhodné
+reprezentovat jednotlivé věty formou rekurzivně zanořených seznamů. McCarthy
+však myšlenku jazyka vhodného pro AI rozpracoval ještě dále &ndash; odklonil se
+například od infixové notace zápisu algebraických výrazů, protože
+naprogramování některých manipulací s&nbsp;těmito výrazy (derivace, integrace,
+zjednodušení výrazů, logická dedukce) bylo zbytečně složité. Navíc jím navržená
+prefixová notace do značné míry odpovídala zápisu výrazů v&nbsp;<i>lambda
+kalkulu</i>, jehož teorii vytvořil Alonzo Church.</p>
+
+<a href="http://i.iinfo.cz/images/455/lisp01.png"><img src="http://i.iinfo.cz/images/455/lisp01-prev.png" alt="lisp01" height="270" width="257" /></a>
+<p><i>Obrázek 2: Na tomto grafu evoluce programovacích jazyků můžeme vidět
+některé historicky významné programovací jazyky, s&nbsp;nimiž jsme se již
+setkali v&nbsp;seriálu o historii počítačů. Jedná se zejména o Fortran, Cobol,
+SNOBOL, Algol, APL, BASIC (resp.&nbsp;přesněji řečeno celá rodina jazyků
+nesoucích toho jméno) a samozřejmě taktéž o LISP a jeho varianty.</i></p>
+
+<p><div class="rs-tip-major">Poznámka: prefixový zápis operátorů se původně
+neoficiálně nazýval &bdquo;Cambridge Polish&ldquo; podle takzvané polské
+(prefixové) notace matematika Jan Łukasiewicze.</div></p>
+
+<p>Následně McCarthy ve svých teoretických pracích (vznikajících v&nbsp;průběhu
+let 1957 a 1958) ukázal, že je možné pomocí několika poměrně jednoduchých
+operací (a notací pro zápis funkcí) vytvořit programovací jazyk, který je
+Turingovsky kompletní (tj.&nbsp;jeho výpočetní mocnost je ekvivalentní
+<i>Turingovu stroji</i>), ale zápis algoritmů v&nbsp;tomto jazyce je mnohem
+jednodušší než zápis pravidel pro Turingův stroj. Tento jazyk, jenž byl
+z&nbsp;velké části založen na <i>Lambda kalkulu</i>, obsahoval možnost
+vytváření rekurzivních funkcí (což byl významný rozdíl například oproti
+tehdejší verzi <i>FORTRANU</i>), umožňoval použít funkce jako argumenty jiných
+funkcí, dále podporoval podmíněné výrazy (jedna z&nbsp;variant speciální
+formy), funkce pro manipulaci se seznamy a v&nbsp;neposlední řadě také funkci
+<i>eval</i>, o níž se zmíníme <a href="#k04">ve čtvrté</a> kapitole.</p>
+
+<img src="https://i.iinfo.cz/images/668/lisp1-1.jpg" class="image-365364" alt="&#160;" width="350" height="503" />
+<p><i>Obrázek 3: Alonzo Church, autor slavného lambda kalkulu.</i></p>
+
+<p>V&nbsp;pracích McCarthyho se objevily i některé (v&nbsp;té době nové)
+jazykové konstrukce, které dnes nalezneme v&nbsp;prakticky všech vyšších
+programovacích jazycích. Zejména se to týká konstrukce <strong>IF</strong>
+s&nbsp;pravdivostním výrazem, která je v&nbsp;LISPu reprezentovaná speciální
+formou stejného jména (typicky se dnes ovšem zapisuje malými písmeny, tedy
+<strong>if</strong>), popř.&nbsp;rozšířenou variantou <strong>cond</strong>.
+Oproti původnímu &bdquo;aritmetickému IF&ldquo; z&nbsp;FORTRANu bylo možné jak
+pravdivostní výraz, tak i obě větve zapsat formou dalšího (rekurzivně
+vyhodnocovaného) výrazu.</p>
+
+<img src="https://i.iinfo.cz/images/668/lisp1-2.jpg" class="image-365365" alt="&#160;" width="300" height="200" />
+<p><i>Obrázek 4: John McCarthy.</i></p>
+
+<p>První teoretický návrh LISPu byl pojat skutečně minimalisticky. Nalezneme
+v&nbsp;něm pouhých sedm funkcí a speciálních forem, z&nbsp;nichž některé byly
+později přejmenovány. Pro úplnost do tabulky dodávám i speciální formu
+<strong>quote</strong>, která byla v&nbsp;původním článku o LISPu popsána
+slovně (v&nbsp;M-výrazech &ndash; viz další text &ndash; ji není nutné přímo
+použít):</p>
+
+<table>
+<tr><th>#</th><th>Typ</th><th>Původní označení</th><th>Jméno v&nbsp;LISPu 1.0 i dalších derivátech</th></tr>
+<tr><td>1</td><td>funkce (predikát)</td><td>null</td><td>null/nullp/null?</td></tr>
+<tr><td>2</td><td>funkce (predikát)</td><td>atom</td><td>atom</td></tr>
+<tr><td>3</td><td>funkce (predikát)</td><td>p1==p2</td><td>eq</td></tr>
+<tr><td>4</td><td>funkce</td><td>combine</td><td>cons</td></tr>
+<tr><td>5</td><td>funkce</td><td>first</td><td>car</td></tr>
+<tr><td>6</td><td>funkce</td><td>rest</td><td>cdr</td></tr>
+<tr><td>7</td><td>speciální forma</td><td>if</td><td>cond</td></tr>
+<tr><td>8</td><td>speciální forma</td><td>popsáno slovně</td><td>quote/'</td></tr>
+</table>
+
+
+
+<p><a name="k03"></a></p>
+<h2 id="k03">3. LISP a umělá inteligence</h2>
+
+<p><i>&bdquo;The default language, embodied in a succession of popular
+languages, has gradually evolved toward Lisp.&ldquo;<br />
+Paul Graham</i></p>
+
+<p><a href="#k02">V&nbsp;předchozí kapitole</a> bylo mj.&nbsp;uvedeno i často
+opakované tvrzení, že LISP byl programovací jazyk vytvořený převážně pro
+potřeby studia a implementace umělé inteligence (<i>AI</i> &ndash; <i>Artifical
+Intelligence</i>). Toto tvrzení má sice reálný základ, ale není zcela pravdivé.
+Reálný základ spočívá v&nbsp;tom, že McCarthy je jak ideovým tvůrcem LISPu, tak
+i člověkem, který termín &bdquo;umělá inteligence&ldquo; vytvořil a použil pro
+pojmenování několikatýdenní konference (spíše workshopu) nazvané <i>Darthmouth
+Summer Research Project on Artificial Intelligence</i>.</p>
+
+<p>A právě na této konferenci si McCarthy začal zahrávat s&nbsp;myšlenkou na
+vytvoření nového programovacího jazyka, který byl inspirován jazykem <i>IPL</i>
+(<i>Information Processing Language</i>) autorů Newell, Shaw, Simon a jeho
+schopnostmi práce se seznamy (ve skutečnosti byl IPL vytvořen jako sada maker
+pro assembler, tj.&nbsp;jednalo se o dosti primitivní a vlastně i
+nízkoúrovňovou záležitost). Později se LISP skutečně pro výzkum AI používal,
+ale nikoli proto, že by byl primárně určen pro umělou inteligenci, ale protože
+jak vývoj LISPu, tak i primární výzkum AI probíhal na stejné universitě,
+konkrétně na slavném MITu (navíc nic lepšího než LISP nevzniklo, až do první
+verze Prologu v&nbsp;roce 1972). Spojení LISPu s&nbsp;AI ovšem bylo samotnému
+programovacímu jazyku spíše na škodu, protože si ho mnozí programátoři
+spojovali se &bdquo;slonovinovou věží&ldquo; univerzitního prostředí a navíc
+&ndash; velká očekávání, která již na konci padesátých let mnozí do AI
+vkládali, se nesplnila, což jak samotnému oboru, tak i nepřímo LISPu
+uškodilo.</p>
+
+<a href="http://i.iinfo.cz/images/521/java32-01.png"><img src="http://i.iinfo.cz/images/521/java32-01-prev.png" width="370" height="231" alt="&#160;" /></a>
+<p><i>Obrázek 5: Hra Abuse je z&nbsp;velké části napsána v&nbsp;LISPu &ndash;
+nízkoúrovňové části používají nativní knihovny (na Linuxu například SDL), ovšem
+veškerá herní logika je skutečně v&nbsp;LISPu a s&nbsp;troškou vůle a volného
+času lze z&nbsp;Abuse vytvořit zcela odlišnou hru. Zdánlivá malá výkonnost
+LISPu se zde neprojevuje, protože Abuse lze bez problémů hrát i na stařičkém
+počítači s&nbsp;mikroprocesorem 80486DX2 (ostatně nízká výkonnost LISPu je pro
+mnoho jeho implementací spíše legendou, než faktem).</i></p>
+
+
+
+<p><a name="k04"></a></p>
+<h2 id="k04">4. Vznik interaktivní smyčky REPL</h2>
+
+<p>Na McCarthovu původně pouze teoretickou práci navázal <i>S. R. Russell</i>,
+který si uvědomil, že samotná funkce <i>eval</i> navržená McCarthym, pokud by
+byla skutečně implementována na nějakém počítači, může sloužit jako základ
+plnohodnotného interpretru jazyka <i>LISP</i> (interpret LISPu se někdy též
+označuje zkratkou <i>REPL: Read-Eval-Print-Loop</i>, tj.&nbsp;interpretr ve
+smyčce načítá jednotlivé výrazy, vyhodnocuje je a následně tiskne jejich
+výslednou hodnotu). Russell skutečně celou smyčku <i>REPL</i> implementoval
+&ndash; tímto způsobem se zrodila první reálně použitelná verze
+<i>LISPu</i>.</p>
+
+<img src="https://i.iinfo.cz/images/668/lisp1-3.png" class="image-365366" alt="&#160;" width="403" height="779" />
+<p><i>Obrázek 6: Základem smyčky REPL je funkce <strong>EVAL</strong>. Zde je
+uveden prakticky celý její zdrojový kód získaný z&nbsp;dvoustránkové publikace
+o LISPu napsané McCarthym. Na první straně je popsán celý jazyk (jeho syntaxe i
+sémantika), stranu druhou zabírá právě výpis funkce
+<strong>EVAL</strong>.</i></p>
+
+<p><div class="rs-tip-major">Poznámka: REPL si sice většinou spojujeme
+s&nbsp;interpretovanými programovacími jazyky, ovšem ve skutečnosti je možné
+smyčku REPL do určité míry používat i u jazyků kompilovaných či překládaných do
+bajtkódu (příkladem je dále zmíněný programovací jazyk <i>Clojure</i>). Je tomu
+tak i například v&nbsp;případě jazyka Go, který je kompilovaný a REPL pro něj
+skutečně vznikl.  U jazyka Go je to umožněno zejména díky tomu, že překladač Go
+je velmi rychlý, takže se v&nbsp;REPL může relativně bez problémů používat
+překlad každé definice či příkazu, a to i na pomalejších počítačích. Se smyčkou
+REPL určenou pro jazyk Go jsme se seznámili v&nbsp;článku <a
+href="https://www.root.cz/clanky/uzitecne-nastroje-pro-go-automaticke-doplnovani-kodu-plnohodnotna-smycka-repl-a-integrace-s-vimem/">Užitečné
+nástroje pro Go: automatické doplňování kódu, plnohodnotná smyčka REPL a
+integrace s Vimem</a>.</div></p>
+
+<a href="http://i.iinfo.cz/images/38/ibm-5-2.jpg"><img src="http://i.iinfo.cz/images/38/ibm-5-2-prev.jpg" alt="ibm-5" height="270" width="215" /></a>
+<p><i>Obrázek 7: Ovládací panel mainframu IBM System/360 Model 65. Tento snímek
+zde uvádím především z&nbsp;toho důvodu, aby bylo zřejmé, že pod pojmem
+&bdquo;interaktivita&ldquo; se v&nbsp;oblasti IT může skrývat mnoho pojmů. Dnes
+si interaktivní smyčku můžeme představit snadno &ndash; jedná se o terminál či
+o notebook (IPython), který ihned reaguje na příkazy zapisované uživateli.
+Ovšem v&nbsp;dobách prvních dvou generací mainframů byly vstupně-výstupní
+prostředky mnohem více omezené, takže výstup byl provádět na tiskárnu a vstupem
+býval dálnopis nebo jeho specializovaná obdoba. A pro administrátory taktéž zde
+zobrazený ovládací panel.</i></p>
+
+<img src="https://i.iinfo.cz/images/143/python-interpreters-1-6.png" class="image-359593" alt="&#160;" width="660" height="411" />
+<p><i>Obrázek 8: Koncept diáře (notebooku) je použit například v&nbsp;nástroji
+nazvaném Gorilla REPL, který mohou využít programátoři pracující s&nbsp;jazykem
+Clojure. Na diář se můžeme dívat jako na vylepšenou variantu interaktivní
+smyčky REPL, která je &bdquo;dvourozměrná&ldquo; (diář zobrazuje historii,
+umožňuje se v&nbsp;ní vracet zpět, provádět změny apod.).</i></p>
+
+
+
+<p><a name="k05"></a></p>
+<h2 id="k05">5. M-výrazy a S-výrazy</h2>
+
+<p>McCarthy a jeho kolektiv se při vývoji LISPu inspirovali kromě jiného i
+v&nbsp;té době již existujícím programovacím jazykem FORTRAN, což je možná
+poněkud překvapivé, ovšem musíme si uvědomit, že FORTRAN byl v&nbsp;té době
+jedním z&nbsp;mála vyšších programovacích jazyků (mezi další patří například
+<i>FLOW-MATIC</i> firmy Sperry-Rand, <i>Commercial Translator</i> firmy IBM a
+<i>AIMACO (Air Material Command)</i>, což jsou ideoví předchůdci COBOLu). Mezi
+přednosti FORTRANu patřil i jednoduchý zápis aritmetických výrazů, což je
+ostatně i základ významu zkratky FORTRAN (<i>FORMula TRANslating System/FORMula
+TRANslator</i>). Původně měl LISP umožňovat běžný <i>infixový</i> zápis
+aritmetických výrazů, ovšem v&nbsp;první verzi se tato možnost neobjevila a ani
+nikdy později se nestala součástí mainstreamových LISPů. Navíc byl zápis
+LISPovských programů v&nbsp;původním návrhu jazyka odlišný od formy, kterou
+známe dnes. Používaly se totiž takzvané M-výrazy (<i>M-expressions</i>),
+v&nbsp;nichž se namísto kulatých závorek zapisovaných okolo všech forem
+(funkcí, speciálních forem, maker) používaly závorky hranaté, ovšem použité
+pouze u parametrů. Zápis byl tedy bližší spíše dnešním programovacím
+jazykům (i když byl méně systematický).</p>
+
+<a href="https://www.root.cz/obrazek/365367/"><img src="https://i.iinfo.cz/images/668/lisp1-4-prev.jpg" class="image-365367" alt="&#160;" width="370" height="225" /></a>
+<p><i>Obrázek 9: První oficiální publikace o jazyku LISP. Právě v&nbsp;ní se
+objevují M-výrazy.</i></p>
+
+<p>Interně se měly M-výrazy překládat na takzvané S-výrazy
+(<i>S-expressions</i>), které přetrvaly dodnes a vizuálně odlišují programy
+psané v&nbsp;LISPu či Scheme od prakticky všech ostatních programovacích
+jazyků. S-výrazy již dokážou popsat samotný program formou (rekurzivních)
+seznamů, tj.&nbsp;programy jsou reprezentovány stejným způsobem, jako samotná
+data. Této důležité vlastnosti se říká homoikonicita (<i>homoiconicity</i>).
+První funkční verze LISPu ovšem přímo M-výrazy nedokázala zpracovat; překlad
+byl prováděn ručně s&nbsp;tím, že v&nbsp;další verzi LISPu již bude překladač
+M-výrazů naprogramován. Mezitím se ovšem zjistilo, že S-výrazy, i přes poněkud
+neobvyklý zápis, jsou velmi užitečné a výkonné. Navíc je bylo možné na
+klávesnici počítače IBM 704 zapisovat snadněji, než programy s&nbsp;hranatými
+závorkami, takže výsledkem je stav, který vydržel celých šedesát let &ndash;
+programy psané v&nbsp;LISPu jsou zapisovány s&nbsp;využitím S-výrazů,
+samozřejmě s&nbsp;tím, že pomocí maker lze význam (sémantiku) zapisovaných
+forem měnit.</p>
+
+<a href="https://www.root.cz/obrazek/365368/"><img src="https://i.iinfo.cz/images/668/lisp1-5-prev.png" class="image-365368" alt="&#160;" width="303" height="270" /></a>
+<p><i>Obrázek 10: První strana dvoustranného článku s&nbsp;popisem jazyka LISP
+i jeho interpretru (napsaného taktéž v&nbsp;LISPu).</i></p>
+
+<p><div class="rs-tip-major">Poznámka: McCarthy skutečně původně chtěl vyjít
+z&nbsp;FORTRANu, který chtěl jen &bdquo;nepatrně&ldquo; vylepšit. Ovšem již
+v&nbsp;roce 1957, kdy začal psát rutiny algoritmů pro šachy, si uvědomil, že
+FORTRAN se svým aritmetickým IF, nemožností volat funkce rekurzivně atd. není
+pro tento druh práce tím nejvhodnějším nástrojem.</div></p>
+
+
+
+<p><a name="k06"></a></p>
+<h2 id="k06">6. Rozsáhlý a chaotický svět dialektů programovacího jazyka LISP</h2>
+
+<p>V&nbsp;průběhu dalších více než pěti desetiletí dosti překotného rozvoje
+výpočetní techniky i programovacích jazyků vzniklo velmi mnoho dialektů tohoto
+programovacího jazyka, například <i>MacLISP</i>, <i>InterLISP</i>,
+<i>ZetaLISP</i>, <i>XLisp</i>, <i>AutoLISP</i> (původně odvozený
+z&nbsp;<i>XLispu</i>), samozřejmě <i>Emacs LISP</i> nebo slavný <i>Common
+LISP</i> (více viz odkazy na konci článku). Kromě těchto implementací jazyka
+LISP, které se od sebe v&nbsp;několika ohledech odlišují (například existencí
+či neexistencí maker či objektového systému), vznikl v&nbsp;minulosti i nový
+dialekt tohoto jazyka nazvaný <i>Scheme</i> (původně <i>Schemer</i>), jehož
+autory jsou Guy L. Steele a Gerald Jay Sussman (Steele později pracoval na
+specifikaci Javy i programovacího jazyka Fortress). Tento dialekt je
+implementačně jednodušší a také se ho lze naučit rychleji, než mnohé další
+varianty jazyka LISP (jedna implementace Scheme se jmenuje Scheme 48, protože
+byla naprogramována za 48 hodin, nyní toto číslo znamená, že se programátor
+dokáže Scheme naučit za 48 hodin).</p>
+
+<a href="https://www.root.cz/obrazek/337666/"><img src="https://i.iinfo.cz/images/196/emacs2-1-prev.png" class="image-337666" alt="&#160;" width="370" height="196" /></a>
+<p><i>Obrázek 12: Vývoj některých dialektů Lispu.<br />
+Zdroj: <a href="https://en.wikipedia.org/wiki/Lisp_%28programming_language%29">Wikipedia</a>.</i></p>
+
+<p>Právě z&nbsp;těchto důvodů se <i>Scheme</i> využívá či využívalo jak při
+výuce programování, tak i v&nbsp;mnoha open-source projektech, například
+v&nbsp;grafickém editoru <i>GIMP</i> jako jeden z&nbsp;podporovaných
+skriptovacích jazyků. Richard Stallman si dokonce přál, aby se <i>Scheme</i>
+(přesněji jeho GNU implementace <i>Guile</i>) stalo standardním skriptovacím
+jazykem většiny GNU aplikací, což je idea, která se &ndash; především po vzniku
+dalších vysokoúrovňových programovacích jazyků (<i>Perl</i>, <i>Python</i>,
+<i>TCL</i>) &ndash; nakonec neuskutečnila (i když vedla k&nbsp;tzv.&nbsp;<a
+href="https://vanderburg.org/old_pages/Tcl/war/">Tcl war</a>).</p
+
+<p><div class="rs-tip-major">Poznámka: Jazyk Scheme byl používán na MIT
+v&nbsp;úvodních kurzech programování. V&nbsp;roce 2009 byl nahrazen Pythonem,
+ovšem Scheme se dále používá, například v&nbsp;kurzu <a
+href="http://groups.csail.mit.edu/mac/users/gjs/6.945/">Adventures in Advanced
+Symbolic Programming</a> (podle některých studentů zdaleka nejzábavnější kurz,
+kterým prošli).</div></p>
+
+
+
+<p><a name="k07"></a></p>
+<h2 id="k07">7. LISP jako koncept, nikoli konkrétní dialekt</h2>
+
+<p>Musíme si však uvědomit, že samotný LISP je nutné chápat jako spíše koncept,
+než konkrétní programovací jazyk. Proto můžeme pod pojmem LISP (psáno též Lisp)
+najít poměrně velké množství programovacích jazyků, které sice mají podobný
+základ, ovšem konkrétní implementace jsou značně rozdílné. Do rodiny
+LISPovských jazyků tak dnes patří i dosti odlišné jazyky, jako například <a
+href="https://www.root.cz/clanky/novinky-v-clojure-verze-1-9-0/#k19">Clojure</a>
+a výše zmíněné implementace jazyka Scheme. Dnes patří mezi nejpopulárnější
+implementace LISPovského jazyka především Common Lisp, dále pochopitelně Emacs
+Lisp, ovšem nesmíme zapomenout na již zmíněné Clojure a taktéž <a
+href="https://racket-lang.org/">Racket</a> neboli původním názvem PLT Scheme
+popř.&nbsp;na GNU Guile (implementace Scheme, která měla být původně určena
+jako základní rozšiřující jazyk v&nbsp;GNU projektu, viz zmínka o RMS <a
+href="#k06">v&nbsp;předchozí kapitole</a>).</p>
+
+<p><div class="rs-tip-major">Poznámka: uvádí se (ovšem bez hlubších měření), že
+Emacs Lisp je dnes ve světě open source pravděpodobně nejrozšířenější dialog
+Lispu s&nbsp;největší základnou programů a modulů.</div></p>
+
+<p><div class="rs-tip-major">Poznámka 2: pokud sečteme popularitu LISPu, Scheme
+a Clojure (viz <a
+href="https://www.tiobe.com/tiobe-index/">https://www.tiobe.com/tiobe-index/</a>,
+dojdeme k&nbsp;tomu, že by se společnými silami mohlo dosáhnout první dvacítky
+(popularita jazyků má ovšem význam spíše při plánování nových projektů a náboru
+nových programátorů).</div></p>
+
+<p>Velmi pěkně jsou základní společné vlastnosti a rozdíly mezi těmito jazyky
+shrnuty na stránce <a href="http://hyperpolyglot.org/lisp">Common Lisp, Racket,
+Clojure, Emacs Lisp</a>.</p>
+
+<a href="https://www.root.cz/obrazek/365369/"><img src="https://i.iinfo.cz/images/668/lisp1-6-prev.png" class="image-365369" alt="&#160;" width="370" height="245" /></a>
+<p><i>Obrázek 13: Mnohé první pokusy o umělou inteligenci používaly právě LISP
+(zde algoritmus pro nalezení cesty v&nbsp;dvourozměrném světě implementovaný na
+počítačích společnosti Symbolics.</i></p>
+
+
+
+<p><a name="k08"></a></p>
+<h2 id="k08">8. Již popsané dialekty a implementace LISPu a Scheme</h2>
+
+<p>Na stránkách <a href="https://www.root.cz">Rootu</a> i serveru <a
+href="https://mojefedora.cz/">Mojefedora.cz</a> jsme se již setkali
+s&nbsp;relativně velkým množstvím dialektů jazyka LISP či Scheme. Tyto dialekty
+budou (samozřejmě jen ve stručnosti) představeny v&nbsp;navazujících
+kapitolách.</p>
+
+<img src="https://i.iinfo.cz/images/196/emacs2-2.jpg" class="image-337667" alt="&#160;" width="400" height="579" />
+<p><i>Obrázek 14: SICP &ndash; jedna z&nbsp;nejznámějších knížek (nejenom) o
+LISPovských jazycích.</i></p>
+
+
+
+<p><a name="k09"></a></p>
+<h2 id="k09">9. Scheme</h2>
+
+<p>Prvním důležitým jazykem odvozeným od LISPu je pochopitelně jazyk nazvaný
+<i>Scheme</i>. Původními autory programovacího jazyka <i>Scheme</i> jsou <i>Guy
+Lewis Steele</i> a <i>Gerald Jay Sussman</i> (Steele and Sussman, někdy též
+zkracováno na S and S), kteří v&nbsp;době návrhu tohoto jazyka pracovali ve
+slavném Massachussetském technologickém institutu (MIT), který již byl zmíněn
+v&nbsp;předchozích kapitolách. První verze jazyka <i>Scheme</i> byla
+v&nbsp;průběhu roku 1975 naprogramována v&nbsp;samotném LISPu, konkrétně
+v&nbsp;MacLispu. Název tohoto dialektu programovacího jazyka LISP ovšem nemá
+nic společného s&nbsp;počítači firmy Apple, jednalo se o verzi LISPu vytvořenou
+taktéž na MIT, která byla původně určena pro počítače <i>PDP-10</i> a operační
+systém <i>Multics</i>.</p>
+
+<p><img src="http://i.iinfo.cz/images/315/hist26-3.jpg" alt="hist26" height="540" width="420" /></p>
+<p><i>Obrázek 15: Jedna z&nbsp;mnoha knih o jazyce Scheme.</i></p>
+
+<p>Guy Steele spolu s&nbsp;Geraldem Sussmanem chtěli nový jazyk použít pro
+zkoumání vlastností takzvaných <i>aktorů</i>, které se v&nbsp;dnešní době,
+tj.&nbsp;necelých 45 let po vzniku jazyka <i>Scheme</i>, opět těší zvýšenému
+zájmu vědců i programátorů, především díky stále většímu důrazu na tvorbu
+systémů, v&nbsp;nichž je spouštěno velké množství paralelně běžících a vzájemně
+kooperujících procesů (aktory je možné považovat za speciální formu
+<i>uzávěrů</i> &ndash; <i>closures</i>, ostatně právě nutnost podpory uzávěrů
+ve <i>Scheme</i> poměrně zásadně ovlivnilo jeho návrh, zejména odlišný způsob
+určování rozsahu platnosti objektů).</p>
+
+<p><img src="http://i.iinfo.cz/images/315/hist26-5.jpg" alt="hist26" height="236" width="195" /></p>
+
+<p>Výsledkem jejich snahy byl v&nbsp;mnoha ohledech minimalistický programovací
+jazyk podporující různá paradigmata programování, ovšem zaměřený především na
+paradigma funkcionální. Původně se tento nový programovací jazyk jmenoval
+<i>SCHEMER</i>, ovšem systém souborů používaný operačním systémem ITS na
+PDP-10, na němž byly uloženy zdrojové kódy původního interpretru, omezoval
+délku názvů na šest znaků, takže se postupně název zkrátil ze <i>SCHEMER</i> a
+dnešní <i>Scheme</i>. Oba autoři následně zveřejnili popis syntaxe a především
+sémantiky nového programovacího jazyka v&nbsp;sérii článků, které se dnes
+souhrnně nazývají &bdquo;Lambda Papers&ldquo;.</p>
+
+<p>Články s&nbsp;podrobnějšími informacemi o jazyku Scheme:</p>
+
+<ol>
+<li><a href="https://www.root.cz/clanky/scheme-kostlivec-ve-skrini-nebo-nehasnouci-hvezda/">Scheme: kostlivec ve skřini nebo nehasnoucí hvězda?</a></li>
+<li><a href="https://www.root.cz/clanky/programovaci-cons-jazyk-scheme/">'(Programovací (cons 'jazyk 'Scheme))</a></li>
+<li><a href="https://www.root.cz/clanky/programovaci-jazyk-scheme-definice-anonymnich-i-pojmenovanych-funkci-iterace/">Programovací jazyk Scheme: definice anonymních i pojmenovaných funkcí, iterace</a></li>
+<li><a href="https://www.root.cz/clanky/zaklady-programovani-v-jazyku-scheme/">Základy programování v jazyku Scheme</a></li>
+<li><a href="https://blog.root.cz/pita601/scheme-vs-prolog/">Scheme vs. Prolog</a></li>
+</ol>
+
+
+
+<p><a name="k10"></a></p>
+<h2 id="k10">10. Clojure</h2>
+
+<p>Samozřejmě nesmíme zapomenout ani na programovací jazyk <i>Clojure</i>,
+který tvoří dnes již samostatnou vývojovou odnož LISPovského jazyka. Clojure
+byl původně jazyk určený pro běh nad virtuálním strojem Javy, tj.&nbsp;JVM
+(<i>Java Virtual Machine</i>), ovšem později vznikla i jeho varianta pro .NET a
+taktéž <i>transpiler</i> pro převod programů do JavaScriptu &ndash; tím je
+mj.&nbsp;umožněn běh aplikací psaných v&nbsp;Clojure v&nbsp;prohlížečích a
+v&nbsp;Node.js. V&nbsp;jazyku Clojure se objevují některé nové a užitečné
+koncepty, které jsou namířeny praktickým směrem, na rozdíl od spíše akademicky
+pojatých variant jazyka Scheme. Na první pohled je patrný odlišný způsob
+deklarace funkcí, kdy se parametry zapisují do hranatých závorek a jsou tak
+vizuálně odlišeny od ostatního kódu (počet formálních parametrů je konstantní,
+takže použití hranatých závorek vyhrazených pro vektory je zcela logické):</p>
+
+<pre>
+(defn csv-data-&gt;maps
+    "Convert read CSV data into proper Clojure map."
+    [csv-data]
+    (map zipmap
+        (-&gt;&gt; (first csv-data)  ;; header
+             (map keyword)     ;; heder items -&gt; keywords
+             repeat)
+             (rest csv-data)))
+</pre>
+
+<a href="https://www.root.cz/obrazek/365370/"><img src="https://i.iinfo.cz/images/668/lisp1-7.png" class="image-365370" alt="&#160;" width="200" height="200" /></a></p>
+
+<p>Podobně byl zjednodušen zápis generátorové notace seznamu, jejíž čitelná
+podoba vypadá takto:</p>
+
+<pre>
+(zipmap dates-from
+    (for [date dates-from]
+        (let [full-filename (str data-directory "/" date "/" filename)]
+            (load-csv full-filename))))
+</pre>
+
+<p>Zmenšil se i počet závorek ve formě <strong>cond</strong>, která je mnohem více čitelná a do značné míry redukuje &bdquo;závorkové peklo&ldquo;, kterými je LISP známý:</p>
+
+<pre>
+(defn -main
+    "Entry point to the Chainring service."
+    [&amp; args]
+    (let [all-options  (cli/parse-opts args cli-options)
+          options      (all-options :options)]
+          ; perform the selected operation according to CLI options
+          (cond (:help options)         (show-help all-options)
+                (:print-config options) (show-configuration configuration)
+                :else                   (start-server))))
+</pre>
+
+<p>Zajímavější je ovšem zcela odlišné chápání pojmu &bdquo;proměnné&ldquo; a
+&bdquo;hodnoty&ldquo; v&nbsp;programovacím jazyce Clojure. Rozlišuje se totiž
+mezi několika různými způsoby, jakými je možné změnit hodnotu v&nbsp;proměnné.
+Změna stavu proměnných (označovaných jako identity, protože se od běžných
+proměnných odlišují) totiž může být provedena buď <i>koordinovaně</i> či naopak
+zcela <i>nezávisle</i> na ostatních identitách. Koordinovaná změna stavu více
+identit je prováděna uvnitř transakcí, tj.&nbsp;konkrétně s&nbsp;využitím
+objektů typu <i>ref</i>. Změna, resp.&nbsp;změny stavů identit se taktéž
+odlišují v&nbsp;tom, že mohou být provedeny buď <i>synchronně</i> či
+<i>asynchronně</i> &ndash; opět v&nbsp;závislosti na potřebách konkrétní
+vyvíjené aplikace. Synchronní změna stavu identit je provedena ihned a tudíž
+přímo ve vláknu, které tuto změnu provádí (synchronní a současně i nezávislá
+změna stavu identity je tedy z&nbsp;hlediska vývojáře prakticky totožná se
+změnou hodnoty proměnné). Naopak asynchronní změna stavu identit(y) nemusí být
+provedena ihned, ale někdy v&nbsp;blíže neurčené budoucnosti. To znamená, že
+asynchronní změnu je možné implementovat v&nbsp;jiném vlákně.</p>
+
+<p>V&nbsp;programovacím jazyce Clojure z&nbsp;tohoto důvodu existují čtyři typy
+<i>referencí</i>, přesněji řečeno čtyři takzvané <i>referenční typy</i>.
+Reference vždy ukazují na neměnná data, protože filozofie jazyka Clojure je
+založena nikoli na jednoduché změně obsahu proměnných (či změně stavu objektů
+&ndash; tj.&nbsp;jejich atributů, pokud budeme uvažovat i o objektově
+orientovaných jazycích), ale na takzvaných <i>identitách</i> asociovaných
+s&nbsp;různými <i>stavy</i>, které se v&nbsp;různých časových okamžicích
+běžícího programu mohou lišit. Samotný stav je představován neměnnou
+(<i>immutable</i>) hodnotou, což však neznamená, že by reference po celou dobu
+běhu programu musela odkazovat na stejný stav. Reference totiž může být
+přesměrována na jinou neměnnou hodnotu &ndash; zkráceně budeme říkat, že se
+změnila hodnota reference, i když je to poněkud nepřesné. Zmíněné čtyři typy
+referencí použitých v&nbsp;programovacím jazyku Clojure se od sebe odlišují
+především v&nbsp;tom, zda je změna hodnot referencí synchronní či asynchronní a
+zda je realizována koordinovaně (tj.&nbsp;v&nbsp;transakci) či nezávisle na
+změně hodnot ostatních referencí.</p>
+
+<p>Všechny čtyři podporované referenční typy jsou vypsány v&nbsp;následující
+tabulce:</p>
+
+<table>
+<tr><th>Jméno</th><th>Var</th><th>Ref</th><th>Atom</th><th>Agent</th></tr>
+<tr><td>Změna stavu</td><td>synchronní</td><td>synchronní</td><td>synchronní</td><td>asynchronní</td></tr>
+<tr><td>Typ změny</td><td>lokální, v rámci jednoho vlákna</td><td>koordinovaná</td><td>nezávislá</td><td>nezávislá</td></tr>
+<tr><td>Podpora transakcí</td><td>ne</td><td>ano</td><td>ne</td><td>ne</td></tr>
+</table>
+
+<p>Články s&nbsp;podrobnějšími informacemi o programovacím jazyku Clojure:</p>
+
+<ol>
+<li><a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm/">Clojure 1: Úvod</a></li>
+<li><a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-2-cast/">Clojure 2: Symboly, kolekce atd.</a></li>
+<li><a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-3-cast-funkcionalni-programovani/">Clojure 3: Funkcionální programování</a></li>
+<li><a href="http://www.root.cz/clanky/clojure-aneb-jazyk-umoznujici-tvorbu-bezpecnych-vicevlaknovych-aplikaci-pro-jvm-4-cast-kolekce-sekvence-a-lazy-sekvence/">Clojure 4: Kolekce, sekvence a lazy sekvence</a></li>
+<li><a href="http://www.root.cz/clanky/clojure-a-bezpecne-aplikace-pro-jvm-sekvence-lazy-sekvence-a-paralelni-programy/">Clojure 5: Sekvence, lazy sekvence a paralelní programy</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-6-futures-nejsou-jen-financni-derivaty/">Clojure 6: Podpora pro paralelní programování</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-7-dalsi-podpurne-prostredky-pro-paralelni-programovani/">Clojure 7: Další funkce pro paralelní programování</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-8-identity-stavy-nemenne-hodnoty-a-referencni-typy/">Clojure 8: Identity, stavy, neměnné hodnoty a reference</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-9-validatory-pozorovatele-a-kooperace-mezi-clojure-a-javou/">Clojure 9: Validátory, pozorovatelé a kooperace s Javou</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-10-kooperace-mezi-clojure-a-javou-pokracovani/">Clojure 10: Kooperace mezi Clojure a Javou</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-11-generatorova-notace-seznamu-list-comprehension/">Clojure 11: Generátorová notace seznamu/list comprehension</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-12-preklad-programu-z-clojure-do-bajtkodu-jvm/">Clojure 12: Překlad programů z Clojure do bajtkódu JVM I:</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-13-preklad-programu-z-clojure-do-bajtkodu-jvm-pokracovani/">Clojure 13: Překlad programů z Clojure do bajtkódu JVM II:</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-14-zaklady-prace-se-systemem-maker/">Clojure 14: Základy práce se systémem maker</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-15-tvorba-uzivatelskych-maker/">Clojure 15: Tvorba uživatelských maker</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-16-slozitejsi-uzivatelska-makra/">Clojure 16: Složitější uživatelská makra</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-17-vyuziti-standardnich-maker-v-praxi/">Clojure 17: Využití standardních maker v praxi</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-18-zakladni-techniky-optimalizace-aplikaci/">Clojure 18: Základní techniky optimalizace aplikací</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-19-vyvojova-prostredi-pro-clojure/">Clojure 19: Vývojová prostředí pro Clojure</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-20-vyvojova-prostredi-pro-clojure-integrace-vimu-s-repl/">Clojure 20: Vývojová prostředí pro Clojure (Vimu s REPL)</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-21-clojurescript-aneb-preklad-clojure-do-javascriptu/">Clojure 21: ClojureScript aneb překlad Clojure do JS</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure/">Leiningen: nástroj pro správu projektů napsaných v Clojure</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-2/">Leiningen: nástroj pro správu projektů napsaných v Clojure (2)</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-3/">Leiningen: nástroj pro správu projektů napsaných v Clojure (3)</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-4/">Leiningen: nástroj pro správu projektů napsaných v Clojure (4)</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-5/">Leiningen: nástroj pro správu projektů napsaných v Clojure (5)</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-6/">Leiningen: nástroj pro správu projektů napsaných v Clojure (6)</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-databaze-1-cast/">Programovací jazyk Clojure a databáze (1.část)</a></li>
+<li><a href="http://www.root.cz/clanky/leiningen-nastroj-pro-spravu-projektu-napsanych-v-clojure-pluginy-pro-leiningen/">Pluginy pro Leiningen</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-knihovny-pro-praci-s-vektory-a-maticemi/">Programovací jazyk Clojure a knihovny pro práci s vektory a maticemi</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-knihovny-pro-praci-s-vektory-a-maticemi-2/">Programovací jazyk Clojure a knihovny pro práci s vektory a maticemi (2)</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk/">Programovací jazyk Clojure: syntéza procedurálních textur s využitím knihovny Clisk</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk-2/">Programovací jazyk Clojure: syntéza procedurálních textur s využitím knihovny Clisk (2)</a></li>
+<li><a href="http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure/">Seesaw: knihovna pro snadnou tvorbu GUI v jazyce Clojure</a></li>
+<li><a href="http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure-2/">Seesaw: knihovna pro snadnou tvorbu GUI v jazyce Clojure (2)</a></li>
+<li><a href="http://www.root.cz/clanky/seesaw-knihovna-pro-snadnou-tvorbu-gui-v-jazyce-clojure-3/">Seesaw: knihovna pro snadnou tvorbu GUI v jazyce Clojure (3)</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-prace-s-gitem/">Programovací jazyk Clojure a práce s Gitem</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-synteza-proceduralnich-textur-s-vyuzitim-knihovny-clisk-dokonceni/">Programovací jazyk Clojure: syntéza procedurálních textur s využitím knihovny Clisk (dokončení)</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-a-prace-s-gitem-2/">Programovací jazyk Clojure a práce s Gitem (2)</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-triky-pri-praci-s-retezci/">Programovací jazyk Clojure – triky při práci s řetězci</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-triky-pri-praci-s-kolekcemi/">Programovací jazyk Clojure – triky při práci s kolekcemi</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-prace-s-mapami-a-mnozinami/">Programovací jazyk Clojure – práce s mapami a množinami</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-zaklady-zpracovani-xml/">Programovací jazyk Clojure – základy zpracování XML</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-testovani-s-vyuzitim-knihovny-expectations/">Programovací jazyk Clojure – testování s využitím knihovny Expectations</a></li>
+<li><a href="http://www.root.cz/clanky/programovaci-jazyk-clojure-nektere-uzitecne-triky-pouzitelne-nejenom-v-testech/">Programovací jazyk Clojure – některé užitečné triky použitelné (nejenom) v&nbsp;testech</a></li>
+<li><a href="http://www.root.cz/clanky/enlive-vykonny-sablonovaci-system-pro-jazyk-clojure/">Enlive – výkonný šablonovací systém pro jazyk Clojure</a></li>
+<li><a href="http://www.root.cz/clanky/nastroj-leiningen-a-programovaci-jazyk-clojure-tvorba-vlastnich-knihoven-pro-verejny-repositar-clojars/">Nástroj Leiningen a programovací jazyk Clojure: tvorba vlastních knihoven pro veřejný repositář Clojars</a></li>
+<li><a href="http://www.root.cz/clanky/novinky-v-clojure-verze-1-8-0/">Novinky v Clojure verze 1.8.0</a></li>
+<li><a href="http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async/">Asynchronní programování v&nbsp;Clojure s&nbsp;využitím knihovny core.async</a></li>
+<li><a href="http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async-pokracovani/">Asynchronní programování v&nbsp;Clojure s&nbsp;využitím knihovny core.async (pokračování)</a></li>
+<li><a href="http://www.root.cz/clanky/asynchronni-programovani-v-clojure-s-vyuzitim-knihovny-core-async-dokonceni/">Asynchronní programování v Clojure s využitím knihovny core.async (dokončení)</a></li>
+<li><a href="http://www.root.cz/clanky/vytvarime-irc-bota-v-programovacim-jazyce-clojure/">Vytváříme IRC bota v programovacím jazyce Clojure</a></li>
+<li><a href="https://www.root.cz/clanky/gorilla-repl-interaktivni-prostredi-pro-programovaci-jazyk-clojure/">Gorilla REPL: interaktivní prostředí pro programovací jazyk Clojure</a></li>
+<li><a href="https://www.root.cz/clanky/multimetody-v-clojure-aneb-polymorfismus-bez-pouziti-oop/">Multimetody v Clojure aneb polymorfismus bez použití OOP</a></li>
+<li><a href="https://www.root.cz/clanky/prace-s-externimi-java-archivy-v-programovacim-jazyku-clojure/">Práce s externími Java archivy v programovacím jazyku Clojure</a></li>
+<li><a href="https://www.root.cz/clanky/novinky-v-clojure-verze-1-9-0/">Novinky v Clojure verze 1.9.0</a></li>
+<li><a href="https://www.root.cz/clanky/validace-dat-s-vyuzitim-knihovny-spec-v-clojure-1-9-0/">Validace dat s&nbsp;využitím knihovny spec v&nbsp;Clojure 1.9.0</a></li>
+<li><a href="https://www.root.cz/clanky/pouziti-jazyka-gherkin-pri-tvorbe-testovacich-scenaru-pro-aplikace-psane-v-nbsp-clojure/">Použití jazyka Gherkin při tvorbě testovacích scénářů pro aplikace psané v Clojure</a></li>
+<li><a href="https://www.root.cz/clanky/pouziti-jazyka-gherkin-pri-tvorbe-testovacich-scenaru-pro-aplikace-psane-v-nbsp-clojure-2/">Použití jazyka Gherkin při tvorbě testovacích scénářů pro aplikace psané v Clojure (2)</a></li>
+</ol>
+
+
+
+<p><a name="k11"></a></p>
+<h2 id="k11">11. Pixie</h2>
+
+<p><i>&bdquo;...the first language I ever wrote was when I was in high-school.
+It was a small interpreted language named PhaLinks and was terrible, but I
+learned a lot from the effort. I also acquired a distaste for parsers in the
+process. Which, incidentally, is why I stick with Lisp these days: Lisp parsers
+are super easy to write.&ldquo;<br /> Autor programovacího jazyka
+Pixie.</i></p>
+
+<p>Další variantou LISPu, s&nbsp;níž jsme se již na stránkách Roota setkali, je
+jazyk nazvaný <i>Pixie</i>.</p>
+
+<p>Pokud programátoři, kteří propadli kouzlu programovacího jazyka Clojure,
+potřebují kromě aplikací běžících delší dobu (webový server atd.) vytvářet i
+kratší skripty spouštěné typicky z&nbsp;příkazové řádky, nezbývá jim nic
+jiného, než se poohlédnout po alternativních řešeních a jazycích, které se
+(alespoň prozatím) Clojure pouze podobají a nejsou s&nbsp;ním vždy na 100%
+kompatibilní. Prozatím pravděpodobně nejpropracovanější variantou je jazyk
+nazvaný <i>Pixie</i>. Jazyk <i>Pixie</i> využívá <i>just in time</i> překladač
+(JIT) i správce paměti implementovaný <a
+href="http://pypy.org/">v&nbsp;PyPy</a> (JIT Pythonu psaný v&nbsp;Pythonu),
+další části Pixie jsou pak psány v&nbsp;jazycích C a C++.</p>
+
+<p>Na rozdíl od Clojure, které se spoléhá na to, že programátoři budou využívat
+knihovny kompatibilní s&nbsp;vybraným virtuálním strojem (tj.&nbsp;například
+javovskou standardní knihovnu apod.) se jazyk Pixie spoléhá na rozhraní <i>FFI
+(Foreign Function Interface</i>) a tím pádem na použití nativních knihoven
+dostupných v&nbsp;operačním systému, v&nbsp;němž aplikace poběží. Kombinace
+JITu a GC z&nbsp;PyPy společně s&nbsp;nativními knihovnami se ukazuje být
+úspěšná, protože skripty psané v&nbsp;Pixie bez výkonnostních problémů fungují
+i na prvních modelech Raspberry Pi (to se týká i prakticky okamžitého
+spouštění).</p>
+
+<p><div class="rs-tip-major">Poznámka: Pixie není v&nbsp;žádném případě prvním
+programovacím jazykem, který se do jisté míry snaží napodobit programovací
+jazyk Clojure. Mj.&nbsp;jsme se již setkali s&nbsp;programovacím jazykem Wisp,
+který je automaticky s&nbsp;využitím takzvaného <i>transpileru</i>
+transformován do JavaScriptu, dále existuje sémanticky podobný jazyk
+naprogramovaný v&nbsp;Perlu atd. Ovšem Pixie je z&nbsp;těchto jazyků
+nejpropracovanější a především pak prakticky využitelný.</div></p>
+
+<p>Články s&nbsp;podrobnějšími informacemi o programovacím jazyku Pixie, které
+již na Rootu vyšly:</p>
+
+<ol>
+<li><a href="https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/">Pixie: lehký skriptovací jazyk s&bdquo;kouzelnými&ldquo; schopnostmi</a></li>
+<li><a href="https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/">Programovací jazyk Pixie: funkce ze základní knihovny a použití FFI</a></li>
+</ol>
+
+
+
+<p><a name="k12"></a></p>
+<h2 id="k12">12. Wisp</h2>
+
+<p>Zapomenout nesmíme ani na jazyk nazvaný <i>Wisp</i>, o němž jsme se krátce
+zmínili v&nbsp;předchozí kapitole.</p>
+
+<p>Transpřekladač <i>Wisp</i> slouží k&nbsp;překladu programů vytvořených
+v&nbsp;programovacím jazyce, který je podmnožinou jazyka <i>Clojure</i> či
+<i>ClojureScript</i>, do <i>JavaScriptu</i>. Vzhledem k&nbsp;tomu, že i
+<i>ClojureScript</i> je překládán do JavaScriptu (viz též [<a
+href="http://www.root.cz/clanky/programovaci-jazyk-clojure-21-clojurescript-aneb-preklad-clojure-do-javascriptu/">1</a>],
+nabízí se logická otázka, jaký je vlastně mezi ClojureScriptem a Wispem
+rozdíl.</p>
+
+<p>Cílem autorů ClojureScriptu je nabídnout vývojářům plnohodnotnou
+alternativní implementaci programovacího jazyka Clojure, což se do značné míry
+daří, samozřejmě s&nbsp;ohledem na fakt, že současné JavaScriptové enginy
+nenabízí některé vlastnosti, které Clojure využívá (to například znamená
+omezené využití <i>agentů</i> či <i>futures</i>). ClojureScript je
+(trans)překládán do JavaScriptu relativně komplikovaným způsobem; výsledek
+transpřekladu je dále optimalizován a většinou i &bdquo;minifikován&ldquo;,
+takže se ke klientům dostane již značně nečitelná varianta původního algoritmu
+(optimalizaci a minifikaci lze při tvorbě zakázat). Díky tomu, že ClojureScript
+podporuje většinu vlastností jazyka Clojure, je možné při vývoji webových
+aplikací použít prakticky stejný programovací jazyk jak na straně serveru, tak
+i na straně klienta, čehož <a
+href="https://github.com/clojure/clojurescript/wiki/Companies-Using-ClojureScript">některé</a>
+společnosti s&nbsp;výhodou využívají.</p>
+
+<p>Transpřekladač <i>Wisp</i> je namísto toho navržen takovým způsobem, aby
+algoritmus zapsaný v&nbsp;podmnožině jazyka Clojure převedl co nejpřímějším
+způsobem do JavaScriptu, ideálně tak, aby původní algoritmus byl jasně
+viditelný i ve vygenerovaném kódu (podle názoru autora může být Wisp
+z&nbsp;tohoto důvodu takřka ideální učební pomůckou vhodnou pro vysvětlení
+principu funkcionálních jazyků). Wisp ovšem zachovává některé vlastnosti jazyka
+Clojure, zejména ty vlastnosti, které jsou odvozeny od LISPu &ndash; Wisp je
+stále homoikonický jazyk (což znamená, že kód je reprezentován stejným způsobem
+jako data a lze s&nbsp;ním i manipulovat jako s&nbsp;daty), nalezneme zde
+podporu pro TCO (<i>tail call optimization</i>) a taktéž, což je poměrně
+důležité, podporu pro makra. Další vlastnosti jazyka Clojure ovšem již
+podporovány nejsou &ndash; protože Wisp používá nativní datové typy
+JavaScriptu, nenalezneme v&nbsp;něm například skutečné neměnné
+(<i>immutable</i>) datové struktury, transakční paměť (STM) a i podpora pro
+líné vyhodnocování (<i>lazy evaluation</i>) je prozatím pouze minimální.</p>
+
+<p>Články s&nbsp;podrobnějšími informacemi o jazyku Wisp:</p>
+
+<ol>
+<li><a href="https://www.root.cz/clanky/propojeni-sveta-lispu-se-svetem-javascriptu-s-vyuzitim-transprekladace-wisp/">Propojení světa LISPu se světem JavaScriptu s využitím transpřekladače Wisp</a></li>
+<li><a href="https://www.root.cz/clanky/propojeni-sveta-lispu-se-svetem-javascriptu-s-vyuzitim-transprekladace-wisp-2-cast/">Propojení světa LISPu se světem JavaScriptu s&nbsp;využitím transpřekladače Wisp (2.část)</a></li>
+</ol>
+
+
+
+<p><a name="k13"></a></p>
+<h2 id="k13">13. Script-fu</h2>
+
+<p>Jednou z&nbsp;nejzajímavějších a taktéž nejužitečnějších vlastností
+grafického editoru GIMP je jeho aplikační programové rozhraní (API)
+zpřístupňující programátorům prakticky veškerou funkcionalitu GIMPu a taktéž
+podpora pro skriptování, přičemž skripty mají přímý přístup k&nbsp;API,
+nezávisle na tom, ve kterém programovacím jazyce byly vytvořeny. Původně se
+v&nbsp;GIMPu mohly psát skripty pouze v&nbsp;programovacím jazyce <i>Scheme</i>
+(pro tyto skripty, resp.&nbsp;pro celou technologii, se používá název
+<i>Script-Fu</i>), ovšem v&nbsp;současnosti existuje i podpora pro populární
+programovací jazyk Python, který mimochodem některé své vlastnosti převzal
+právě ze Scheme a LISPu. Skripty používající technologii <i>Script-Fu</i> mohou
+vytvářet nové obrázky a provádět nad nimi základní grafické operace &ndash;
+kreslení na úrovni jednotlivých pixelů a taktéž kreslení s&nbsp;využitím již
+existujících kreslicích nástrojů, zejména tužky (<i>pen</i>), štětce
+(<i>brush</i>) či rozprašovače (<i>airbrush</i>).</p>
+
+<p><div class="rs-tip-major">Poznámka: ve skutečnosti je možné přes PDB
+(<i>Procedural Database</i>) ovládat GIMP i z&nbsp;dalších jazyků, například
+z&nbsp;Perlu. Ovšem Scheme a Python jsou zdaleka nejpoužívanější.</div></p>
+
+<p>Programátor může při tvorbě skriptů určených pro grafický editor GIMP
+používat širokou paletu objektů spravovaných samotným editorem. Mnohé
+z&nbsp;těchto objektů jsou dostupné i uživatelům z&nbsp;grafického
+uživatelského rozhraní editoru, kde je s&nbsp;nimi možné různým způsobem
+interaktivně manipulovat. Jedná se především o samotné obrázky, dále pak
+hladiny umisťované do obrázků (kreslení je prováděno do hladin), kanály, tužky,
+štětce, barvové palety, výběry atd. Skripty psané v&nbsp;programovacím jazyce
+Python a Scheme mohou buď při svém běhu vytvořit objekty nové, což například
+může vést ke skutečnému vytvoření nového obrázku, přidání hladiny do obrázku
+atd., nebo mohou pomocí rozličných dotazovacích funkcí získat některý z již
+existujících objektů. Například skript, který má vykreslit nějaký objekt do
+aktivního obrázku, musí získat identifikátor tohoto obrázku (vždy se jedná o
+celé číslo, protože API GIMPu je poměrně nízkoúrovňové), následně identifikátor
+hladiny a teprve poté je možné provést požadovanou činnost.</p>
+
+<p>Příklad jednoduchého pluginu pro GIMP:</p>
+
+<pre>
+; Tato funkce je zavolána z dialogu vyvolaného uživatelem
+; z grafického uživatelského rozhraní GIMPu.
+(define (script-draw-circle image-width image-height radius selected-color background-color)
+    (let*
+        (
+            ; vytvoření nového obrázku, jehož ID se uloží
+            ; do proměnné nazvané "image"
+            (image (car (gimp-image-new image-width image-height RGB)))
+&nbsp;
+            ; vytvoření nové hladiny, jejíž ID se uloží
+            ; do proměnné nazvané "layer"
+            (layer (car (gimp-layer-new image image-width image-height RGB-IMAGE "Circle" 100 NORMAL-MODE))))
+&nbsp;
+            ; přidání hladiny do vytvořeného obrázku
+            (gimp-image-add-layer image layer 0)
+&nbsp;
+            ; volba barvy v paletě
+            (gimp-palette-set-background background-color)
+&nbsp;
+            ; vykreslení obrazce - jeho výplň
+            (gimp-edit-fill layer BG-IMAGE-FILL)
+&nbsp;
+            ; vytvoření výběru ve tvaru kružnice
+            (gimp-image-select-ellipse
+                image                         ; obrázek v němž se výběr vytvoří
+                CHANNEL-OP-REPLACE            ; přepsání oblasti původního výběru
+                (- (/ image-width 2) radius)  ; levý horní roh výběru
+                (- (/ image-height 2) radius)
+                (* 2 radius) (* 2 radius))    ; rozměry výběru
+&nbsp;
+            ; volba barvy v paletě
+            (gimp-palette-set-background selected-color)
+&nbsp;
+            ; vykreslení obrazce - jeho výplň
+            (gimp-edit-fill layer BG-IMAGE-FILL)
+&nbsp;
+            ; zrušení výběru (lze vrátit pomocí CTRL+Z)
+            (gimp-selection-none image)
+&nbsp;
+            ; zobrazení právě vytvořeného obrázku
+            (gimp-display-new image)
+&nbsp;
+            ; přinutíme GIMP, aby finální obrázek vykreslil
+            (gimp-displays-flush)))
+&nbsp;
+; základní informace o skriptu a definice dialogu
+; zobrazeného uživateli
+(script-fu-register "script-draw-circle"
+                    "&lt;Image&gt;/Filters/Render/Pattern/Circle"
+                    "Vytvori novy obrazek a v nem nakresli kruznici."
+                    "Pavel Tisnovsky"
+                    "Pavel Tisnovsky"
+                    "2017-05-04"
+                    ""
+                    SF-ADJUSTMENT "Image width"  '(256 16 8192 16 64 0 1)
+                    SF-ADJUSTMENT "Image height" '(256 16 8192 16 64 0 1)
+                    SF-ADJUSTMENT "Radius"       '(50 16 200 16 64 0 1)
+                    SF-COLOR      "Color"       "yellow"
+                    SF-COLOR      "Background"  "black")
+</pre>
+
+<p>Články s&nbsp;podrobnějšími informacemi o jazyku Script-fu:</p>
+
+<ol>
+<li><a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp/">Tvorba pluginů pro grafický editor GIMP</a></li>
+<li><a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp-2-cast/">Tvorba pluginů pro grafický editor GIMP (2.část)</a></li>
+<li><a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp-3-cast-vykresleni-hvezdne-oblohy/">Tvorba pluginů pro grafický editor GIMP (3.část – vykreslení hvězdné oblohy)</a></li>
+<li><a href="https://mojefedora.cz/tvorba-pluginu-pro-graficky-editor-gimp-4-pouziti-vyberu-selection-pri-kresleni-a-editaci-obrazku/">Tvorba pluginů pro grafický editor GIMP 4: použití výběrů (selection) při kreslení a editaci obrázků</a></li>
+</ol>
+
+
+
+<p><a name="k14"></a></p>
+<h2 id="k14">14. Hy</h2>
+
+<p>Programovací jazyk <i>Hy</i> je ve velké míře inspirován (poměrně
+populárním) jazykem <i>Clojure</i>, s&nbsp;nímž jsme se na stránkách Roota i
+v&nbsp;předchozím textu již mnohokrát setkali. Ovšem zatímco interpret Clojure
+překládá všechny zapsané výrazy do bajtkódu JVM a teprve poté je spouští,
+pracuje <i>Hy</i> odlišně, protože kód generuje pomocí AST a dokonce dokáže
+zdrojový LISPovský kód transformovat do Pythonu a teprve poté ho spustit. To je
+výhodná vlastnost, protože umožňuje projekt <i>Hy</i> integrovat například
+s&nbsp;debuggery atd. Překlad přes AST do Pythonu podporuje jak Python 2.x, tak
+i Python 3.x. Další důležitou vlastností <i>Hy</i> představuje možnost plné
+kooperace mezi kódem zapsaným přímo v&nbsp;tomto jazyku a pythoním kódem, což
+znamená, že je možné použít všechny Pythonovské knihovny a frameworky (včetně
+<i>Numpy</i>, <i>PyTorch</i>, <i>Flask</i> atd.) a naopak &ndash; například mít
+napsanou aplikaci v&nbsp;Pythonu a pro manipulaci se symboly použít <i>Hy</i>
+(v&nbsp;tomto ohledu jsou homoikonické programovací jazyky s&nbsp;makry podle
+mého názoru mnohem lepší, než samotný Python).</p>
+
+<p><img src="https://i.iinfo.cz/images/51/hy-1-prev.jpg" alt="hist26" height="263" width="468" /></p>
+<p><i>Obrázek 16: Logo programovacího jazyka Hy.</i></p>
+
+<p>Příklad programu vyvinutého v&nbsp;Hy:</p>
+
+<pre>
+<i>; rekurzivní výpočet faktoriálu</i>
+&nbsp;
+(defn factorial
+    [n]
+    (if (&lt;= n 1)
+        1
+        <strong>(* n (factorial (- n 1)))</strong>))
+&nbsp;
+<strong>(for [n (range 1 11)]</strong>
+     <strong>(print n (factorial n)))</strong>
+1 1
+2 2
+3 6
+4 24
+5 120
+6 720
+7 5040
+8 40320
+9 362880
+10 3628800
+</pre>
+
+<p>Články s&nbsp;podrobnějšími informacemi o jazyku Hy:</p>
+
+<ol>
+<li><a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">Jazyky Hy a Clojure-py: moderní dialekty LISPu určené pro Python VM</a></li>
+<li><a href="https://www.root.cz/clanky/moznosti-nabizene-jazykem-hy-modernim-dialektem-lispu-urcenym-pro-python-vm/">Možnosti nabízené jazykem Hy: moderním dialektem LISPu určeným pro Python VM</a></li>
+</ol>
+
+
+
+<p><a name="k15"></a></p>
+<h2 id="k15">15. Clojure-py</h2>
+
+<p>Druhým LISPovským programovacím jazykem vytvořeným v&nbsp;Pythonu je jazyk
+nazvaný <i>Clojure-py</i>. Soudě podle názvu by se mělo jednat o další variantu
+jazyka <i>Clojure</i>, ovšem projekt <i>Clojure-py</i> je v&nbsp;současnosti
+v&nbsp;dosti nestabilním stavu, takže například dochází k&nbsp;pádu VM
+(přesněji řečeno k&nbsp;pádu interpretru) atd. Pro praktické nasazení je mnohem
+lepší a především méně riskantní použít <i>Hy</i>.</p>
+
+<p>Článek s&nbsp;podrobnějšími informacemi o jazyku Clojure-py:</p>
+
+<ol>
+<li><a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">Jazyky Hy a Clojure-py: moderní dialekty LISPu určené pro Python VM</a></li>
+</ol>
+
+
+
+<p><a name="k16"></a></p>
+<h2 id="k16">16. Další programovací jazyky inspirované LISPem</h2>
+
+<p>Již <a href="#k01">v&nbsp;úvodní kapitole</a> jsme si řekli, že jazykem LISP
+byly do větší či menší míry inspirovány i mnohé další programovací jazyky.
+Připomeňme si především dva z&nbsp;těchto jazyků, u nichž sice nemusí být
+inspirace zřejmá na první pohled (zápis programů je mnohdy výrazně odlišný
+&ndash; tj.&nbsp;liší se syntaxe), ovšem <i>sémantika</i> operací jasně ukazuje
+na to, že tyto jazyky jsou LISPem ovlivněny do velké míry. Jedná se o jazyky
+Logo a TCL.</p>
+
+
+
+<p><a name="k17"></a></p>
+<h2 id="k17">17. Jazyk Logo</h2>
+
+<p>Programovací jazyk Logo sice z&nbsp;LISPu skutečně vychází, ovšem zatímco
+většina programovacích jazyků byla vytvořena buď pro praktické programování
+nebo pro výuku programování, Logo je v&nbsp;tomto smyslu poněkud odlišný jazyk,
+protože programování zde není cílem ale pouze nástrojem, který má pomoci při
+vzdělávání. Logo stojí na základech daných takzvanou <i>konstruktivní
+vzdělávací filozofií</i> a je navrženo k&nbsp;podpoře konstruktivního učení.
+Konstruktivismus vysvětluje znalosti a dovednosti, jak jsou vytvořeny žáky
+v&nbsp;jejich vlastních myslích, prostřednictvím vzájemné interakce
+s&nbsp;jinými lidmi a okolím. Tato zajímavá teorie je spojena především se
+švýcarským psychologem Jeanem Piagetem, který strávil mnoho času studováním a
+zdokumentováním učení malých dětí. S&nbsp;Piagetem v Ženevě spolupracoval i
+Seymour Papert, který později stál u vzniku Loga.</p>
+
+<p>Papert se stal světoznámým díky svému bestselleru Mindstorms, ve kterém
+popisuje koncepci založenou na tom, že se dětem dá k&nbsp;dispozici jednoduchý
+ale rozšiřitelný nástroj, přičemž jejich energie a představivost může být
+použita k&nbsp;nalézání nových možností tohoto nástroje. Oním nástrojem se
+v&nbsp;této knize (a na mnoha školách a dalších vzdělávacích institucích i
+v&nbsp;praxi) stalo Logo spolu s&nbsp;jeho želvou. Tím, že dítě
+&bdquo;učí&ldquo; želvu novým dovednostem, tj.&nbsp;přidává další příkazy do
+Loga, se samo učí a především formuje svoji osobnost. Tento způsob učení je
+někdy nazýván &bdquo;rozhovor se želvou&ldquo;. Později byl stejný koncept
+použit například v&nbsp;jazyku Scratch.</p>
+
+<p>Ukažme si ve stručnosti některé jednoduché programy naprogramované
+v&nbsp;Logu. Nejprve rekurzivní výpočet a vykreslení takzvané dračí křivky,
+resp.&nbsp;její varianty známé pod jménem C-křivka:</p>
+
+<pre>
+to c_krivka :velikost :uroven
+    if :uroven &lt;= 0 [
+        forward :velikost
+        stop
+    ]
+    c_krivka :velikost :uroven-1
+    right 90
+    c_krivka :velikost :uroven-1
+    left 90
+end
+</pre>
+
+<a href="https://i.iinfo.cz/urs/logo_08_03-118701676932387.png"><img alt="logo0803" width="232" height="350" src="https://i.iinfo.cz/urs/logo_08_03-preview-118701676932387.png"></a>
+<p><i>Obrázek 17: Dračí křivka vykreslená předchozí funkcí.</i></p>
+
+<p>Vykreslení spirály s&nbsp;využitím programové smyčky
+<strong>repeat</strong>:</p>
+
+<pre>
+to spiral3
+    clearscreen
+    hideturtle
+    repeat 3 [
+        repeat 99 [
+            right 5
+            make "d 3*repcount
+            repeat 3 [
+                forward :d
+                left 120
+            ]
+        ]
+    ]
+end
+&nbsp;
+(draw 310 310)
+&nbsp;
+spiral3 
+</pre>
+
+<img alt="logo1201" width="400" height="388" src="https://i.iinfo.cz/urs/logo_12_01-118943199426218.png"></div>
+<p><i>Obrázek 18: Předchozí demonstrační příklad spuštěný v Turtle Tracks</i></p>
+
+
+
+<p><a name="k18"></a></p>
+<h2 id="k18">18. Jazyk TCL</h2>
+
+<p>I jazyk TCL je inspirován LISPem, což nemusí být na první pohled patrné.
+Příkladem může být vytvoření proměnné <strong>hello</strong>, což se
+v&nbsp;LISPu zapíše takto:</p>
+
+<pre>
+(setq hello "Hello world")
+</pre>
+
+<p>V&nbsp;Tcl se naproti tomu nepoužívají závorky okolo výrazů:</p>
+
+<pre>
+set hello "Hello world"
+</pre>
+
+<p>Vyhodnocování příkazů v&nbsp;jazyce TCL (mimochodem: už samotný pojem
+<i>vyhodnocování</i> se vztahuje k&nbsp;LISPu) ukazuje, v&nbsp;jaké oblasti TCL
+získal inspiraci. Při vyhodnocování se totiž provádí takzvané
+<i>substituce</i>. Substituce se v&nbsp;Tcl používají například
+k&nbsp;nahrazení jména proměnné její hodnotou &ndash; zde se používá znak
+dolaru. V&nbsp;některých případech by se nám hodilo substituci zakázat. To je
+samozřejmě možné a děje se tak použitím složených závorek &ndash;
+<strong>{</strong> a <strong>}</strong> (což zhruba odpovídá speciální formě
+<strong>quote</strong> z&nbsp;LISPu). Rozdíl mezi použitím složených závorek
+zakazujících substituci a uvozovek umožňujících zápis řetězce s&nbsp;mezerami
+ukazuje následující příklad. V&nbsp;něm je nejdříve inicializována proměnná
+<strong>answer</strong> a tato proměnná je použita při tisku dvou řetězců.
+V&nbsp;prvním případě se provede substituce jména proměnné na její hodnotu, ve
+druhém případě se řetězec vytiskne beze změny tak, jak byl zadán:</p>
+
+<pre>
+set answer 42
+puts "Odpověď je $answer"
+puts {Odpověď je $answer}
+</pre>
+
+<p>Složené závorky jsou často použity například při zápisu těla smyček. Je to
+logické, protože tělo smyčky se nesmí provést již při jejím vytváření, ale až
+po jejím spuštění. Z&nbsp;tohoto důvodu je nutné prvotní provedení smyčky
+(která v&nbsp;tomto případě znamená zavolání prvního příkazu v&nbsp;těle
+smyčky) zakázat:</p>
+
+<pre>
+for { set i 10}  {$i &lt; 10} {incr i} {
+   puts "i = : $i"
+}
+</pre>
+
+<p>Nyní si shrňme všechny prováděné substituce (a jejich opaky) do jedné
+tabulky:</p>
+
+<table>
+<tr><th>Použité znaky</th><th>Význam znaků</th></tr>
+<tr><td>$</td><td>substituce proměnných - náhrada jména proměnné její hodnotou</td></tr>
+<tr><td>[]</td><td>vyhodnocení příkazu - příkaz v&nbsp;závorkách se vyhodnotí nejdříve</td></tr>
+<tr><td>""</td><td>potlačuje zpracování mezer jako oddělovačů příkazů či jejich argumentů</td></tr>
+<tr><td>{}</td><td>stejné jako uvozovky s&nbsp;tím rozdílem, že se všechny substituce uvnitř závorek zakazují</td></tr>
+<tr><td>\</td><td>ruší zvláštní význam následujícího znaku</td></tr>
+</table>
+
+<p><div class="rs-tip-major">Poznámka: na tomto místě je vhodné upozornit na
+to, že LISP automaticky vyhodnocuje všechny výrazy (tj.&nbsp;provádí substituci
+výrazu za jeho výsledek), pokud ovšem nejsou uzavřeny ve speciální formě
+<strong>quote</strong>, kterou lze většinou zapsat i zkráceně pomocí apostrofu.
+Žádné další podmínky pro substituci/nesubstituci není nutné specifikovat.
+V&nbsp;jazyku TCL se jeho autor rozhodl pro opačný přístup: ve výchozím stavu
+se substituce neprovádí, což možná může znít logicky, ovšem jak je vidět
+z&nbsp;předchozí tabulky, bylo ve skutečnosti nutné do jazyka přidat další
+podmínky kdy a za jakých okolností se substituce může provést. Z&nbsp;tohoto
+pohledu je návrh LISPu mnohem čistší (není se ostatně čemu divit, protože
+vychází z&nbsp;minimalistického <i>lambda kalkulu</i>).</div></p>
+
+
+
+<p><a name="k19"></a></p>
+<h2 id="k19">19. Literatura</h2>
+
+<p>Knihy o LISPu, Scheme, Clojure a souvisejících tématech:</p>
+
+<ol>
+
+<li>Peter Seibel<br />
+<i>&bdquo;Practical Common Lisp&ldquo;</i><br />
+2009
+</li>
+
+<li>Paul Graham<br />
+<i>&bdquo;ANSI Common Lisp&ldquo;</i><br />
+1995
+</li>
+
+<li>Gerald Gazdar<br />
+<i>&bdquo;Natural Language Processing in Lisp: An Introduction to Computational Linguistics&ldquo;</i><br />
+1989
+</li>
+
+<li>Peter Norvig<br />
+<i>&bdquo;Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp&ldquo;</i><br />
+1991
+</li>
+
+<li>Alex Mileler et.al.<br />
+<i>&bdquo;Clojure Applied: From Practice to Practitioner&ldquo;</i><br />
+2015
+</li>
+
+<li>
+<i>&bdquo;Living Clojure: An Introduction and Training Plan for Developers&ldquo;</i><br />
+2015
+</li>
+
+<li>Dmitri Sotnikov<br />
+<i>&bdquo;Web Development with Clojure: Build Bulletproof Web Apps with Less Code&ldquo;</i><br />
+2016
+</li>
+
+<li>McCarthy<br />
+<i>&bdquo;Recursive functions of symbolic expressions and their computation by machine, part I&ldquo;</i><br />
+1960
+</li>
+
+<li>R. Kent Dybvig<br />
+<i>&bdquo;The Scheme Programming Language&ldquo;</i><br />
+2009
+</li>
+
+<li>Max Hailperin<br />
+<i>&bdquo;Concrete Abstractions&ldquo;</i><br />
+1998
+</li>
+
+<li>Guy L. Steele<br />
+<i>&bdquo;History of Scheme&ldquo;</i><br />
+2006, Sun Microsystems Laboratories
+</li>
+
+<li>Kolář J., Muller K.:<br />
+<i>&bdquo;Speciální programovací jazyky&ldquo;</i><br />
+Praha 1981
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 9, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., October 1987
+</li>
+
+<li>
+<i>&bdquo;AutoLISP Release 10, Programmer's reference&ldquo;</i><br />
+Autodesk Ltd., September 1988
+</li>
+
+<li>McCarthy, John; Abrahams, Paul W.; Edwards, Daniel J.; Hart, Timothy P.; Levin, Michael I.<br />
+<i>&bdquo;LISP 1.5 Programmer's Manual&ldquo;</i><br />
+MIT Press. ISBN 0 262 130 1 1 4
+</li>
+
+<li>Carl Hewitt; Peter Bishop and Richard Steiger<br />
+<i>&bdquo;A Universal Modular Actor Formalism for Artificial Intelligence&ldquo;</i><br />
+1973
+</li>
+
+<li>Feiman, J.<br />
+<i>&bdquo;The Gartner Programming Language Survey (October 2001)&ldquo;</i><br />
+Gartner Advisory
+</li>
+
+<li>Harold Abelson, Gerald Jay Sussman, Julie Sussman:<br />
+<i>Structure and Interpretation of Computer Programs</i><br />
+MIT Press. 1985, 1996 (a možná vyšel i další přetisk)
+</li>
+
+<li>Paul Graham<br />
+<i>On Lisp</i><br />
+Prentice Hall, 1993<br />
+Dostupné online na stránce <a href="http://www.paulgraham.com/onlisptext.html">http://www.paulgraham.com/onlisptext.html</a>
+</li>
+
+<li>David S. Touretzky<br />
+<i>Common LISP: A Gentle Introduction to Symbolic Computation (Dover Books on Engineering)</i><br />
+</li>
+
+<li>Peter Norvig<br />
+<i>Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp</i>
+</li>
+
+<li>Patrick Winston, Berthold Horn<br />
+<i>Lisp (3rd Edition)</i><br />
+ISBN-13: 978-0201083194, ISBN-10: 0201083191
+</li>
+
+<li>Matthias Felleisen, David Van Horn, Dr. Conrad Barski<br>
+<i>Realm of Racket: Learn to Program, One Game at a Time!</i><br />
+ISBN-13: 978-1593274917, ISBN-10: 1593274912 
+</li>
+
+</ol>
+
+
+
+<p><a name="k20"></a></p>
+<h2 id="k20">20. Odkazy na Internetu</h2>
+
+<ol>
+
+<li>SchemePy<br />
+<a href="https://pypi.org/project/SchemePy/">https://pypi.org/project/SchemePy/</a>
+</li>
+
+<li>lispy<br />
+<a href="https://pypi.org/project/lispy/">https://pypi.org/project/lispy/</a>
+</li>
+
+<li>Lython<br />
+<a href="https://pypi.org/project/Lython/">https://pypi.org/project/Lython/</a>
+</li>
+
+<li>Lizpop<br />
+<a href="https://pypi.org/project/lizpop/">https://pypi.org/project/lizpop/</a>
+</li>
+
+<li>Budoucnost programovacích jazyků<br />
+<a href="http://www.knesl.com/budoucnost-programovacich-jazyku">http://www.knesl.com/budoucnost-programovacich-jazyku</a>
+</li>
+
+<li>LISP Prolog and Evolution<br />
+<a href="http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html">http://blog.samibadawi.com/2013/05/lisp-prolog-and-evolution.html</a>
+</li>
+
+<li>List of Lisp-family programming languages<br />
+<a href="https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages">https://en.wikipedia.org/wiki/List_of_Lisp-family_programming_languages</a>
+</li>
+
+<li>clojure_py na indexu PyPi<br />
+<a href="https://pypi.python.org/pypi/clojure_py">https://pypi.python.org/pypi/clojure_py</a>
+</li>
+
+<li>PyClojure<br />
+<a href="https://github.com/eigenhombre/PyClojure">https://github.com/eigenhombre/PyClojure</a>
+</li>
+
+<li>Hy na GitHubu<br />
+<a href="https://github.com/hylang/hy">https://github.com/hylang/hy</a>
+</li>
+
+<li>Hy: The survival guide<br />
+<a href="https://notes.pault.ag/hy-survival-guide/">https://notes.pault.ag/hy-survival-guide/</a>
+</li>
+
+<li>Hy běžící na monitoru terminálu společnosti Symbolics<br />
+<a href="http://try-hy.appspot.com/">http://try-hy.appspot.com/</a>
+</li>
+
+<li>Welcome to Hy’s documentation!<br />
+<a href="http://docs.hylang.org/en/stable/">http://docs.hylang.org/en/stable/</a>
+</li>
+
+<li>Hy na PyPi<br />
+<a href="https://pypi.org/project/hy/#description">https://pypi.org/project/hy/#description</a>
+</li>
+
+<li>Getting Hy on Python<br />
+<a href="https://lwn.net/Articles/596626/">https://lwn.net/Articles/596626/</a>
+</li>
+
+<li>Programming Can Be Fun with Hy<br />
+<a href="https://opensourceforu.com/2014/02/programming-can-fun-hy/">https://opensourceforu.com/2014/02/programming-can-fun-hy/</a>
+</li>
+
+<li>Přednáška o projektu Hy (pětiminutový lighttalk)<br />
+<a href="http://blog.pault.ag/day/2013/04/02">http://blog.pault.ag/day/2013/04/02</a>
+</li>
+
+<li>Hy (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Hy">https://en.wikipedia.org/wiki/Hy</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Point<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Narrowing<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Narrowing.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Narrowing.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Functions that Create Markers<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Markers.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Markers.html</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Motion<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Motion.html#Motion">https://www.gnu.org/software/emacs/manual/html_node/elisp/Motion.html#Motion</a>
+</li>
+
+<li>GNU Emacs Lisp Reference Manual: Basic Char Syntax<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Basic-Char-Syntax.html">https://www.gnu.org/software/emacs/manual/html_node/elisp/Basic-Char-Syntax.html</a>
+</li>
+
+<li>Elisp: Sequence: List, Array<br />
+<a href="http://ergoemacs.org/emacs/elisp_list_vs_vector.html">http://ergoemacs.org/emacs/elisp_list_vs_vector.html</a>
+</li>
+
+<li>Elisp: Property List<br />
+<a href="http://ergoemacs.org/emacs/elisp_property_list.html">http://ergoemacs.org/emacs/elisp_property_list.html</a>
+</li>
+
+<li>Elisp: Hash Table<br />
+<a href="http://ergoemacs.org/emacs/elisp_hash_table.html">http://ergoemacs.org/emacs/elisp_hash_table.html</a>
+</li>
+
+<li>Elisp: Association List<br />
+<a href="http://ergoemacs.org/emacs/elisp_association_list.html">http://ergoemacs.org/emacs/elisp_association_list.html</a>
+</li>
+
+<li>The mapcar Function (An Introduction to Programming in Emacs Lisp)<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html">https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html</a>
+</li>
+
+<li>Anaphoric macro<br />
+<a href="https://en.wikipedia.org/wiki/Anaphoric_macro">https://en.wikipedia.org/wiki/Anaphoric_macro</a>
+</li>
+
+<li>Some Common Lisp Loop Macro Examples<br />
+<a href="https://www.youtube.com/watch?v=3yl8o6r_omw">https://www.youtube.com/watch?v=3yl8o6r_omw</a>
+</li>
+
+<li>A Guided Tour of Emacs<br />
+<a href="https://www.gnu.org/software/emacs/tour/">https://www.gnu.org/software/emacs/tour/</a>
+</li>
+
+<li>The Roots of Lisp<br />
+<a href="http://www.paulgraham.com/rootsoflisp.html">http://www.paulgraham.com/rootsoflisp.html</a>
+</li>
+
+<li>Evil (Emacs Wiki)<br />
+<a href="https://www.emacswiki.org/emacs/Evil">https://www.emacswiki.org/emacs/Evil</a>
+</li>
+
+<li>Evil (na GitHubu)<br />
+<a href="https://github.com/emacs-evil/evil">https://github.com/emacs-evil/evil</a>
+</li>
+
+<li>Evil (na stránkách repositáře MELPA)<br />
+<a href="https://melpa.org/#/evil">https://melpa.org/#/evil</a>
+</li>
+
+<li>Evil Mode: How I Switched From VIM to Emacs<br />
+<a href="https://blog.jakuba.net/2014/06/23/evil-mode-how-to-switch-from-vim-to-emacs.html">https://blog.jakuba.net/2014/06/23/evil-mode-how-to-switch-from-vim-to-emacs.html</a>
+</li>
+
+<li>GNU Emacs (home page)<br />
+<a href="https://www.gnu.org/software/emacs/">https://www.gnu.org/software/emacs/</a>
+</li>
+
+<li>GNU Emacs (texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?GnuEmacs">http://texteditors.org/cgi-bin/wiki.pl?GnuEmacs</a>
+</li>
+
+<li>An Introduction To Using GDB Under Emacs<br />
+<a href="http://tedlab.mit.edu/~dr/gdbintro.html">http://tedlab.mit.edu/~dr/gdbintro.html</a>
+</li>
+
+<li>An Introduction to Programming in Emacs Lisp<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html">https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html</a>
+</li>
+
+<li>27.6 Running Debuggers Under Emacs<br />
+<a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Debuggers.html">https://www.gnu.org/software/emacs/manual/html_node/emacs/Debuggers.html</a>
+</li>
+
+<li>GdbMode<br />
+<a href="http://www.emacswiki.org/emacs/GdbMode">http://www.emacswiki.org/emacs/GdbMode</a>
+</li>
+
+<li>Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Emacs">https://en.wikipedia.org/wiki/Emacs</a>
+</li>
+
+<li>Emacs timeline<br />
+<a href="http://www.jwz.org/doc/emacs-timeline.html">http://www.jwz.org/doc/emacs-timeline.html</a>
+</li>
+
+<li>Emacs Text Editors Family<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EmacsFamily">http://texteditors.org/cgi-bin/wiki.pl?EmacsFamily</a>
+</li>
+
+<li>Vrapper aneb spojení možností Vimu a Eclipse<br />
+<a href="https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse/">https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse/</a>
+</li>
+
+<li>Vrapper aneb spojení možností Vimu a Eclipse (část 2: vyhledávání a nahrazování textu)<br />
+<a href="https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse-cast-2-vyhledavani-a-nahrazovani-textu/">https://mojefedora.cz/vrapper-aneb-spojeni-moznosti-vimu-a-eclipse-cast-2-vyhledavani-a-nahrazovani-textu/</a>
+</li>
+
+<li>Emacs/Evil-mode - A basic reference to using evil mode in Emacs<br />
+<a href="http://www.aakarshnair.com/posts/emacs-evil-mode-cheatsheet">http://www.aakarshnair.com/posts/emacs-evil-mode-cheatsheet</a>
+</li>
+
+<li>From Vim to Emacs+Evil chaotic migration guide<br />
+<a href="https://juanjoalvarez.net/es/detail/2014/sep/19/vim-emacsevil-chaotic-migration-guide/">https://juanjoalvarez.net/es/detail/2014/sep/19/vim-emacsevil-chaotic-migration-guide/</a>
+</li>
+
+<li>Introduction to evil-mode {video)<br />
+<a href="https://www.youtube.com/watch?v=PeVQwYUxYEg">https://www.youtube.com/watch?v=PeVQwYUxYEg</a>
+</li>
+
+<li>EINE (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/EINE">http://www.emacswiki.org/emacs/EINE</a>
+</li>
+
+<li>EINE (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?EINE">http://texteditors.org/cgi-bin/wiki.pl?EINE</a>
+</li>
+
+<li>ZWEI (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/ZWEI">http://www.emacswiki.org/emacs/ZWEI</a>
+</li>
+
+<li>ZWEI (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?ZWEI">http://texteditors.org/cgi-bin/wiki.pl?ZWEI</a>
+</li>
+
+<li>Zmacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/Zmacs">https://en.wikipedia.org/wiki/Zmacs</a>
+</li>
+
+<li>Zmacs (Texteditors.org)<br />
+<a href="http://texteditors.org/cgi-bin/wiki.pl?Zmacs">http://texteditors.org/cgi-bin/wiki.pl?Zmacs</a>
+</li>
+
+<li>TecoEmacs (Emacs Wiki)<br />
+<a href="http://www.emacswiki.org/emacs/TecoEmacs">http://www.emacswiki.org/emacs/TecoEmacs</a>
+</li>
+
+<li>Micro Emacs<br />
+<a href="http://www.emacswiki.org/emacs/MicroEmacs">http://www.emacswiki.org/emacs/MicroEmacs</a>
+</li>
+
+<li>Micro Emacs (Wikipedia)<br />
+<a href="https://en.wikipedia.org/wiki/MicroEMACS">https://en.wikipedia.org/wiki/MicroEMACS</a>
+</li>
+
+<li>EmacsHistory<br />
+<a href="http://www.emacswiki.org/emacs/EmacsHistory">http://www.emacswiki.org/emacs/EmacsHistory</a>
+</li>
+
+<li>Seznam editorů s ovládáním podobným Emacsu či kompatibilních s příkazy Emacsu<br />
+<a href="http://www.finseth.com/emacs.html">http://www.finseth.com/emacs.html</a>
+</li>
+
+<li>evil-numbers<br />
+<a href="https://github.com/cofi/evil-numbers">https://github.com/cofi/evil-numbers</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v&nbsp;Linuxu (1.část)<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v&nbsp;Linuxu (2.část)<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-2-cast/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-2-cast/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (3): Nemiver<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-3-nemiver/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-3-nemiver/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (4): KDbg<br />
+<a href="http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-4-kdbg/">http://fedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-4-kdbg/</a>
+</li>
+
+<li>Debuggery a jejich nadstavby v Linuxu (5): ladění aplikací v editorech Emacs a Vim<br />
+<a href="https://mojefedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-5-ladeni-aplikaci-v-editorech-emacs-a-vim/">https://mojefedora.cz/debuggery-a-jejich-nadstavby-v-linuxu-5-ladeni-aplikaci-v-editorech-emacs-a-vim/</a>
+</li>
+
+<li>Org mode<br />
+<a href="https://orgmode.org/">https://orgmode.org/</a>
+</li>
+
+<li>The Org Manual<br />
+<a href="https://orgmode.org/manual/index.html">https://orgmode.org/manual/index.html</a>
+</li>
+
+<li>Kakoune (modální textový editor)<br />
+<a href="http://kakoune.org/">http://kakoune.org/</a>
+</li>
+
+<li>Vim-style keybinding in Emacs/Evil-mode<br />
+<a href="https://gist.github.com/troyp/6b4c9e1c8670200c04c16036805773d8">https://gist.github.com/troyp/6b4c9e1c8670200c04c16036805773d8</a>
+</li>
+
+<li>Emacs - jak začít<br />
+<a href="http://www.abclinuxu.cz/clanky/navody/emacs-jak-zacit">http://www.abclinuxu.cz/clanky/navody/emacs-jak-zacit</a>
+</li>
+
+<li>Programovací jazyk LISP a LISP machines<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/">https://www.root.cz/clanky/programovaci-jazyk-lisp-a-lisp-machines/</a>
+</li>
+
+<li>Evil-surround<br />
+<a href="https://github.com/emacs-evil/evil-surround">https://github.com/emacs-evil/evil-surround</a>
+</li>
+
+<li>Spacemacs<br />
+<a href="http://spacemacs.org/">http://spacemacs.org/</a>
+</li>
+
+<li>Lisp: Common Lisp, Racket, Clojure, Emacs Lisp<br />
+<a href="http://hyperpolyglot.org/lisp">http://hyperpolyglot.org/lisp</a>
+</li>
+
+<li>Common Lisp, Scheme, Clojure, And Elisp Compared<br />
+<a href="http://irreal.org/blog/?p=725">http://irreal.org/blog/?p=725</a>
+</li>
+
+<li>Does Elisp Suck?<br />
+<a href="http://irreal.org/blog/?p=675">http://irreal.org/blog/?p=675</a>
+</li>
+
+<li>Emacs pro mírně pokročilé (9): Elisp<br />
+<a href="https://www.root.cz/clanky/emacs-elisp/">https://www.root.cz/clanky/emacs-elisp/</a>
+</li>
+
+<li>If I want to learn lisp, are emacs and elisp a good choice?<br />
+<a href="https://www.reddit.com/r/emacs/comments/2m141y/if_i_want_to_learn_lisp_are_emacs_and_elisp_a/">https://www.reddit.com/r/emacs/comments/2m141y/if_i_want_to_learn_lisp_are_emacs_and_elisp_a/</a>
+</li>
+
+<li>Clojure(Script) Interactive Development Environment that Rocks!<br />
+<a href="https://github.com/clojure-emacs/cider">https://github.com/clojure-emacs/cider</a>
+</li>
+
+<li>An Introduction to Emacs Lisp<br />
+<a href="https://harryrschwartz.com/2014/04/08/an-introduction-to-emacs-lisp.html">https://harryrschwartz.com/2014/04/08/an-introduction-to-emacs-lisp.html</a>
+</li>
+
+<li>Emergency Elisp<br />
+<a href="http://steve-yegge.blogspot.com/2008/01/emergency-elisp.html">http://steve-yegge.blogspot.com/2008/01/emergency-elisp.html</a>
+</li>
+
+<li>Lambda calculus<br />
+<a href="https://en.wikipedia.org/wiki/Lambda_calculus">https://en.wikipedia.org/wiki/Lambda_calculus</a>
+</li>
+
+<li>John McCarthy's original LISP paper from 1959<br />
+<a href="https://www.reddit.com/r/programming/comments/17lpz4/john_mccarthys_original_lisp_paper_from_1959/">https://www.reddit.com/r/programming/comments/17lpz4/john_mccarthys_original_lisp_paper_from_1959/</a>
+</li>
+
+<li>Micro Manual LISP<br />
+<a href="https://www.scribd.com/document/54050141/Micro-Manual-LISP">https://www.scribd.com/document/54050141/Micro-Manual-LISP</a>
+</li>
+
+<li>How Lisp Became God's Own Programming Language<br />
+<a href="https://twobithistory.org/2018/10/14/lisp.html">https://twobithistory.org/2018/10/14/lisp.html</a>
+</li>
+
+<li>History of Lisp<br />
+<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">http://jmc.stanford.edu/articles/lisp/lisp.pdf</a>
+</li>
+
+<li>The Roots of Lisp<br />
+<a href="http://languagelog.ldc.upenn.edu/myl/llog/jmc.pdf">http://languagelog.ldc.upenn.edu/myl/llog/jmc.pdf</a>
+</li>
+
+<li>Racket<br />
+<a href="https://racket-lang.org/">https://racket-lang.org/</a>
+</li>
+
+<li>The Racket Manifesto<br />
+<a href="http://felleisen.org/matthias/manifesto/">http://felleisen.org/matthias/manifesto/</a>
+</li>
+
+<li>MIT replaces Scheme with Python<br />
+<a href="https://www.johndcook.com/blog/2009/03/26/mit-replaces-scheme-with-python/">https://www.johndcook.com/blog/2009/03/26/mit-replaces-scheme-with-python/</a>
+</li>
+
+<li>Adventures in Advanced Symbolic Programming<br />
+<a href="http://groups.csail.mit.edu/mac/users/gjs/6.945/">http://groups.csail.mit.edu/mac/users/gjs/6.945/</a>
+</li>
+
+<li>Why MIT Switched from Scheme to Python (2009)<br />
+<a href="https://news.ycombinator.com/item?id=14167453">https://news.ycombinator.com/item?id=14167453</a>
+</li>
+
+<li>Starodávná stránka XLispu<br />
+<a href="http://www.xlisp.org/">http://www.xlisp.org/</a>
+</li>
+
+<li>AutoLISP<br />
+<a href="https://en.wikipedia.org/wiki/AutoLISP">https://en.wikipedia.org/wiki/AutoLISP</a>
+</li>
+
+<li>Seriál PicoLisp: minimalistický a výkonný interpret Lispu<br />
+<a href="https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/">https://www.root.cz/serialy/picolisp-minimalisticky-a-vykonny-interpret-lispu/</a>
+</li>
+
+<li>Common Lisp<br />
+<a href="https://common-lisp.net/">https://common-lisp.net/</a>
+</li>
+
+<li>Getting Going with Common Lisp<br />
+<a href="https://cliki.net/Getting%20Started">https://cliki.net/Getting%20Started</a>
+</li>
+
+<li>Online Tutorial (Common Lisp)<br />
+<a href="https://cliki.net/online%20tutorial">https://cliki.net/online%20tutorial</a>
+</li>
+
+<li>Guile Emacs<br />
+<a href="https://www.emacswiki.org/emacs/GuileEmacs">https://www.emacswiki.org/emacs/GuileEmacs</a>
+</li>
+
+<li>Guile Emacs History<br />
+<a href="https://www.emacswiki.org/emacs/GuileEmacsHistory">https://www.emacswiki.org/emacs/GuileEmacsHistory</a>
+</li>
+
+<li>Guile is a programming language<br />
+<a href="https://www.gnu.org/software/guile/">https://www.gnu.org/software/guile/</a>
+</li>
+
+<li>MIT Scheme<br />
+<a href="http://groups.csail.mit.edu/mac/projects/scheme/">http://groups.csail.mit.edu/mac/projects/scheme/</a>
+</li>
+
+<li>SIOD: Scheme in One Defun<br />
+<a href="http://people.delphiforums.com/gjc//siod.html">http://people.delphiforums.com/gjc//siod.html</a>
+</li>
+
+<li>CommonLispForEmacs<br />
+<a href="https://www.emacswiki.org/emacs/CommonLispForEmacs">https://www.emacswiki.org/emacs/CommonLispForEmacs</a>
+</li>
+
+<li>Elisp: print, princ, prin1, format, message<br />
+<a href="http://ergoemacs.org/emacs/elisp_printing.html">http://ergoemacs.org/emacs/elisp_printing.html</a>
+</li>
+
+<li>Special Forms in Lisp<br />
+<a href="http://www.nhplace.com/kent/Papers/Special-Forms.html">http://www.nhplace.com/kent/Papers/Special-Forms.html</a>
+</li>
+
+<li>Basic Building Blocks in LISP<br />
+<a href="https://www.tutorialspoint.com/lisp/lisp_basic_syntax.htm">https://www.tutorialspoint.com/lisp/lisp_basic_syntax.htm</a>
+</li>
+
+<li>Introduction to LISP - University of Pittsburgh<br />
+<a href="https://people.cs.pitt.edu/~milos/courses/cs2740/Lectures/LispTutorial.pdf">https://people.cs.pitt.edu/~milos/courses/cs2740/Lectures/LispTutorial.pdf</a>
+</li>
+
+<li>Why don't people use LISP<br />
+<a href="https://forums.freebsd.org/threads/why-dont-people-use-lisp.24572/">https://forums.freebsd.org/threads/why-dont-people-use-lisp.24572/</a>
+</li>
+
+<li>Structured program theorem<br />
+<a href="https://en.wikipedia.org/wiki/Structured_program_theorem">https://en.wikipedia.org/wiki/Structured_program_theorem</a>
+</li>
+
+<li>Clojure: API Documentation<br />
+<a href="https://clojure.org/api/api">https://clojure.org/api/api</a>
+</li>
+
+<li>Tutorial for the Common Lisp Loop Macro<br />
+<a href="http://www.ai.sri.com/pkarp/loop.html">http://www.ai.sri.com/pkarp/loop.html</a>
+</li>
+
+<li>Common Lisp's Loop Macro Examples for Beginners<br />
+<a href="http://www.unixuser.org/~euske/doc/cl/loop.html">http://www.unixuser.org/~euske/doc/cl/loop.html</a>
+</li>
+
+<li>A modern list api for Emacs. No 'cl required.<br />
+<a href="https://github.com/magnars/dash.el">https://github.com/magnars/dash.el</a>
+</li>
+
+<li>The LOOP Facility<br />
+<a href="http://www.lispworks.com/documentation/HyperSpec/Body/06_a.htm">http://www.lispworks.com/documentation/HyperSpec/Body/06_a.htm</a>
+</li>
+
+<li>Clojure.org: Vars and the Global Environment<br />
+<a href="http://clojure.org/Vars">http://clojure.org/Vars</a>
+</li>
+
+<li>Clojure.org: Refs and Transactions<br />
+<a href="http://clojure.org/Refs">http://clojure.org/Refs</a>
+</li>
+
+<li>Clojure.org: Atoms<br />
+<a href="http://clojure.org/Atoms">http://clojure.org/Atoms</a>
+</li>
+
+<li>Clojure.org: Agents as Asynchronous Actions<br />
+<a href="http://clojure.org/agents">http://clojure.org/agents</a>
+</li>
+
+<li>Transient Data Structures
+<a href="http://clojure.org/transients">http://clojure.org/transients</a>
+</li>
+
+<li>Dynamic Languages Strike Back<br />
+<a href="http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html">http://steve-yegge.blogspot.cz/2008/05/dynamic-languages-strike-back.html</a>
+</li>
+
+<li>Scripting: Higher Level Programming for the 21st Century<br />
+<a href="http://www.tcl.tk/doc/scripting.html">http://www.tcl.tk/doc/scripting.html</a>
+</li>
+
+<li>Clojure (na Wikipedia EN)<br />
+<a href="http://en.wikipedia.org/wiki/Clojure">http://en.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>Clojure (na Wikipedia CS)<br />
+<a href="http://cs.wikipedia.org/wiki/Clojure">http://cs.wikipedia.org/wiki/Clojure</a>
+</li>
+
+<li>SICP (The Structure and Interpretation of Computer Programs)<br />
+<a href="http://mitpress.mit.edu/sicp/">http://mitpress.mit.edu/sicp/</a>
+</li>
+
+<li>Pure function<br />
+<a href="http://en.wikipedia.org/wiki/Pure_function">http://en.wikipedia.org/wiki/Pure_function</a>
+</li>
+
+<li>Funkcionální programování<br />
+<a href="http://cs.wikipedia.org/wiki/Funkcionální_programování">http://cs.wikipedia.org/wiki/Funkcionální_programování</a>
+</li>
+
+<li>Jazyky Hy a Clojure-py: moderní dialekty LISPu určené pro Python VM<br />
+<a href="https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/">https://www.root.cz/clanky/jazyky-hy-a-clojure-py-moderni-dialekty-lispu-urcene-pro-python-vm/</a>
+</li>
+
+<li>Pixie: lehký skriptovací jazyk s „kouzelnými“ schopnostmi<br />
+<a href="https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/">https://www.root.cz/clanky/pixie-lehky-skriptovaci-jazyk-s-kouzelnymi-schopnostmi/</a>
+</li>
+
+<li>Programovací jazyk Pixie: funkce ze základní knihovny a použití FFI<br />
+<a href="https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/">https://www.root.cz/clanky/programovaci-jazyk-pixie-funkce-ze-zakladni-knihovny-a-pouziti-ffi/</a>
+</li>
+
+</ol>
+
+
+
+<p></p><p></p>
+<p><small>Autor: <a href="http://www.fit.vutbr.cz/~tisnovpa">Pavel Tišnovský</a> &nbsp; 2019</small></p>
+</body>
+</html>
+
