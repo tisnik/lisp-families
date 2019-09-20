@@ -1,3 +1,5 @@
+#lang racket/base
+
 (define-syntax or
   (syntax-rules ()
     [(or) #f]
