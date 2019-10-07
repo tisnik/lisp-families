@@ -1,3 +1,5 @@
+#lang racket/base
+
 (define-syntax-rule (square x)
     (* x x))
 
