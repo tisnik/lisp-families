@@ -1,3 +1,5 @@
+#lang racket/base
+
 (define-syntax-rule (square x)
     (let ([tmp x])
          (* tmp tmp)))
