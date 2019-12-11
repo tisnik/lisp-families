@@ -1,0 +1,15 @@
+csi -b -q closure_1.scm > closure_1.out
+csi -b -q closure_2.scm > closure_2.out
+csi -b -q closure_3.scm > closure_3.out
+csi -b -q closure_4.scm > closure_4.out
+csi -b -q cons.scm > cons.out
+csi -b -q dot_pairs.scm > dot_pairs.out
+csi -b -q factorial_1.scm > factorial_1.out
+csi -b -q factorial_2.scm > factorial_2.out
+csi -b -q factorial_3.scm > factorial_3.out
+csi -b -q functions.scm > functions.out
+csi -b -q lexical_scope_1.scm > lexical_scope_1.out
+csi -b -q lexical_scope_2.scm > lexical_scope_2.out
+csi -b -q lexical_scope_3.scm > lexical_scope_3.out
+csi -b -q lexical_scope_4.scm > lexical_scope_4.out
+csi -b -q lists.scm > lists.out
