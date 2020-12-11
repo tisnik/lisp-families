@@ -1,0 +1,36 @@
+(define (print item)
+     (princ item)
+     (newline))
+
+(define (get-counter)
+    (let ((i -1))
+         (lambda ()
+             (set! i (+ i 1))
+             i)))
+
+(define counter1 (get-counter))
+(define counter2 (get-counter))
+
+(print "Counter 1")
+(print (counter1))
+(print (counter1))
+(print (counter1))
+(newline)
+
+(print "Counter 2")
+(print (counter2))
+(print (counter2))
+(print (counter2))
+(newline)
+
+(print "Counter 1")
+(print (counter1))
+(print (counter1))
+(print (counter1))
+(newline)
+
+(print "Counter 2")
+(print (counter2))
+(print (counter2))
+(print (counter2))
+(newline)
