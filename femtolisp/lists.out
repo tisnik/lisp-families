@@ -1,0 +1,21 @@
+Empty list
+()
+
+A list
+(1 2 3 4)
+
+Another list
+(1 2 3 4)
+
+car
+1
+
+cdr
+(2 3 4)
+
+cadr
+2
+
+cddr
+(3 4)
+
