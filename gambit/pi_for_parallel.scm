@@ -13,7 +13,7 @@
 
 (define (power-of-two n maximum)
   (if (< n maximum)
-     (cons n (power-of-two (* n 2) maximum))
-     (list n)))
+      (cons n (power-of-two (* n 2) maximum))
+      (list n)))
 
 (map pi-for (power-of-two 1 5000000))
