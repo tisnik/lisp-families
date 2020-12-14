@@ -7,15 +7,15 @@
  
 (define (pi-for n)
   (let ((pi (compute-pi n)))
-      (display n)
-      (display "\t")
-      (display pi)
-      (newline)))
+    (display n)
+    (display "\t")
+    (display pi)
+    (newline)))
 
 (define (power-of-two n maximum)
   (if (< n maximum)
-     (cons n (power-of-two (* n 2) maximum))
-     (list n)))
+      (cons n (power-of-two (* n 2) maximum))
+      (list n)))
 
 ;(define t (make-thread (lambda () (pi-for 10))))
 ;(display t)
