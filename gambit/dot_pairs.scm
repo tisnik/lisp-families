@@ -1,6 +1,6 @@
 (define (print item)
-     (display item)
-     (newline))
+  (display item)
+  (newline))
 
 (print '(1 . 2))
 
