@@ -1,6 +1,6 @@
 (define (print item)
-     (display item)
-     (newline))
+  (display item)
+  (newline))
 
 (define (factorial n)
     (let fact-iter (          ; pomocná vnitřní funkce
