@@ -1,6 +1,6 @@
 (define (print item)
-     (display item)
-     (newline))
+  (display item)
+  (newline))
 
 (define (factorial n)
     (if (= n 0) ; podmínka pro ukončení rekurzivního zanořování
