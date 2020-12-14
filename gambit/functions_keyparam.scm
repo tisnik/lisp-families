@@ -1,0 +1,15 @@
+(define (print item)
+  (display item)
+  (newline))
+
+(define (f b #!key c (d 7) (e 8))
+  (print b)
+  (print c)
+  (print e)
+  (print e)
+  (newline))
+
+(f 0)
+(f 1 c: 2)
+(f 1 e: 5)
+(f 1 c: 2 d: 3 e: 4)
