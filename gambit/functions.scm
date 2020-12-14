@@ -1,6 +1,6 @@
 (define (print item)
-     (display item)
-     (newline))
+  (display item)
+  (newline))
 
 ; anonymous function
 (lambda (x y) (+ x y))
@@ -11,10 +11,10 @@
 ; apply anonymous function
 (print
   (
-    ; create anonymous function
-    (lambda (x y) (+ x y))
-    ; pass parameters to it
-    1 2))
+   ; create anonymous function
+   (lambda (x y) (+ x y))
+   ; pass parameters to it
+   1 2))
 
 ; apply anonymous function (one liner)
 (print ((lambda (x y) (+ x y)) 1 2))
