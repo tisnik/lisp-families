@@ -1,3 +1,17 @@
+; Skriptování v GIMPu
+
+;
+;  (C) Copyright 2020  Pavel Tisnovsky
+;
+;  All rights reserved. This program and the accompanying materials
+;  are made available under the terms of the Eclipse Public License v1.0
+;  which accompanies this distribution, and is available at
+;  http://www.eclipse.org/legal/epl-v10.html
+;
+;  Contributors:
+;      Pavel Tisnovsky
+;
+
 ; Funkce, která do existujícího obrázku vykreslí
 ; Lissajousův obrazec buď vybraným perem/tužkou nebo štětcem.
 (define (script-fu-draw-lissajous selected-image selected-layer cx cy rx ry dx dy)
