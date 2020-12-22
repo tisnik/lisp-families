@@ -1,6 +1,18 @@
 ; Článek "Tvoříme skripty pro grafický editor GIMP (2)"
 ; Demonstrační příklad číslo 3
 
+;
+;  (C) Copyright 2020  Pavel Tisnovsky
+;
+;  All rights reserved. This program and the accompanying materials
+;  are made available under the terms of the Eclipse Public License v1.0
+;  which accompanies this distribution, and is available at
+;  http://www.eclipse.org/legal/epl-v10.html
+;
+;  Contributors:
+;      Pavel Tisnovsky
+;
+
 ; Tato funkce je zavolána z dialogu vyvolaného uživatelem
 ; z grafického uživatelského rozhraní GIMPu.
 (define (script-fu-spirals-2
