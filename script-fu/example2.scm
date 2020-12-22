@@ -1,6 +1,18 @@
 ; Skriptování v GIMPu (4)
 ; Demonstrační příklad číslo 2
 
+;
+;  (C) Copyright 2020  Pavel Tisnovsky
+;
+;  All rights reserved. This program and the accompanying materials
+;  are made available under the terms of the Eclipse Public License v1.0
+;  which accompanies this distribution, and is available at
+;  http://www.eclipse.org/legal/epl-v10.html
+;
+;  Contributors:
+;      Pavel Tisnovsky
+;
+
 (define (script-fu-filter-samples2
                              selected-image
                              selected-layer)
