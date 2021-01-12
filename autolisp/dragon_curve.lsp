@@ -1,3 +1,5 @@
+; Examples prepared for the classic AutoLISP
+
 ; **********************************************************
 ; Inicializační funkce pro vykreslení fraktální Dračí křivky
 ; **********************************************************
