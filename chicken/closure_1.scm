@@ -16,13 +16,13 @@
 
 ; helper function to print a value with newline appended
 (define (print item)
-     (display item)
-     (newline))
+  (display item)
+  (newline))
 
 ; closure construction
 (define (larger-than limit)
-    ; function with value closed over
-    (lambda (value) (> value limit)))
+  ; function with value closed over
+  (lambda (value) (> value limit)))
 
 ; construct and use closure
 (print ((larger-than 5) 0))
