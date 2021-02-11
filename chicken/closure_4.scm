@@ -16,16 +16,16 @@
 
 ; helper function to print a value with newline appended
 (define (print item)
-     (display item)
-     (newline))
+  (display item)
+  (newline))
 
 ; closure construction
 (define (get-counter)
-    (let ((i -1))
-         ; function with value closed over
-         (lambda ()
-             (set! i (+ i 1))
-             i)))
+  (let ((i -1))
+    ; function with value closed over
+    (lambda ()
+      (set! i (+ i 1))
+      i)))
 
 ; construct two closures
 (define counter1 (get-counter))
