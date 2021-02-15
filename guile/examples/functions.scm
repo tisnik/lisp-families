@@ -12,6 +12,7 @@
 ;      Pavel Tisnovsky
 ;
 
+; helper function to print a value with newline appended
 (define (print item)
   (display item)
   (newline))
