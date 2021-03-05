@@ -12,6 +12,7 @@
 ;      Pavel Tisnovsky
 ;
 
+; import and use SRFI 1 (list library) procedures
 (use srfi-1)
 
 ; helper function to print a value with newline appended
@@ -27,7 +28,7 @@
       (set! i (+ i 1))
       i)))
 
-; construct and use three closures
+; construct and use three closures as independent counters
 (print (counter))
 (print (counter))
 (print (counter))
