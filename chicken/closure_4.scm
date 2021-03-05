@@ -12,6 +12,7 @@
 ;      Pavel Tisnovsky
 ;
 
+; import and use SRFI 1 (list library) procedures
 (use srfi-1)
 
 ; helper function to print a value with newline appended
@@ -31,7 +32,7 @@
 (define counter1 (get-counter))
 (define counter2 (get-counter))
 
-; usage of closures
+; usage of closures - two independent counters
 (print (counter1))
 (print (counter1))
 (print (counter1))
