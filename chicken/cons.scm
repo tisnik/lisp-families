@@ -17,20 +17,20 @@
   (display item)
   (newline))
 
-; cons usage
+; cons function usage
 (print (cons 1 2))
 
-; another cons usage
+; another cons function usage
 (print (cons 1 (cons 2 3)))
 
-; dot-pairs
+; usage of dot-pairs
 (print '((1 . 2) . (3 . 4)))
 
-; this is proper list
+; this is proper list constructed from dot-pairs
 (print (cons 1 (cons 2 (cons 3 '()))))
 
 ; poor man's nil (not fully compatible with LISP)
 (define nil '())
 
-; this is proper list
+; this is proper list constructed from dot-pairs
 (print (cons 1 (cons 2 (cons 3 nil))))
