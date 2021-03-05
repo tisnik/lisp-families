@@ -12,6 +12,7 @@
 ;      Pavel Tisnovsky
 ;
 
+; import and use SRFI 1 (list library) procedures
 (use srfi-1)
 
 ; helper function to print a value with newline appended
@@ -28,5 +29,5 @@
 (print ((larger-than 5) 0))
 (print ((larger-than 5) 10))
 
-; another usage of closure
+; yet another usage of closure
 (print (filter (larger-than 5) '(1 2 3 4 5 6 7 8 9 10)))
