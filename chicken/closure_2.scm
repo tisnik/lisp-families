@@ -12,6 +12,7 @@
 ;      Pavel Tisnovsky
 ;
 
+; import and use SRFI 1 (list library) procedures
 (use srfi-1)
 
 ; helper function to print a value with newline appended
