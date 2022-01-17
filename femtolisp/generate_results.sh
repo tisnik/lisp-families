@@ -25,3 +25,4 @@
 ./flisp let_loop.scm > results/let_loop.out
 ./flisp let_loop_iterate1.scm > results/let_loop_iterate1.out
 ./flisp let_loop_iterate2.scm > results/let_loop_iterate2.out
+./flisp MIT_6.001_sqrt.scm > MIT_6.001_sqrt.out
