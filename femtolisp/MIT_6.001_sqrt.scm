@@ -7,19 +7,28 @@
      "")
 
 
+; helper functions
+(define (square x)
+  (* x x))
+
+
+(define (average x y)
+  (/ (+ x y) 2))
+
+
 ; Wizard's version
-(define (sqrt x)
+(define (sqrt-of x)
   (define (improve guess)
     (average guess (/ x guess)))
   (define (good-enough? guess)
     (< (abs (- (square guess) x))
-       0.01))
+       0.001))
   (define (try guess)
     (if (good-enough? guess)
         guess
-        (try (improve quess))))
+        (try (improve guess))))
   (try 1))
 
 
-(print (sqrt 100))
-(print (sqrt 2))
+(print (sqrt-of 100))
+(print (sqrt-of 2))
