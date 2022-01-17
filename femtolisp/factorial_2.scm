@@ -12,9 +12,11 @@
 ;      Pavel Tisnovsky
 ;
 
+; helper function to print a value with newline appended
 (define (print item)
      (princ item)
-     (newline))
+     (newline)
+     "")
 
 (define (factorial n)
     (if (= n 0) ; podmínka pro ukončení rekurzivního zanořování
