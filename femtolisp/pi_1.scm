@@ -12,6 +12,7 @@
 ;      Pavel Tisnovsky
 ;
 
+; helper function to print a value with newline appended
 (define (compute-pi n)
   (let ((pi 4.0))
     (do ((i 3 (+ i 2)))
