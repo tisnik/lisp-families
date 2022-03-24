@@ -12,15 +12,18 @@
 ;      Pavel Tisnovsky
 ;
 
+; Ackermann function
 (define (A m n)
   (cond
     ((= m 0) (+ n 1))
     ((= n 0) (A (- m 1) 1))
     (else (A (- m 1) (A m (- n 1))))))
 
+; counters
 (define m 0)
 (define n 0)
 
+; compute Ackermann function for given input values pairs
 (do ()
   ((>= m 4))
   (set! n 0)
