@@ -1,4 +1,5 @@
 ; Examples prepared for Kawa
+; https://www.gnu.org/software/kawa/
 
 ;
 ;  (C) Copyright 2020  Pavel Tisnovsky
