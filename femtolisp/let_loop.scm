@@ -1,4 +1,5 @@
 ; Examples prepared for Femtolisp
+; https://github.com/JeffBezanson/femtolisp
 
 ;
 ;  (C) Copyright 2022  Pavel Tisnovsky
