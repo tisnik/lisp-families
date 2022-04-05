@@ -1,4 +1,8 @@
 ; A classic example taken from MIT 6.001 course
+; https://github.com/JeffBezanson/femtolisp
+
+; Updated for Femtolisp
+; https://github.com/JeffBezanson/femtolisp
 
 ; helper function to print a value with newline appended
 (define (print item)
