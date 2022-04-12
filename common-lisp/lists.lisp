@@ -20,5 +20,3 @@
 
 (print "cddr")
 (print (cddr a))
-
-(quit)

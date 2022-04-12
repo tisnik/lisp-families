@@ -5,5 +5,3 @@
 
 (print (add 1 2))
 (print (mul 6 7))
-
-(quit)

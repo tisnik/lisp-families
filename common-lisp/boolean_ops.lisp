@@ -4,5 +4,3 @@
 (print (or T nil))
 (print (or nil nil T nil))
 (print (or nil nil nil nil))
-
-(quit)

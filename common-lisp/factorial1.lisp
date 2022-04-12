@@ -3,5 +3,3 @@
           (T (* n (factorial (- n 1))))))
 
 (print (factorial 10))
-
-(quit)

@@ -15,5 +15,3 @@
 (print "zerop")
 (print (zerop 0))
 (print (zerop 42))
-
-(quit)

@@ -5,5 +5,3 @@
   (incf counter))
 
 (print counter)
-
-(quit)
