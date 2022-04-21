@@ -1,5 +1,5 @@
 ;
-;  (C) Copyright 2020  Pavel Tisnovsky
+;  (C) Copyright 2020, 2021, 2022  Pavel Tisnovsky
 ;
 ;  All rights reserved. This program and the accompanying materials
 ;  are made available under the terms of the Eclipse Public License v1.0
@@ -11,9 +11,9 @@
 ;
 
 (do (
-        (x 1 (* x 2))    ; poèáteèní hodnota promìnné a iteraèní vıraz provedenı na konci smyèky
+        (x 1 (* x 2))    ; poÄÃ¡teÄnÃ­ hodnota promÄ›nnÃ© a iteraÄnÃ­ vÃ½raz provedenÃ½ na konci smyÄky
         (y 1000 (- y 1)) ; dtto
         (z 0 (* x y)))   ; dtto
-    ((< y x))         ; podmínka vyhodnocovaná pro ukonèení smyèky
-        (display (list x y z)) ; tìlo smyèky
+    ((< y x))            ; podmÃ­nka vyhodnocovanÃ¡ pro ukonÄenÃ­ smyÄky
+        (display (list x y z)) ; tÄ›lo smyÄky
         (newline))
