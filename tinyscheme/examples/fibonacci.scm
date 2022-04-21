@@ -1,5 +1,5 @@
 ;
-;  (C) Copyright 2020  Pavel Tisnovsky
+;  (C) Copyright 2020, 2021, 2022  Pavel Tisnovsky
 ;
 ;  All rights reserved. This program and the accompanying materials
 ;  are made available under the terms of the Eclipse Public License v1.0
@@ -12,6 +12,6 @@
 
 ; rekurzivni vypocet Fibonacciho posloupnosti
 (define (fib n)
-    (cond ((= n 0) 0)
-          ((= n 1) 1)
+    (cond ((= n 0) 0) ; ukonceni rekurzivniho vypoctu
+          ((= n 1) 1) ; ukonceni rekurzivniho vypoctu
           (else (+ (fib (- n 1)) (fib (- n 2))))))
