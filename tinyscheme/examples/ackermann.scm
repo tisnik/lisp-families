@@ -1,5 +1,5 @@
 ;
-;  (C) Copyright 2020  Pavel Tisnovsky
+;  (C) Copyright 2020, 2021, 2022  Pavel Tisnovsky
 ;
 ;  All rights reserved. This program and the accompanying materials
 ;  are made available under the terms of the Eclipse Public License v1.0
@@ -10,15 +10,18 @@
 ;      Pavel Tisnovsky
 ;
 
+; Ackermann function
 (define (A m n)
   (cond
     ((= m 0) (+ n 1))
     ((= n 0) (A (- m 1) 1))
     (else (A (- m 1) (A m (- n 1))))))
 
+; counters
 (define m 0)
 (define n 0)
 
+; compute Ackermann function for given input values pairs
 (do ()
   ((>= m 4))
   (set! n 0)
