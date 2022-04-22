@@ -1,3 +1,6 @@
+; Examples prepared for Gambit Scheme
+; http://www.gambitscheme.org/
+
 ;
 ;  (C) Copyright 2020  Pavel Tisnovsky
 ;
